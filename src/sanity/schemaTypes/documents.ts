@@ -1,7 +1,9 @@
 import { defineArrayMember, defineField, defineType } from "sanity";
 import { Briefcase, Folder, HelpCircle, Inbox, MessageSquareQuote, Settings } from "lucide-react";
 import { pageBlocks } from "./blocks";
+import { photoFields } from "./locale";
 import { COUNTRY_OPTIONS } from "../../lib/countries";
+
 
 export const siteSettings = defineType({
   name: "siteSettings",
@@ -29,8 +31,9 @@ export const siteSettings = defineType({
     defineField({ name: "workingHours", title: "Время работы", type: "localeString", group: "contacts" }),
     defineField({ name: "instagram", title: "Instagram (без @)", type: "string", group: "contacts" }),
     defineField({ name: "heroTitle", title: "Главный заголовок", type: "localeString", group: "home" }),
+    defineField({ name: "heroTitleAccent", title: "Заголовок — выделенная часть", type: "localeString", group: "home", description: "Показывается цветом после основного заголовка. Например: «без лишней беготни»." }),
     defineField({ name: "heroSubtitle", title: "Подзаголовок", type: "localeText", group: "home" }),
-    defineField({ name: "heroImage", title: "Фото на главной", type: "image", group: "home", options: { hotspot: true }, description: "Реальное фото офиса или команды. Не стоковое." }),
+    defineField({ name: "heroImage", title: "Фото на главной", type: "image", group: "home", options: { hotspot: true }, fields: photoFields, description: "Реальное фото офиса или команды. Не стоковое." }),
     defineField({
       name: "stats",
       title: "Цифры доверия",
@@ -49,8 +52,8 @@ export const siteSettings = defineType({
       ],
     }),
     defineField({ name: "aboutText", title: "Текст «О нас»", type: "localeText", group: "home" }),
-    defineField({ name: "aboutImage", title: "Фото для «О нас»", type: "image", group: "home", options: { hotspot: true } }),
-    defineField({ name: "officeImage", title: "Фото офиса (контакты)", type: "image", group: "home", options: { hotspot: true } }),
+    defineField({ name: "aboutImage", title: "Фото для «О нас»", type: "image", group: "home", options: { hotspot: true }, fields: photoFields }),
+    defineField({ name: "officeImage", title: "Фото офиса (контакты)", type: "image", group: "home", options: { hotspot: true }, fields: photoFields }),
     defineField({ name: "seoDescription", title: "Описание сайта для Google", type: "localeText", group: "seo" }),
     defineField({ name: "ogImage", title: "Картинка для соцсетей по умолчанию", type: "image", group: "seo", description: "1200×630" }),
   ],
@@ -109,7 +112,7 @@ export const service = defineType({
       description: "Если нужной страны нет в списке — загрузите картинку флага ниже.",
     }),
     defineField({ name: "flagImage", title: "Флаг картинкой (необязательно)", type: "image", group: "main" }),
-    defineField({ name: "coverImage", title: "Обложка", type: "image", group: "main", options: { hotspot: true } }),
+    defineField({ name: "coverImage", title: "Обложка", type: "image", group: "main", options: { hotspot: true }, fields: photoFields }),
     defineField({ name: "excerpt", title: "Короткое описание", type: "localeText", group: "main", description: "1–2 предложения для карточки." }),
     defineField({ name: "badge", title: "Метка на карточке", type: "localeString", group: "main", description: "Например: «Предрегистрация» или «Скоро подробнее». Можно оставить пустым." }),
     defineField({

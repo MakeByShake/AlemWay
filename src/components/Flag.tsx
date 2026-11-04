@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Globe } from "lucide-react";
 import type { ReactNode } from "react";
-import { hasImage, urlFor } from "@/sanity/image";
+import { hasImage, imageUrl } from "@/sanity/image";
 import type { SanityImage } from "@/lib/types";
 
 /** 5-point star path centred at (cx, cy). */
@@ -220,7 +220,7 @@ export function Flag({ code, image, label = "", className = "" }: Props) {
   if (hasImage(image)) {
     return (
       <span className={base}>
-        <Image src={urlFor(image).width(96).height(64).url()} alt={label} fill sizes="48px" className="object-cover" />
+        <Image src={imageUrl(image, 96, 64)} alt={label} fill sizes="48px" className="object-cover" />
       </span>
     );
   }

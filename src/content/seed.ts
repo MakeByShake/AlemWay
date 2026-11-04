@@ -12,6 +12,7 @@ import type {
   LocaleString,
   PageBlock,
   Review,
+  SanityImage,
   Service,
   SiteSettings,
 } from "../lib/types";
@@ -19,6 +20,14 @@ import type {
 let keyCounter = 0;
 const key = () => `k${(++keyCounter).toString(36)}`;
 const t = (ru: string, kk: string): LocaleString => ({ ru, kk });
+/** Local photo from /public/images. Free-license photos need the author credit. */
+const photo = (file: string, altRu: string, altKk: string, credit?: string): SanityImage => ({
+  _type: "image",
+  src: `/images/${file}`,
+  alt: t(altRu, altKk),
+  ...(credit ? { credit } : {}),
+});
+
 const list = (items: [string, string][]): Keyed<LocaleString>[] =>
   items.map(([ru, kk]) => ({ _key: key(), ru, kk }));
 
@@ -38,10 +47,11 @@ export const seedSettings: SiteSettings = {
     { _key: key(), value: "1000+", label: t("клиентов", "клиент") },
     { _key: key(), value: "60", label: t("студентов уже в Германии", "студент Германияда") },
   ],
-  heroTitle: t(
-    "Визы и работа за рубежом без лишней беготни",
-    "Виза және шетелде жұмыс — артық әуресіз"
-  ),
+  heroTitle: t("Визы и работа за рубежом —", "Виза және шетелде жұмыс —"),
+  heroTitleAccent: t("без лишней беготни", "артық әуресіз"),
+  heroImage: photo("hero-wing.jpg", "Крыло самолёта над облаками", "Бұлттар үстіндегі ұшақ қанаты"),
+  aboutImage: photo("site-family.jpg", "Семья на прогулке", "Серуендеген отбасы"),
+  officeImage: photo("site-work.jpg", "Рабочее место в офисе", "Кеңседегі жұмыс орны"),
   heroSubtitle: t(
     "K-ETA в Корею за 12 000 ₸, летняя работа в Германии для студентов и визы. Скажем цену и список документов за 15 минут.",
     "Кореяға K-ETA 12 000 ₸, студенттерге Германияда жазғы жұмыс және визалар. Бағасы мен құжаттар тізімін 15 минутта айтамыз."
@@ -105,6 +115,17 @@ const ketaBlocks: PageBlock[] = [
       ["Госсбор уже включён в цену", "Мемлекеттік алым бағаға кірген"],
       ["Готовое разрешение присылаем в WhatsApp", "Дайын рұқсатты WhatsApp-қа жібереміз"],
     ]),
+  },
+  {
+    _type: "imageText",
+    _key: key(),
+    imagePosition: "right",
+    image: photo("korea-bukchon.jpg", "Улица Пукчон в Сеуле", "Сеулдегі Пукчон көшесі", "Фото: Basile Morin, CC BY-SA 4.0"),
+    title: t("Сеул без визы — до 30 дней", "Сеул визасыз — 30 күнге дейін"),
+    body: t(
+      "С K-ETA можно летать в Южную Корею на отдых, к друзьям или по делам — без похода в посольство. Разрешение привязано к паспорту, на границе его проверят автоматически.",
+      "K-ETA-мен Оңтүстік Кореяға демалысқа, достарға немесе іспен елшілікке бармай-ақ ұшуға болады. Рұқсат паспортқа байланған, шекарада автоматты түрде тексеріледі."
+    ),
   },
   {
     _type: "documents",
@@ -181,6 +202,17 @@ const ferienjobBlocks: PageBlock[] = [
     ],
   },
   {
+    _type: "imageText",
+    _key: key(),
+    imagePosition: "left",
+    image: photo("germany-heidelberg-air.jpg", "Гейдельберг с высоты", "Гейдельберг биіктен", "Фото: Schlurcher, CC BY 4.0"),
+    title: t("Лето, которое окупает себя", "Өзін-өзі ақтайтын жаз"),
+    body: t(
+      "Студенты работают в отелях, ресторанах, на складах и фермах. Жильё часто даёт работодатель, а в выходные можно путешествовать по Европе по шенгенской визе.",
+      "Студенттер қонақүйлерде, мейрамханаларда, қоймалар мен фермаларда жұмыс істейді. Тұрғын үйді жиі жұмыс беруші береді, ал демалыста шенген визасымен Еуропаны аралауға болады."
+    ),
+  },
+  {
     _type: "features",
     _key: key(),
     title: t("Что входит", "Не кіреді"),
@@ -245,6 +277,7 @@ export const seedServices: Service[] = [
     slug: { current: "k-eta" },
     category: catBySlug("entry-permits"),
     countryCode: "KR",
+    coverImage: photo("korea-palace.jpg", "Дворец Кёнбоккун в Сеуле", "Сеулдегі Кёнбоккун сарайы", "Фото: Frank Schulenburg, CC BY-SA 4.0"),
     excerpt: t(
       "Электронное разрешение на въезд без визы до 30 дней. Действует 3 года.",
       "30 күнге дейін визасыз кіруге электронды рұқсат. 3 жыл жарамды."
@@ -273,6 +306,7 @@ export const seedServices: Service[] = [
     slug: { current: "work-and-travel-germany" },
     category: catBySlug("work-abroad"),
     countryCode: "DE",
+    coverImage: photo("germany-heidelberg.jpg", "Старый город Гейдельберга", "Гейдельбергтің ескі қаласы", "Фото: R. J. Mathar, CC BY-SA 4.0"),
     excerpt: t(
       "Летняя работа в Германии для студентов очной формы. До 90 дней на каникулах.",
       "Күндізгі оқитын студенттерге Германияда жазғы жұмыс. Демалыста 90 күнге дейін."
@@ -300,6 +334,7 @@ export const seedServices: Service[] = [
     slug: { current: "visa-australia" },
     category: catBySlug("visas"),
     countryCode: "AU",
+    coverImage: photo("australia-sydney.jpg", "Сиднейский оперный театр", "Сидней опера театры", "Фото: DXR, CC BY-SA 4.0"),
     badge: t("Скоро подробнее", "Жақында толығырақ"),
     excerpt: t(
       "Подробная информация скоро появится. Оставьте заявку или напишите в WhatsApp, проконсультируем.",

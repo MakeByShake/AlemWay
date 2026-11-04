@@ -5,6 +5,8 @@
  * Документы создаются с постоянными _id, поэтому повторный запуск обновляет их, а не дублирует.
  * Удалённые из стартового набора услуги (Япония, Польша, Словакия, Green Card) скрипт тоже убирает, если они есть.
  */
+import { createReadStream } from "node:fs";
+import path from "node:path";
 import { createClient } from "@sanity/client";
 import { seedCategories, seedFaq, seedServices, seedSettings } from "../src/content/seed";
 import type { Service } from "../src/lib/types";
@@ -28,6 +30,29 @@ const REMOVED_IDS = [
   "category-green-card",
 ];
 
+// Local photos (/images/...) are uploaded once and replaced with Sanity asset references.
+const uploaded = new Map<string, string>();
+async function uploadImages<T>(value: T): Promise<T> {
+  if (Array.isArray(value)) return (await Promise.all(value.map((v) => uploadImages(v)))) as T;
+  if (!value || typeof value !== "object") return value;
+  const obj = value as Record<string, unknown>;
+  if (typeof obj.src === "string" && obj.src.startsWith("/")) {
+    const { src, ...rest } = obj;
+    let id = uploaded.get(src as string);
+    if (!id) {
+      const file = path.join(process.cwd(), "public", src as string);
+      const asset = await client.assets.upload("image", createReadStream(file), { filename: path.basename(file) });
+      id = asset._id;
+      uploaded.set(src as string, id);
+      console.log(`🖼  Загружено фото ${src}`);
+    }
+    return { ...rest, _type: "image", asset: { _type: "reference", _ref: id } } as T;
+  }
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) out[k] = await uploadImages(v);
+  return out as T;
+}
+
 function serviceDoc(s: Service) {
   const { category, ...rest } = s;
   return {
@@ -38,10 +63,13 @@ function serviceDoc(s: Service) {
 }
 
 async function main() {
+  const settings = await uploadImages(seedSettings);
+  const services = await uploadImages(seedServices.map(serviceDoc));
+
   const tx = client.transaction();
-  tx.createOrReplace(seedSettings);
+  tx.createOrReplace(settings);
   for (const c of seedCategories) tx.createOrReplace({ ...c, slug: { _type: "slug", current: c.slug.current } });
-  for (const s of seedServices) tx.createOrReplace(serviceDoc(s));
+  for (const s of services) tx.createOrReplace(s);
   for (const f of seedFaq) tx.createOrReplace(f);
   await tx.commit();
   console.log(`✅ Залито: настройки, ${seedCategories.length} категории, ${seedServices.length} услуги, ${seedFaq.length} вопроса FAQ`);

@@ -109,3 +109,21 @@ details > summary {
 details > summary::-webkit-details-marker {
   display: none;
 }
+
+/* Ticker strip */
+.ticker {
+  animation: ticker 40s linear infinite;
+}
+.ticker:hover {
+  animation-play-state: paused;
+}
+@keyframes ticker {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticker {
+    animation: none;
+  }
+}

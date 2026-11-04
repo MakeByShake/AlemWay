@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { ImageIcon } from "lucide-react";
-import { hasImage, urlFor } from "@/sanity/image";
+import { hasImage, imageUrl } from "@/sanity/image";
 import { l } from "@/lib/i18n-content";
 import type { SanityImage } from "@/lib/types";
 
@@ -13,21 +13,34 @@ type Props = {
   className?: string;
   priority?: boolean;
   width?: number;
+  /** Hide the small author caption (e.g. when the photo is a background with its own caption). */
+  hideCredit?: boolean;
 };
 
-/** Photo from Sanity, or a neutral placeholder block with a caption ("Фото офиса"). */
-export function Media({ image, locale, placeholder, alt, sizes, className = "", priority, width = 1600 }: Props) {
+/** Small author/license caption required by free photo licenses. */
+export function PhotoCredit({ credit, className = "" }: { credit?: string; className?: string }) {
+  if (!credit) return null;
+  return (
+    <span className={`pointer-events-none absolute right-2 bottom-2 z-10 max-w-[80%] truncate rounded-md bg-black/45 px-1.5 py-0.5 text-[10px] leading-tight text-white/85 ${className}`}>
+      {credit}
+    </span>
+  );
+}
+
+/** Photo from Sanity (or /public), or a neutral placeholder block with a caption ("Фото офиса"). */
+export function Media({ image, locale, placeholder, alt, sizes, className = "", priority, width = 1600, hideCredit }: Props) {
   if (hasImage(image)) {
     return (
       <div className={`relative overflow-hidden bg-surface ${className}`}>
         <Image
-          src={urlFor(image).width(width).url()}
+          src={imageUrl(image, width)}
           alt={alt ?? l(image.alt, locale)}
           fill
           sizes={sizes}
           priority={priority}
           className="object-cover"
         />
+        {!hideCredit && <PhotoCredit credit={image.credit} />}
       </div>
     );
   }

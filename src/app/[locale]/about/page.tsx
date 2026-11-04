@@ -22,7 +22,7 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
 
   return (
     <>
-      <section className="container-x grid gap-10 py-12 sm:py-20 lg:grid-cols-[1.2fr_1fr] lg:gap-16">
+      <section className="container-x grid gap-10 py-12 sm:py-20 lg:grid-cols-[1.2fr_1fr] lg:items-center lg:gap-16">
         <div>
           <h1 className="h-display">{t("title")}</h1>
           <p className="mt-6 text-[19px] leading-relaxed font-medium text-ink sm:text-[21px]">{t("lead")}</p>
@@ -33,7 +33,7 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
           locale={locale}
           placeholder={t("photo")}
           sizes="(min-width: 1024px) 480px, 100vw"
-          className="aspect-[4/3] rounded-[20px] lg:aspect-[4/5]"
+          className="aspect-[4/3] rounded-[20px]"
         />
       </section>
 

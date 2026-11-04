@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { ArrowDown, Star } from "lucide-react";
-import { getFaq, getReviews, getServicesByCategory, getSettings } from "@/lib/data";
+import Image from "next/image";
+import { ArrowDown, Check, Star } from "lucide-react";
+import { getFaq, getReviews, getService, getServicesByCategory, getSettings } from "@/lib/data";
 import { l, siteUrl, whatsappLink } from "@/lib/i18n-content";
 import { pageMetadata } from "@/lib/seo";
-import { Media } from "@/components/Media";
+import { Media, PhotoCredit } from "@/components/Media";
+import { PopularCard } from "@/components/PopularCard";
+import { hasImage, imageUrl } from "@/sanity/image";
 import { ServiceCard } from "@/components/ServiceCard";
-import { FaqList, LeadSection, SectionHeading } from "@/components/Sections";
+import { FaqList, LeadSection, SectionHeading, Ticker } from "@/components/Sections";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsAppLink";
 import { JsonLd } from "@/components/JsonLd";
 
@@ -41,6 +44,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     getTranslations("nav"),
   ]);
   const how = t.raw("how") as HowStep[];
+  const popularSlug = groups.flatMap((g) => g.services).find((s) => s.popular && !s.priceOnRequest)?.slug.current;
+  const popular = popularSlug ? await getService(popularSlug) : null;
   const wa = whatsappLink(settings.whatsapp);
 
   return (
@@ -62,56 +67,103 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         }}
       />
 
-      {/* Hero */}
-      <section className="overflow-hidden">
-        <div className="container-x grid gap-10 pt-10 pb-14 sm:pt-16 lg:grid-cols-[1.15fr_1fr] lg:items-center lg:gap-14 lg:pt-20 lg:pb-24">
+      {/* Hero: full-bleed photo with dark overlay */}
+      <section className="relative isolate overflow-hidden bg-ink text-white">
+        {hasImage(settings.heroImage) && (
+          <Image
+            src={imageUrl(settings.heroImage, 1920)}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="-z-20 object-cover"
+          />
+        )}
+        <div
+          className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(11,15,36,0.88),rgba(11,15,36,0.55)_45%,rgba(11,15,36,0.1)),linear-gradient(180deg,rgba(11,15,36,0)_40%,rgba(11,15,36,0.7)),radial-gradient(700px_380px_at_85%_-10%,rgba(35,64,255,0.35),transparent_60%)]"
+          aria-hidden
+        />
+        <div className="container-x grid gap-10 pt-12 pb-16 sm:pt-16 lg:grid-cols-[1.25fr_1fr] lg:items-center lg:gap-14 lg:pt-24 lg:pb-28">
           <div>
-            <p className="eyebrow">{th("eyebrow")}</p>
-            <h1 className="h-display mt-4 max-w-[14ch] text-balance">{l(settings.heroTitle, locale)}</h1>
-            <p className="mt-5 max-w-xl text-[17px] leading-relaxed text-muted sm:text-lg">{l(settings.heroSubtitle, locale)}</p>
+            <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-[13px] font-medium text-white/90 backdrop-blur-sm">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
+              </span>
+              {th("badge")}
+            </p>
+            <h1 className="h-display mt-5 max-w-[16ch] text-balance">
+              {l(settings.heroTitle, locale)}{" "}
+              {l(settings.heroTitleAccent, locale) && <span className="text-[#3ee08f]">{l(settings.heroTitleAccent, locale)}</span>}
+            </h1>
+            <p className="mt-5 max-w-xl text-[17px] leading-relaxed text-white/75 sm:text-lg">{l(settings.heroSubtitle, locale)}</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <a href="#services" className="btn-primary">
+              <a href="#services" className="btn-primary shadow-[0_10px_30px_-10px_rgba(35,64,255,0.8)]">
                 {th("chooseService")}
                 <ArrowDown className="h-4 w-4" />
               </a>
-              <WhatsAppLink href={wa} place="hero" className="btn-ghost">
-                <WhatsAppIcon className="h-5 w-5 text-accent" />
+              <WhatsAppLink href={wa} place="hero" className="btn-whatsapp">
+                <WhatsAppIcon className="h-5 w-5" />
                 {tn("whatsapp")}
               </WhatsAppLink>
             </div>
-
-            {settings.stats?.length ? (
-              <dl className="mt-12 grid max-w-xl grid-cols-3 gap-4 border-t border-line pt-6">
-                {settings.stats.map((s) => (
-                  <div key={s._key}>
-                    <dt className="sr-only">{l(s.label, locale)}</dt>
-                    <dd className="text-[26px] leading-none font-bold tracking-[-0.04em] sm:text-[32px]">{s.value}</dd>
-                    <dd className="mt-2 text-[13px] leading-snug text-muted sm:text-[14px]">{l(s.label, locale)}</dd>
-                  </div>
+            <ul className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-[14px] text-white/75">
+              {(th.raw("trust") as string[]).map((item) => (
+                <li key={item} className="inline-flex items-center gap-1.5">
+                  <Check className="h-4 w-4 text-[#3ee08f]" strokeWidth={2.5} />
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-7 flex items-center gap-3">
+              <div className="flex -space-x-2" aria-hidden>
+                {["А", "Д", "М", "Е", "Н"].map((ch, i) => (
+                  <span
+                    key={ch}
+                    className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink text-[12px] font-bold text-white"
+                    style={{ background: ["#2340FF", "#10B864", "#F59E0B", "#7C3AED", "#0EA5E9"][i] }}
+                  >
+                    {ch}
+                  </span>
                 ))}
-              </dl>
-            ) : null}
+              </div>
+              <p className="text-[14px] text-white/75">{th.rich("trustPeople", { b: (chunks) => <b className="font-semibold text-white">{chunks}</b> })}</p>
+            </div>
           </div>
 
-          <Media
-            image={settings.heroImage}
-            locale={locale}
-            placeholder={th("photoPlaceholder")}
-            sizes="(min-width: 1024px) 520px, 100vw"
-            className="aspect-[4/3] rounded-[20px] lg:aspect-[4/5]"
-            priority
-          />
+          {popular && <PopularCard service={popular} locale={locale} />}
         </div>
+        {settings.heroImage?.credit && <PhotoCredit credit={settings.heroImage.credit} />}
       </section>
 
+      <Ticker items={t.raw("ticker") as string[]} />
+
+      {/* Stats band */}
+      {settings.stats?.length ? (
+        <section className="border-b border-line bg-white">
+          <dl className="container-x grid grid-cols-2 lg:grid-cols-4">
+            {[
+              ...settings.stats.map((s) => ({ key: s._key, value: s.value, label: l(s.label, locale) })),
+              { key: "resp", value: t("responseValue"), label: t("responseLabel") },
+            ].map((s, i) => (
+              <div key={s.key} className={`px-2 py-7 text-center sm:py-9 ${i % 2 ? "border-l border-line" : ""} ${i > 1 ? "border-t border-line lg:border-t-0" : ""} ${i === 2 ? "lg:border-l" : ""}`}>
+                <dt className="sr-only">{s.label}</dt>
+                <dd className="text-[30px] leading-none font-extrabold tracking-[-0.04em] text-brand sm:text-[38px]">{s.value}</dd>
+                <dd className="mt-2 text-[13px] text-muted sm:text-[14px]">{s.label}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      ) : null}
+
       {/* Services */}
-      <section id="services" className="scroll-mt-20 border-t border-line py-16 sm:py-24">
+      <section id="services" className="scroll-mt-20 bg-surface py-16 sm:py-24">
         <div className="container-x">
-          <SectionHeading title={t("servicesTitle")} subtitle={t("servicesSubtitle")} />
+          <SectionHeading eyebrow={t("servicesEyebrow")} title={t("servicesTitle")} accent={t("servicesAccent")} subtitle={t("servicesSubtitle")} center />
           {groups.length === 0 ? (
-            <p className="text-muted">{t("noServices")}</p>
+            <p className="text-center text-muted">{t("noServices")}</p>
           ) : (
-            <div className="reveal grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="reveal grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {groups.flatMap((g) => g.services).map((s) => (
                 <ServiceCard key={s._id} service={s} locale={locale} showCategory />
               ))}
@@ -120,15 +172,48 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </div>
       </section>
 
+      {/* Why us: photo + checklist */}
+      <section className="py-16 sm:py-24">
+        <div className="container-x grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+          <div className="relative">
+            <Media
+              image={settings.officeImage}
+              locale={locale}
+              placeholder={th("photoPlaceholder")}
+              sizes="(min-width: 1024px) 560px, 100vw"
+              className="aspect-[4/3] rounded-[24px]"
+              width={1200}
+            />
+            <div className="absolute -bottom-5 left-5 rounded-2xl bg-white p-4 shadow-[0_16px_40px_-16px_rgba(11,15,36,0.35)] sm:left-8">
+              <p className="text-[28px] leading-none font-extrabold tracking-[-0.04em] text-brand">1000+</p>
+              <p className="mt-1 text-[13px] text-muted">{settings.stats?.[1] ? l(settings.stats[1].label, locale) : ""}</p>
+            </div>
+          </div>
+          <div className="pt-6 lg:pt-0">
+            <SectionHeading eyebrow={t("whyEyebrow")} title={t("whyTitle")} accent={t("whyAccent")} subtitle={t("whyText")} />
+            <ul className="-mt-4 space-y-3">
+              {(t.raw("why") as string[]).map((item) => (
+                <li key={item} className="flex gap-3 text-[16px] leading-snug">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-white">
+                    <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                  </span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
       {/* How we work */}
       <section className="bg-ink py-16 text-white sm:py-24">
         <div className="container-x">
-          <h2 className="h-section max-w-xl">{t("howTitle")}</h2>
-          <ol className="mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+          <SectionHeading eyebrow={t("howEyebrow")} title={t("howTitle")} dark />
+          <ol className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {how.map((step, i) => (
-              <li key={i} className="reveal border-t border-white/15 pt-5">
-                <span className="text-[14px] font-semibold text-accent tabular-nums">0{i + 1}</span>
-                <p className="mt-3 text-[19px] font-semibold tracking-[-0.015em]">{step.title}</p>
+              <li key={i} className="reveal rounded-[18px] border border-white/10 bg-white/[0.04] p-6">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand text-[15px] font-bold">{i + 1}</span>
+                <p className="mt-5 text-[19px] font-semibold tracking-[-0.015em]">{step.title}</p>
                 <p className="mt-2 text-[15px] leading-relaxed text-white/65">{step.text}</p>
               </li>
             ))}
@@ -165,7 +250,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       {faq.length > 0 && (
         <section className={`py-16 sm:py-24 ${reviews.length ? "border-t border-line" : ""}`}>
           <div className="container-x grid gap-8 lg:grid-cols-[1fr_1.6fr] lg:gap-16">
-            <h2 className="h-section">{t("faqTitle")}</h2>
+            <SectionHeading eyebrow={t("faqEyebrow")} title={t("faqTitle")} />
             <FaqList items={faq.map((f) => ({ key: f._id, question: l(f.question, locale), answer: l(f.answer, locale) }))} />
           </div>
         </section>

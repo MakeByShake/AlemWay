@@ -87,6 +87,9 @@ export function HeaderNav({ groups, whatsappHref }: { groups: NavGroup[]; whatsa
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
+          <Link href="/" className={`${linkCls} ${pathname === "/" ? "text-ink" : ""}`} aria-current={pathname === "/" ? "page" : undefined}>
+            {t("home")}
+          </Link>
           <div className="relative" ref={dropRef}>
             <button
               type="button"
@@ -162,6 +165,9 @@ export function HeaderNav({ groups, whatsappHref }: { groups: NavGroup[]; whatsa
       {menuOpen && (
         <div id="mobile-menu" className="fixed inset-x-0 top-16 bottom-0 z-40 overflow-y-auto bg-white lg:hidden">
           <nav className="container-x flex flex-col gap-6 py-6" aria-label="Mobile">
+            <Link href="/" className="-mb-2 border-b border-line pb-3.5 text-[17px] font-semibold">
+              {t("home")}
+            </Link>
             {groups.map((g) => (
               <div key={g.title}>
                 <p className="mb-2 text-[12px] font-semibold tracking-[0.08em] text-muted uppercase">{g.title}</p>

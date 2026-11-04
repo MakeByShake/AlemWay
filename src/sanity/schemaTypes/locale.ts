@@ -42,3 +42,10 @@ export const seo = defineType({
     defineField({ name: "image", title: "Картинка для соцсетей", type: "image", description: "1200×630." }),
   ],
 });
+
+
+/** Fields for every photo: description + author credit. */
+export const photoFields = [
+  defineField({ name: "alt", title: "Описание фото (для незрячих и Google)", type: "localeString" }),
+  defineField({ name: "credit", title: "Автор фото", type: "string", description: "Если фото чужое по свободной лицензии, например: «Фото: Иван Иванов, CC BY 4.0». Своё фото — оставьте пустым." }),
+];

@@ -7,6 +7,10 @@ export type Keyed<T> = T & { _key: string };
 export type SanityImage = {
   _type?: "image";
   asset?: { _ref?: string; _type?: string };
+  /** Local file in /public (used before Sanity is connected; `npm run seed` uploads it). */
+  src?: string;
+  /** Photo author / license, shown small on the photo. */
+  credit?: string;
   alt?: LocaleString;
   hotspot?: unknown;
   crop?: unknown;
@@ -152,6 +156,7 @@ export type SiteSettings = {
   instagram?: string;
   stats?: Keyed<{ value?: string; label?: LocaleString }>[];
   heroTitle?: LocaleString;
+  heroTitleAccent?: LocaleString;
   heroSubtitle?: LocaleText;
   heroImage?: SanityImage;
   aboutText?: LocaleText;

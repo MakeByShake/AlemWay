@@ -64,7 +64,7 @@ export default async function ContactsPage({ params }: { params: Promise<{ local
           locale={locale}
           placeholder={th("photoPlaceholder")}
           sizes="(min-width: 1024px) 560px, 100vw"
-          className="aspect-[4/3] rounded-[20px] lg:aspect-auto lg:min-h-[480px]"
+          className="aspect-[4/3] rounded-[20px] lg:sticky lg:top-24"
         />
       </section>
       <LeadSection locale={locale} />

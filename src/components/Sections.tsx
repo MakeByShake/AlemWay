@@ -79,12 +79,55 @@ export async function LeadSection({
   );
 }
 
-export function SectionHeading({ title, subtitle, eyebrow }: { title: string; subtitle?: string; eyebrow?: string }) {
+export function SectionHeading({
+  title,
+  accent,
+  subtitle,
+  eyebrow,
+  center = false,
+  dark = false,
+}: {
+  title: string;
+  accent?: string;
+  subtitle?: string;
+  eyebrow?: string;
+  center?: boolean;
+  dark?: boolean;
+}) {
   return (
-    <div className="mb-10 max-w-2xl sm:mb-12">
-      {eyebrow && <p className="eyebrow mb-3">{eyebrow}</p>}
-      <h2 className="h-section">{title}</h2>
-      {subtitle && <p className="mt-3 text-[17px] leading-relaxed text-muted">{subtitle}</p>}
+    <div className={`mb-10 max-w-2xl sm:mb-12 ${center ? "mx-auto text-center" : ""}`}>
+      {eyebrow && (
+        <p className={`mb-3 inline-flex items-center gap-2.5 text-[12px] font-semibold tracking-[0.12em] uppercase ${dark ? "text-white/60" : "text-muted"}`}>
+          <span className="h-0.5 w-5 rounded-full bg-brand" aria-hidden />
+          {eyebrow}
+        </p>
+      )}
+      <h2 className="h-section text-balance">
+        {title} {accent && <span className={dark ? "text-[#7d8cff]" : "text-brand"}>{accent}</span>}
+      </h2>
+      {subtitle && <p className={`mt-3 text-[17px] leading-relaxed ${dark ? "text-white/65" : "text-muted"}`}>{subtitle}</p>}
+    </div>
+  );
+}
+
+/** Endless strip of short selling points. */
+export function Ticker({ items }: { items: string[] }) {
+  const row = (hidden: boolean) => (
+    <ul className="flex shrink-0 items-center gap-8 pr-8" aria-hidden={hidden || undefined}>
+      {items.map((it, i) => (
+        <li key={i} className="flex items-center gap-8 text-[14px] font-medium whitespace-nowrap">
+          {it}
+          <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />
+        </li>
+      ))}
+    </ul>
+  );
+  return (
+    <div className="overflow-hidden border-y border-white/10 bg-[#0e1430] py-3.5 text-white/85">
+      <div className="ticker flex w-max">
+        {row(false)}
+        {row(true)}
+      </div>
     </div>
   );
 }

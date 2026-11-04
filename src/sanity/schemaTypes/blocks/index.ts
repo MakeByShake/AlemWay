@@ -1,4 +1,5 @@
 import { defineArrayMember, defineField, defineType } from "sanity";
+import { photoFields } from "../locale";
 import {
   AlertTriangle,
   BarChart3,
@@ -150,7 +151,7 @@ export const imageTextBlock = defineType({
       title: "Фото",
       type: "image",
       options: { hotspot: true },
-      fields: [defineField({ name: "alt", title: "Описание фото (для незрячих и Google)", type: "localeString" })],
+      fields: photoFields,
     }),
     defineField({
       name: "imagePosition",
@@ -179,7 +180,7 @@ export const galleryBlock = defineType({
         defineArrayMember({
           type: "image",
           options: { hotspot: true },
-          fields: [defineField({ name: "alt", title: "Описание фото", type: "localeString" })],
+          fields: photoFields,
         }),
       ],
     }),
