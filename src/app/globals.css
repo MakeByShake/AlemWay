@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #2340ff;
+  --color-brand-dark: #1a30d6;
+  --color-brand-soft: #eef0ff;
+  --color-accent: #10b864;
+  --color-accent-soft: #e7f8ef;
+  --color-ink: #0b0f24;
+  --color-muted: #545a73;
+  --color-surface: #f5f6fa;
+  --color-line: #e6e8f0;
+  --color-warn: #8a5a00;
+  --color-warn-soft: #fff6e0;
+
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --radius-card: 16px;
+  --radius-btn: 12px;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: #ffffff;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss03";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@utility container-x {
+    @apply mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8;
+  }
+
+@utility h-display {
+    @apply text-[34px] leading-[1.05] font-bold tracking-[-0.035em] sm:text-5xl lg:text-[64px];
+  }
+
+@utility h-section {
+    @apply text-[28px] leading-[1.1] font-bold tracking-[-0.03em] sm:text-4xl;
+  }
+
+@utility h-card {
+    @apply text-lg leading-snug font-semibold tracking-[-0.015em];
+  }
+
+@utility btn {
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-[var(--radius-btn)] px-5 text-[15px] font-semibold transition-colors duration-150 select-none disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+@utility btn-primary {
+    @apply btn bg-brand text-white hover:bg-brand-dark;
+  }
+
+@utility btn-whatsapp {
+    @apply btn bg-accent text-white hover:bg-[#0ea258];
+  }
+
+@utility btn-ghost {
+    @apply btn border border-line bg-white text-ink hover:border-ink/30;
+  }
+
+@utility card {
+    @apply rounded-[var(--radius-card)] border border-line bg-white;
+  }
+
+@utility field {
+    @apply block w-full rounded-[var(--radius-btn)] border border-line bg-white px-4 py-3 text-base text-ink placeholder:text-muted/70 transition-colors outline-none focus:border-brand focus:ring-2 focus:ring-brand/20;
+  }
+
+@utility eyebrow {
+    @apply text-[13px] font-semibold tracking-[0.08em] text-brand uppercase;
+  }
+
+/* Gentle reveal on scroll — CSS only, ignored by browsers without support. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation: reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+  }
+}
+@keyframes reveal {
+  /* Only a small slide: content is never hidden (safe for search engines and screenshots). */
+  from {
+    transform: translateY(14px);
+  }
+  to {
+    transform: none;
+  }
+}
+
+details > summary {
+  list-style: none;
+}
+details > summary::-webkit-details-marker {
+  display: none;
+}
