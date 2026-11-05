@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
   const name = str(body.name, 80);
   const phone = str(body.phone, 20);
   const serviceSlug = str(body.service, 100);
-  const serviceTitle = str(body.serviceTitle, 200);
+  const serviceTitle = str(body.serviceTitle, 200) || (serviceSlug === "other" ? "Другое / не знаю" : "");
   const comment = str(body.comment, 1000);
   const locale = str(body.locale, 5) === "kk" ? "kk" : "ru";
   // Only a site path like "/ru/services/k-eta" — never a full URL.
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
         name,
         phone,
         service: serviceRef,
-        serviceTitle: serviceTitle || (serviceSlug === "other" ? "Другое / не знаю" : ""),
+        serviceTitle,
         comment,
         locale,
         page,
