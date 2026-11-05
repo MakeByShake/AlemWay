@@ -1,10 +1,21 @@
 import type { LocaleString } from "./types";
+import { SHOW_PRICES } from "./prices";
+
+// "за 12 000 ₸", "12 000 ₸", "12000₸" — amounts in tenge written inside admin texts.
+const PRICE_IN_TEXT = /\s*(?:за\s+)?\d{1,3}(?:[\s ]\d{3})*\s?₸/g;
+
+/** While prices are hidden, removes tenge amounts from admin texts without touching the stored content. */
+function stripPrices(text: string) {
+  if (SHOW_PRICES || !text.includes("₸")) return text;
+  const out = text.replace(PRICE_IN_TEXT, "").replace(/^[\s,.—-]+/, "").replace(/\s{2,}/g, " ").trim();
+  return out.charAt(0).toUpperCase() + out.slice(1);
+}
 
 /** Pick the text for the current language, falling back to Russian. */
 export function l(field: LocaleString | undefined | null, locale: string): string {
   if (!field) return "";
   const value = field[locale as keyof LocaleString];
-  return (value && value.trim()) || field.ru || field.kk || "";
+  return stripPrices((value && value.trim()) || field.ru || field.kk || "");
 }
 
 /** Split a multiline text field into paragraphs. */

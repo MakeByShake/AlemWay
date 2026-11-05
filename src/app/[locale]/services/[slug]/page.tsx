@@ -6,6 +6,7 @@ import { ArrowLeft, Clock } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { getService, getServices, getSettings } from "@/lib/data";
 import { formatPrice, l, siteUrl, whatsappLink } from "@/lib/i18n-content";
+import { SHOW_PRICES } from "@/lib/prices";
 import { pageMetadata } from "@/lib/seo";
 import type { FaqBlock, Service } from "@/lib/types";
 import { hasImage, imageUrl } from "@/sanity/image";
@@ -65,7 +66,7 @@ export default async function ServicePage({ params }: Params) {
   const title = l(service.title, locale);
   const excerpt = l(service.excerpt, locale);
   const duration = l(service.duration, locale);
-  const hasPrice = !service.priceOnRequest && typeof service.price === "number";
+  const hasPrice = SHOW_PRICES && !service.priceOnRequest && typeof service.price === "number";
   const wa = whatsappLink(settings.whatsapp, l(service.whatsappText, locale) || undefined);
   const related = relatedFor(service, all);
   const url = `${siteUrl()}/${locale}/services/${slug}`;
@@ -133,12 +134,14 @@ export default async function ServicePage({ params }: Params) {
 
             <div className="card p-5 text-ink shadow-[0_30px_80px_-30px_rgba(0,0,0,0.55)] sm:p-6">
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-[13px] text-muted">{t("price")}</p>
-                  <p className="mt-1 text-[26px] leading-tight font-extrabold tracking-[-0.03em] text-brand">
-                    {hasPrice ? formatPrice(service.price!, locale) : <span className="text-[17px]">{t("priceOnRequest")}</span>}
-                  </p>
-                </div>
+                {SHOW_PRICES && (
+                  <div>
+                    <p className="text-[13px] text-muted">{t("price")}</p>
+                    <p className="mt-1 text-[26px] leading-tight font-extrabold tracking-[-0.03em] text-brand">
+                      {hasPrice ? formatPrice(service.price!, locale) : <span className="text-[17px]">{t("priceOnRequest")}</span>}
+                    </p>
+                  </div>
+                )}
                 {duration && (
                   <div>
                     <p className="text-[13px] text-muted">{t("duration")}</p>

@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { AlertTriangle, Check, FileCheck2, Info } from "lucide-react";
 import { formatPrice, l } from "@/lib/i18n-content";
+import { SHOW_PRICES } from "@/lib/prices";
 import type { PageBlock } from "@/lib/types";
 import { hasImage } from "@/sanity/image";
 import { Media } from "../Media";
@@ -88,7 +89,8 @@ async function Block({ block, ctx }: { block: PageBlock; ctx: Ctx }) {
       );
 
     case "pricing": {
-      if (!block.plans?.length) return null;
+      // Tariff tables are hidden while prices are off.
+      if (!SHOW_PRICES || !block.plans?.length) return null;
       const t = await getTranslations("service");
       return (
         <div>

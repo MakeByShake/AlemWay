@@ -2,6 +2,7 @@ import { ArrowUpRight, Clock } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { formatPrice, l } from "@/lib/i18n-content";
+import { SHOW_PRICES } from "@/lib/prices";
 import type { Service } from "@/lib/types";
 import { hasImage } from "@/sanity/image";
 import { Flag } from "./Flag";
@@ -59,9 +60,11 @@ export async function ServiceCard({ service, locale, showCategory = false }: { s
         )}
         {l(service.excerpt, locale) && <p className="mt-2 text-[15px] leading-relaxed text-muted">{l(service.excerpt, locale)}</p>}
         <div className="mt-auto flex flex-wrap items-end justify-between gap-x-4 gap-y-2 pt-5">
-          <p className="text-[19px] font-bold tracking-[-0.02em] text-brand">
-            {hasPrice ? formatPrice(service.price!, locale) : <span className="text-[15px] font-semibold text-ink/70">{t("priceOnRequest")}</span>}
-          </p>
+          {SHOW_PRICES && (
+            <p className="text-[19px] font-bold tracking-[-0.02em] text-brand">
+              {hasPrice ? formatPrice(service.price!, locale) : <span className="text-[15px] font-semibold text-ink/70">{t("priceOnRequest")}</span>}
+            </p>
+          )}
           {duration && (
             <p className="inline-flex items-center gap-1.5 text-[13px] text-muted">
               <Clock className="h-3.5 w-3.5" /> {duration}

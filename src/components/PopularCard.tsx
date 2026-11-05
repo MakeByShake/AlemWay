@@ -2,6 +2,7 @@ import { ArrowRight, Check, Clock } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { formatPrice, l } from "@/lib/i18n-content";
+import { SHOW_PRICES } from "@/lib/prices";
 import type { FeaturesBlock, Service } from "@/lib/types";
 import { Flag } from "./Flag";
 
@@ -36,12 +37,16 @@ export async function PopularCard({ service, locale }: { service: Service; local
       )}
 
       <div className="mt-5 flex items-end justify-between gap-4">
-        <div>
-          <p className="text-[13px] text-muted">{ts("price")}</p>
-          <p className="text-[34px] leading-none font-extrabold tracking-[-0.04em] text-brand">
-            {hasPrice ? formatPrice(service.price!, locale) : <span className="text-xl">{ts("priceOnRequest")}</span>}
-          </p>
-        </div>
+        {SHOW_PRICES ? (
+          <div>
+            <p className="text-[13px] text-muted">{ts("price")}</p>
+            <p className="text-[34px] leading-none font-extrabold tracking-[-0.04em] text-brand">
+              {hasPrice ? formatPrice(service.price!, locale) : <span className="text-xl">{ts("priceOnRequest")}</span>}
+            </p>
+          </div>
+        ) : (
+          <span />
+        )}
         {duration && (
           <p className="flex max-w-[48%] items-start gap-1.5 text-right text-[12px] leading-snug text-muted">
             <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
