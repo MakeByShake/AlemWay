@@ -48,6 +48,14 @@ export default async function CabinetPage({ params }: { params: Promise<{ locale
     data: cab.data ?? {},
     files,
     declarationDate: cab.declarationDate ?? null,
+    job: {
+      employer: cab.employerName ?? null,
+      city: cab.workCity ?? null,
+      position: cab.workPosition ?? null,
+      from: cab.workFrom ?? null,
+      to: cab.workTo ?? null,
+      message: cab.clientMessage ?? null,
+    },
   };
 
   return <CabinetApp key={JSON.stringify(view.files) + view.status} view={view} locale={cabinetLocale(locale)} />;

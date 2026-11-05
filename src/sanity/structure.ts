@@ -29,6 +29,7 @@ export const structure: StructureResolver = (S) =>
                   .child(
                     S.documentList()
                       .title(st.title)
+                      .apiVersion("2025-10-01")
                       .schemaType("lead")
                       .filter(st.value === "new" ? `_type == "lead" && (status == "new" || !defined(status))` : `_type == "lead" && status == $status`)
                       .params({ status: st.value })
@@ -58,6 +59,7 @@ export const structure: StructureResolver = (S) =>
                   .child(
                     S.documentList()
                       .title(st.title)
+                      .apiVersion("2025-10-01")
                       .schemaType("cabinet")
                       .filter(
                         st.value === "waiting_data"

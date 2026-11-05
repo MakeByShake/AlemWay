@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   if (!isSameOrigin(req)) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   const cab = await currentCabinet();
   if (!cab) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
-  if (cab.status === "signed_uploaded" || cab.status === "done") {
+  if (cab.status && cab.status !== "waiting_data" && cab.status !== "declaration_ready") {
     return NextResponse.json({ ok: false, error: "locked" }, { status: 409 });
   }
 

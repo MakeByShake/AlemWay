@@ -22,9 +22,17 @@ export type Cabinet = {
   declarationDate?: string;
   submittedAt?: string;
   signedAt?: string;
+  zavReceivedAt?: string;
+  employerName?: string;
+  workCity?: string;
+  workPosition?: string;
+  workFrom?: string;
+  workTo?: string;
+  clientMessage?: string;
 };
 
-const PROJECTION = `{_id, _rev, status, clientName, clientPhone, data, files, declarationDate, submittedAt, signedAt}`;
+const PROJECTION = `{_id, _rev, status, clientName, clientPhone, data, files, declarationDate, submittedAt, signedAt,
+  zavReceivedAt, employerName, workCity, workPosition, workFrom, workTo, clientMessage}`;
 
 export function writeClient(): SanityClient {
   const c = getWriteClient();

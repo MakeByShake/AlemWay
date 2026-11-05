@@ -49,7 +49,8 @@ export async function generateDeclaration(cab: Cabinet): Promise<StoredFile> {
   const file: StoredFile = { path: stored, name, contentType: "application/pdf", size: bytes.length, uploadedAt: new Date().toISOString() };
 
   const previous = cab.files?.declaration?.path;
-  const nextStatus = cab.status === "signed_uploaded" || cab.status === "done" ? cab.status : "declaration_ready";
+  // Rebuilding the declaration never moves a cabinet back from later stages (signed, ZAV, done).
+  const nextStatus = !cab.status || cab.status === "waiting_data" ? "declaration_ready" : cab.status;
   await patchCabinet(cab._id, { "files.declaration": file, declarationDate: dateIso, status: nextStatus });
   if (previous && previous !== stored) await deleteFile(previous);
   return file;

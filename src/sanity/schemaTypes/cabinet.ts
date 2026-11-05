@@ -17,6 +17,7 @@ export const cabinet = defineType({
     { name: "main", title: "Клиент", default: true },
     { name: "data", title: "Анкета" },
     { name: "files", title: "Файлы" },
+    { name: "zav", title: "ZAV и контракт" },
   ],
   fields: [
     defineField({
@@ -41,6 +42,28 @@ export const cabinet = defineType({
     defineField({ name: "tokenHash", title: "Хэш ключа входа", type: "string", hidden: true, readOnly: true }),
     defineField({ name: "lead", title: "Заявка", type: "reference", to: [{ type: "lead" }], weak: true, group: "main", readOnly: true }),
     defineField({ name: "submittedAt", title: "Клиент отправил анкету", type: "datetime", group: "main", readOnly: true }),
+
+    // --- ZAV / contract: shown to the client once ZAV is uploaded (tab «Файлы» → «Загрузить ZAV»). ---
+    defineField({
+      name: "employerName",
+      title: "Работодатель в Германии",
+      type: "string",
+      group: "zav",
+      description: "Клиент увидит это в кабинете после загрузки ZAV.",
+    }),
+    defineField({ name: "workCity", title: "Город работы", type: "string", group: "zav" }),
+    defineField({ name: "workPosition", title: "Должность / работа", type: "string", group: "zav" }),
+    defineField({ name: "workFrom", title: "Работа с", type: "date", group: "zav", options: { dateFormat: "DD.MM.YYYY" } }),
+    defineField({ name: "workTo", title: "Работа по", type: "date", group: "zav", options: { dateFormat: "DD.MM.YYYY" } }),
+    defineField({
+      name: "clientMessage",
+      title: "Сообщение клиенту",
+      type: "text",
+      rows: 4,
+      group: "zav",
+      description: "Что делать дальше: запись в посольство, документы на визу и т. п. Показывается в кабинете клиента.",
+    }),
+    defineField({ name: "zavReceivedAt", title: "ZAV загружен", type: "datetime", group: "zav", readOnly: true }),
     defineField({ name: "signedAt", title: "Клиент загрузил подписанную декларацию", type: "datetime", group: "main", readOnly: true }),
 
     defineField({

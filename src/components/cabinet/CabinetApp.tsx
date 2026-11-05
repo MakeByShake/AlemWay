@@ -2,7 +2,20 @@
 
 import { useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, CheckCircle2, Download, FileUp, Loader2, LogOut } from "lucide-react";
+import {
+  AlertCircle,
+  Briefcase,
+  Building2,
+  CalendarDays,
+  CheckCircle2,
+  Download,
+  FileUp,
+  Hourglass,
+  Loader2,
+  LogOut,
+  MapPin,
+  PartyPopper,
+} from "lucide-react";
 import clsx from "clsx";
 import {
   CABINET_SECTIONS,
@@ -28,9 +41,10 @@ export type CabinetView = {
   data: CabinetData;
   files: Record<FileKind, FileMeta>;
   declarationDate: string | null;
+  job: { employer: string | null; city: string | null; position: string | null; from: string | null; to: string | null; message: string | null };
 };
 
-const STEP_OF: Record<CabinetStatus, number> = { waiting_data: 0, declaration_ready: 1, signed_uploaded: 2, done: 2 };
+const STEP_OF: Record<CabinetStatus, number> = { waiting_data: 0, declaration_ready: 1, signed_uploaded: 2, zav_received: 3, done: 3 };
 
 /** Shrinks phone photos to a sensible JPEG so uploads stay under the size limit. */
 async function prepareFile(file: File): Promise<File> {
@@ -174,7 +188,7 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
           </button>
         </div>
 
-        <ol className="mt-8 grid grid-cols-3 gap-2" aria-label={t.title}>
+        <ol className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label={t.title}>
           {t.steps.map((label, i) => (
             <li
               key={label}
@@ -204,7 +218,8 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
         )}
 
         {view.status === "done" && <Banner title={t.doneTitle} text={t.doneText} />}
-        {view.status === "signed_uploaded" && <Banner title={t.doneSignedTitle} text={t.doneSignedText} />}
+        {view.status === "signed_uploaded" && <Banner tone="wait" title={t.zavWaitTitle} text={t.zavWaitText} />}
+        {(view.status === "zav_received" || view.status === "done") && <ZavCard view={view} t={t} hasFile={Boolean(files.zav)} />}
 
         {files.declaration && (
           <div className="card mt-6 p-5 sm:p-7">
@@ -224,11 +239,11 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
                 {t.declDate}: {toGermanDate(view.declarationDate)}
               </p>
             )}
-            <a href="/api/cabinet/file/declaration" download className="btn-primary mt-5">
+            <a href="/api/cabinet/file/declaration" download className={clsx("mt-5", view.status === "declaration_ready" ? "btn-primary" : "btn-ghost")}>
               <Download className="h-4 w-4" /> {t.download}
             </a>
 
-            {view.status !== "done" && (
+            {(view.status === "declaration_ready" || view.status === "signed_uploaded") && (
               <div className="mt-6 border-t border-line pt-5">
                 <FileRow
                   label={t.signedTitle}
@@ -330,13 +345,67 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
 
 type T = (typeof CABINET_TEXT)[CabinetLocale];
 
-function Banner({ title, text }: { title: string; text: string }) {
+function Banner({ title, text, tone = "ok" }: { title: string; text: string; tone?: "ok" | "wait" }) {
   return (
-    <div className="mt-6 flex items-start gap-3 rounded-2xl bg-accent-soft p-5">
-      <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-accent" />
+    <div className={clsx("mt-6 flex items-start gap-3 rounded-2xl p-5", tone === "wait" ? "bg-brand-soft" : "bg-accent-soft")}>
+      {tone === "wait" ? (
+        <Hourglass className="mt-0.5 h-6 w-6 shrink-0 text-brand" />
+      ) : (
+        <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-accent" />
+      )}
       <div>
         <p className="font-semibold">{title}</p>
-        <p className="mt-1 text-[15px] text-muted">{text}</p>
+        <p className="mt-1 text-[15px] leading-relaxed text-muted">{text}</p>
+      </div>
+    </div>
+  );
+}
+
+/** «ZAV получен»: the job is confirmed — employer, dates, the manager's next steps and the ZAV file. */
+function ZavCard({ view, t, hasFile }: { view: CabinetView; t: T; hasFile: boolean }) {
+  const { job } = view;
+  const dates = job.from && job.to ? `${toGermanDate(job.from)} — ${toGermanDate(job.to)}` : job.from ? `${t.zavFrom} ${toGermanDate(job.from)}` : null;
+  const rows = [
+    job.employer && { label: t.zavEmployer, value: job.employer, icon: Building2 },
+    job.position && { label: t.zavPosition, value: job.position, icon: Briefcase },
+    job.city && { label: t.zavCity, value: job.city, icon: MapPin },
+    dates && { label: t.zavDates, value: dates, icon: CalendarDays },
+  ].filter(Boolean) as { label: string; value: string; icon: typeof Building2 }[];
+
+  return (
+    <div className="card mt-6 overflow-hidden">
+      <div className="flex items-start gap-3 bg-accent-soft p-5 sm:p-7">
+        <PartyPopper className="mt-0.5 h-7 w-7 shrink-0 text-accent" />
+        <div>
+          <h2 className="h-card">{t.zavTitle}</h2>
+          <p className="mt-1 text-[15px] leading-relaxed text-muted">{t.zavText}</p>
+        </div>
+      </div>
+      <div className="p-5 sm:p-7">
+        {rows.length > 0 && (
+          <dl className="grid gap-4 sm:grid-cols-2">
+            {rows.map((r) => (
+              <div key={r.label} className="flex items-start gap-3">
+                <r.icon className="mt-0.5 h-5 w-5 shrink-0 text-muted" />
+                <div>
+                  <dt className="text-[13px] text-muted">{r.label}</dt>
+                  <dd className="mt-0.5 text-[16px] font-semibold">{r.value}</dd>
+                </div>
+              </div>
+            ))}
+          </dl>
+        )}
+        {job.message && (
+          <div className={clsx("rounded-xl bg-surface p-4", rows.length > 0 && "mt-5")}>
+            <p className="text-[13px] font-semibold text-muted">{t.zavMessage}</p>
+            <p className="mt-1 whitespace-pre-line text-[15px] leading-relaxed">{job.message}</p>
+          </div>
+        )}
+        {hasFile && (
+          <a href="/api/cabinet/file/zav" download className={clsx("btn-primary", (rows.length > 0 || job.message) && "mt-5")}>
+            <Download className="h-4 w-4" /> {t.zavDownload}
+          </a>
+        )}
       </div>
     </div>
   );
