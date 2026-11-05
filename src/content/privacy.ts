@@ -65,7 +65,7 @@ export const privacy: Record<string, { updated: string; intro: string; sections:
       },
       {
         title: "8. Контакты Оператора",
-        body: ["AlemWay Visa, г. Алматы, Республика Казахстан.", "Email: baybolgc@gmail.com", "Телефон / WhatsApp: +7 777 875 09 04"],
+        body: ["AlemWay Visa, г. Алматы, Республика Казахстан.", "Email: alemway.kz@gmail.com", "Телефон / WhatsApp: +7 777 588 29 49"],
       },
     ],
   },
@@ -129,7 +129,7 @@ export const privacy: Record<string, { updated: string; intro: string; sections:
       },
       {
         title: "8. Оператордың байланыс деректері",
-        body: ["AlemWay Visa, Алматы қ., Қазақстан Республикасы.", "Email: baybolgc@gmail.com", "Телефон / WhatsApp: +7 777 875 09 04"],
+        body: ["AlemWay Visa, Алматы қ., Қазақстан Республикасы.", "Email: alemway.kz@gmail.com", "Телефон / WhatsApp: +7 777 588 29 49"],
       },
     ],
   },

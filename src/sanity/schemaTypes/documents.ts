@@ -17,13 +17,13 @@ export const siteSettings = defineType({
   ],
   fields: [
     defineField({ name: "title", title: "Название компании", type: "string", group: "contacts" }),
-    defineField({ name: "phone", title: "Телефон (как показывать)", type: "string", group: "contacts", description: "Например: +7 777 875 09 04" }),
+    defineField({ name: "phone", title: "Телефон (как показывать)", type: "string", group: "contacts", description: "Например: +7 777 588 29 49" }),
     defineField({
       name: "whatsapp",
       title: "Номер WhatsApp",
       type: "string",
       group: "contacts",
-      description: "Только цифры, без + и пробелов. Например: 77778750904",
+      description: "Только цифры, без + и пробелов. Например: 77775882949",
       validation: (r) => r.regex(/^\d{10,15}$/, { name: "цифры" }),
     }),
     defineField({ name: "email", title: "Email", type: "string", group: "contacts" }),
