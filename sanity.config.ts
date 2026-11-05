@@ -19,10 +19,14 @@ export default defineConfig({
     templates: (templates) => templates.filter((t) => t.schemaType !== "siteSettings" && t.schemaType !== "lead"),
   },
   document: {
-    actions: (actions, ctx) =>
-      ctx.schemaType === "siteSettings"
-        ? actions.filter((a) => !["duplicate", "delete", "unpublish"].includes(a.action ?? ""))
-        : actions,
+    actions: (actions, ctx) => {
+      if (ctx.schemaType === "siteSettings") {
+        return actions.filter((a) => !["duplicate", "delete", "unpublish"].includes(a.action ?? ""));
+      }
+      // A duplicated lead would get a normal (public) _id, exposing client data. See api/lead.
+      if (ctx.schemaType === "lead") return actions.filter((a) => a.action !== "duplicate");
+      return actions;
+    },
   },
   plugins: [structureTool({ structure }), visionTool({ defaultApiVersion: apiVersion })],
 });

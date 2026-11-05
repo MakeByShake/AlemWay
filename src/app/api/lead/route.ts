@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { getWriteClient } from "@/sanity/client";
 import { siteUrl } from "@/lib/i18n-content";
@@ -24,12 +25,35 @@ function rateLimited(ip: string) {
 }
 
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
-const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const escapeHtml = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+const MAX_BODY_BYTES = 8 * 1024;
+
+/** Only accept form posts from our own pages (blocks cross-site form spam). */
+function isSameOrigin(req: NextRequest) {
+  const origin = req.headers.get("origin");
+  if (!origin) return false;
+  try {
+    return new URL(origin).host === req.headers.get("host");
+  } catch {
+    return false;
+  }
+}
 
 export async function POST(req: NextRequest) {
+  if (!isSameOrigin(req)) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
+  if (!req.headers.get("content-type")?.includes("application/json")) {
+    return NextResponse.json({ ok: false, error: "bad_content_type" }, { status: 415 });
+  }
+
   let body: Record<string, unknown>;
   try {
-    body = await req.json();
+    const raw = await req.text();
+    if (raw.length > MAX_BODY_BYTES) return NextResponse.json({ ok: false, error: "too_large" }, { status: 413 });
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("not an object");
+    body = parsed as Record<string, unknown>;
   } catch {
     return NextResponse.json({ ok: false, error: "bad_json" }, { status: 400 });
   }
@@ -43,7 +67,9 @@ export async function POST(req: NextRequest) {
   const serviceTitle = str(body.serviceTitle, 200);
   const comment = str(body.comment, 1000);
   const locale = str(body.locale, 5) === "kk" ? "kk" : "ru";
-  const page = str(body.page, 300);
+  // Only a site path like "/ru/services/k-eta" — never a full URL.
+  const pageRaw = str(body.page, 300);
+  const page = /^\/[\w\-/%.]*$/.test(pageRaw) ? pageRaw : "";
   const utmRaw = (body.utm && typeof body.utm === "object" ? body.utm : {}) as Record<string, unknown>;
   const utm = Object.fromEntries(
     ["source", "medium", "campaign", "term", "content"].map((k) => [k, str(utmRaw[k], 200)]).filter(([, v]) => v)
@@ -70,7 +96,10 @@ export async function POST(req: NextRequest) {
         const id = await sanity.fetch<string | null>(`*[_type == "service" && slug.current == $slug][0]._id`, { slug: serviceSlug });
         if (id) serviceRef = { _type: "reference", _ref: id.replace(/^drafts\./, ""), _weak: true };
       }
+      // The dataset is public. An _id with a dot ("leads.…") makes Sanity hide the document
+      // from unauthenticated API reads, so client names and phones are not exposed.
       const doc = await sanity.create({
+        _id: `leads.${randomUUID()}`,
         _type: "lead",
         status: "new",
         name,
