@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { adminError, requireAdmin } from "@/lib/admin-auth";
-import { MANAGER_UPLOAD_KINDS, type CabinetStatus, type ManagerUploadKind } from "@/lib/cabinet/fields";
+import { MANAGER_UPLOAD_KINDS, SERVICE_FILES, serviceOf, type CabinetStatus, type ManagerUploadKind } from "@/lib/cabinet/fields";
 import { cabinetAdminUrl, displayName, getCabinet, patchCabinet } from "@/lib/cabinet/server";
 import { readUpload, storeCabinetFile } from "@/lib/cabinet/uploads";
 import { escapeHtml, sendTelegram } from "@/lib/telegram";
@@ -8,7 +8,7 @@ import { escapeHtml, sendTelegram } from "@/lib/telegram";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const ORDER: CabinetStatus[] = ["waiting_data", "declaration_ready", "signed_uploaded", "zav_received", "done"];
+const ORDER: CabinetStatus[] = ["waiting_data", "declaration_ready", "signed_uploaded", "zav_received", "keta_applying", "keta_applied", "keta_approved", "done"];
 /** Moves the status forward to `target`, never backwards. */
 const atLeast = (current: CabinetStatus | undefined, target: CabinetStatus) =>
   ORDER.indexOf(current ?? "waiting_data") >= ORDER.indexOf(target) ? current! : target;
@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
   if (!id.startsWith("cabinets.") || !MANAGER_UPLOAD_KINDS.includes(kind)) return adminError("Некорректный запрос");
   const cab = await getCabinet(id);
   if (!cab) return adminError("Кабинет не найден", 404);
+  if (!SERVICE_FILES[serviceOf(cab.service)].all.includes(kind)) return adminError("Этот файл не относится к услуге кабинета");
 
   const up = await readUpload(req);
   if (!up.ok) return adminError(ERRORS[up.error] ?? "Ошибка загрузки", up.status);
@@ -41,11 +42,14 @@ export async function POST(req: NextRequest) {
   const surname = (cab.data?.lastName ?? "client").replace(/[^A-Za-z0-9-]/g, "") || "client";
   if (kind === "zav") file.name = `ZAV-${surname}.${up.ext}`;
   if (kind === "declaration") file.name = `ZAV-Declaration-${surname}.${up.ext}`;
+  if (kind === "keta") file.name = `K-ETA-${surname}.${up.ext}`;
 
   const set: Record<string, unknown> = { [`files.${kind}`]: file };
   if (kind === "zav") Object.assign(set, { status: atLeast(cab.status, "zav_received"), zavReceivedAt: file.uploadedAt });
   if (kind === "declaration") set.status = atLeast(cab.status, "declaration_ready");
   if (kind === "signed") Object.assign(set, { status: atLeast(cab.status, "signed_uploaded"), signedAt: file.uploadedAt });
+  // Approved K-ETA: always moves to «одобрено» (also after a mistaken «отказ»).
+  if (kind === "keta") set.status = cab.status === "done" ? "done" : "keta_approved";
   await patchCabinet(id, set);
   await cleanup();
 
@@ -55,6 +59,16 @@ export async function POST(req: NextRequest) {
       "",
       `<b>Клиент:</b> ${escapeHtml(displayName(cab))}`,
       "Клиент увидит ZAV и данные о работе в своём кабинете.",
+      "",
+      `📋 <a href="${cabinetAdminUrl(id)}">Открыть кабинет в админке</a>`,
+    ]);
+  }
+  if (kind === "keta") {
+    await sendTelegram([
+      "<b>🇰🇷 K-ETA одобрен</b>",
+      "",
+      `<b>Клиент:</b> ${escapeHtml(displayName(cab))}`,
+      "Клиент увидит одобрение и сможет скачать его в кабинете.",
       "",
       `📋 <a href="${cabinetAdminUrl(id)}">Открыть кабинет в админке</a>`,
     ]);

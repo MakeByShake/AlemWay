@@ -1,6 +1,10 @@
 import { defineField, defineType } from "sanity";
 import { UserRound } from "lucide-react";
-import { CABINET_SECTIONS, CABINET_STATUSES, FILE_KINDS, FILE_LABELS } from "../../lib/cabinet/fields";
+import { ALL_FIELDS, CABINET_STATUSES, FILE_KINDS, FILE_LABELS, SERVICE_TITLES, fieldsFor, serviceOf } from "../../lib/cabinet/fields";
+
+type Doc = { document?: Record<string, unknown> };
+const isKeta = ({ document }: Doc) => serviceOf(document?.service as string | undefined) === "keta";
+const isFerienjob = (ctx: Doc) => !isKeta(ctx);
 import { CabinetFilesInput } from "../cabinet/CabinetFilesInput";
 
 /**
@@ -17,9 +21,25 @@ export const cabinet = defineType({
     { name: "main", title: "Клиент", default: true },
     { name: "data", title: "Анкета" },
     { name: "files", title: "Файлы" },
-    { name: "zav", title: "ZAV и контракт" },
+    { name: "zav", title: "ZAV и контракт", hidden: isKeta },
+    { name: "keta", title: "K-ETA", hidden: isFerienjob },
   ],
   fields: [
+    defineField({
+      name: "service",
+      title: "Услуга",
+      type: "string",
+      group: "main",
+      options: {
+        list: [
+          { title: SERVICE_TITLES.ferienjob.ru, value: "ferienjob" },
+          { title: SERVICE_TITLES.keta.ru, value: "keta" },
+        ],
+        layout: "radio",
+      },
+      initialValue: "ferienjob",
+      description: "Задаётся при создании кабинета. От неё зависят анкета, файлы и шаги у клиента.",
+    }),
     defineField({
       name: "status",
       title: "Статус",
@@ -48,45 +68,59 @@ export const cabinet = defineType({
       name: "employerName",
       title: "Работодатель в Германии",
       type: "string",
-      group: "zav",
+      group: "zav", hidden: isKeta,
       description: "Клиент увидит это в кабинете после загрузки ZAV.",
     }),
-    defineField({ name: "workCity", title: "Город работы", type: "string", group: "zav" }),
-    defineField({ name: "workPosition", title: "Должность / работа", type: "string", group: "zav" }),
-    defineField({ name: "workFrom", title: "Работа с", type: "date", group: "zav", options: { dateFormat: "DD.MM.YYYY" } }),
-    defineField({ name: "workTo", title: "Работа по", type: "date", group: "zav", options: { dateFormat: "DD.MM.YYYY" } }),
+    defineField({ name: "workCity", title: "Город работы", type: "string", group: "zav", hidden: isKeta }),
+    defineField({ name: "workPosition", title: "Должность / работа", type: "string", group: "zav", hidden: isKeta }),
+    defineField({ name: "workFrom", title: "Работа с", type: "date", group: "zav", hidden: isKeta, options: { dateFormat: "DD.MM.YYYY" } }),
+    defineField({ name: "workTo", title: "Работа по", type: "date", group: "zav", hidden: isKeta, options: { dateFormat: "DD.MM.YYYY" } }),
     defineField({
       name: "clientMessage",
       title: "Сообщение клиенту",
       type: "text",
       rows: 4,
-      group: "zav",
-      description: "Что делать дальше: запись в посольство, документы на визу и т. п. Показывается в кабинете клиента.",
+      group: ["zav", "keta"],
+      description: "Что делать дальше (запись в посольство, документы, правила въезда и т. п.). Показывается в кабинете клиента.",
     }),
-    defineField({ name: "zavReceivedAt", title: "ZAV загружен", type: "datetime", group: "zav", readOnly: true }),
-    defineField({ name: "signedAt", title: "Клиент загрузил подписанную декларацию", type: "datetime", group: "main", readOnly: true }),
+    defineField({ name: "zavReceivedAt", title: "ZAV загружен", type: "datetime", group: "zav", hidden: isKeta, readOnly: true }),
+    defineField({ name: "signedAt", title: "Клиент загрузил подписанную декларацию", type: "datetime", group: "main", readOnly: true, hidden: isKeta }),
+    defineField({
+      name: "ketaValidUntil",
+      title: "K-ETA действует до",
+      type: "date",
+      group: "keta",
+      hidden: isFerienjob,
+      options: { dateFormat: "DD.MM.YYYY" },
+      description: "Из одобрения на k-eta.go.kr. 3 года, но не дольше паспорта. Клиент увидит эту дату.",
+    }),
 
     defineField({
       name: "data",
       title: "Анкета клиента",
       type: "object",
       group: "data",
-      description: "Можно исправить ошибку клиента, опубликовать и нажать «Пересоздать декларацию».",
-      fieldsets: CABINET_SECTIONS.map((s) => ({ name: s.id, title: s.title.ru, options: { collapsible: true, collapsed: false } })),
-      fields: CABINET_SECTIONS.flatMap((s) =>
-        s.fields.map((f) => {
-          const base = { name: f.key, title: f.label.ru, fieldset: s.id };
-          if (f.kind === "date") return defineField({ ...base, type: "date", options: { dateFormat: "DD.MM.YYYY" } });
-          if (f.kind === "yesno") {
-            return defineField({
-              ...base,
-              type: "string",
-              options: { list: [{ title: "Да", value: "yes" }, { title: "Нет", value: "no" }], layout: "radio", direction: "horizontal" },
-            });
-          }
-          return defineField({ ...base, type: "string" });
-        })
-      ),
+      description: "Можно исправить ошибку клиента и опубликовать. Для Ferienjob затем нажмите «Пересоздать декларацию».",
+      // One list for both services; each field shows only in cabinets of the service that asks for it.
+      fields: ALL_FIELDS.map((f) => {
+        const base = {
+          name: f.key,
+          title: f.label.ru,
+          hidden: ({ document }: Doc) => !fieldsFor(serviceOf(document?.service as string | undefined)).some((x) => x.key === f.key),
+        };
+        if (f.kind === "date") return defineField({ ...base, type: "date", options: { dateFormat: "DD.MM.YYYY" } });
+        if (f.kind === "yesno") {
+          return defineField({
+            ...base,
+            type: "string",
+            options: { list: [{ title: "Да", value: "yes" }, { title: "Нет", value: "no" }], layout: "radio", direction: "horizontal" },
+          });
+        }
+        if (f.kind === "select") {
+          return defineField({ ...base, type: "string", options: { list: (f.options ?? []).map((o) => ({ title: o.label.ru, value: o.value })) } });
+        }
+        return defineField({ ...base, type: "string" });
+      }),
     }),
 
     defineField({
@@ -111,15 +145,16 @@ export const cabinet = defineType({
         })
       ),
     }),
-    defineField({ name: "declarationDate", title: "Дата в декларации", type: "date", group: "files", readOnly: true }),
+    defineField({ name: "declarationDate", title: "Дата в декларации", type: "date", group: "files", readOnly: true, hidden: isKeta }),
   ],
   orderings: [{ title: "Сначала новые", name: "createdDesc", by: [{ field: "_createdAt", direction: "desc" }] }],
   preview: {
-    select: { name: "clientName", first: "data.firstName", last: "data.lastName", status: "status", phone: "clientPhone" },
-    prepare: ({ name, first, last, status, phone }) => {
+    select: { name: "clientName", first: "data.firstName", last: "data.lastName", status: "status", phone: "clientPhone", service: "service" },
+    prepare: ({ name, first, last, status, phone, service }) => {
       const s = CABINET_STATUSES.find((x) => x.value === status)?.title ?? CABINET_STATUSES[0].title;
       const who = [first, last].filter(Boolean).join(" ") || name || "Без имени";
-      return { title: who, subtitle: [s, phone].filter(Boolean).join(" · ") };
+      const tag = serviceOf(service) === "keta" ? "🇰🇷 K-ETA" : "🇩🇪 Ferienjob";
+      return { title: who, subtitle: [tag, s, phone].filter(Boolean).join(" · ") };
     },
   },
 });

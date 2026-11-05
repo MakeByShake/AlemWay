@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isSameOrigin } from "@/lib/http";
-import { UPLOAD_KINDS, type UploadKind } from "@/lib/cabinet/fields";
+import { SERVICE_FILES, UPLOAD_KINDS, serviceOf, type UploadKind } from "@/lib/cabinet/fields";
 import { cabinetAdminUrl, currentCabinet, displayName, patchCabinet } from "@/lib/cabinet/server";
 import { readUpload, storeCabinetFile } from "@/lib/cabinet/uploads";
 import { escapeHtml, sendTelegram } from "@/lib/telegram";
@@ -16,11 +16,14 @@ export async function POST(req: NextRequest) {
   const cab = await currentCabinet();
   if (!cab) return fail("unauthorized", 401);
 
+  const service = serviceOf(cab.service);
   const kind = req.nextUrl.searchParams.get("kind") as UploadKind | null;
-  if (!kind || !UPLOAD_KINDS.includes(kind)) return fail("bad_kind");
+  if (!kind || !UPLOAD_KINDS.includes(kind) || !SERVICE_FILES[service].client.includes(kind)) return fail("bad_kind");
 
   const status = cab.status ?? "waiting_data";
-  if (kind === "signed") {
+  if (service === "keta") {
+    if (status !== "waiting_data") return fail("locked", 409);
+  } else if (kind === "signed") {
     // Signed scan: after the declaration exists, and can be replaced until ZAV arrives.
     if (!cab.files?.declaration?.path) return fail("no_declaration", 409);
     if (status !== "declaration_ready" && status !== "signed_uploaded") return fail("locked", 409);

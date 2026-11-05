@@ -87,6 +87,9 @@ export const NewLinkAction: DocumentActionComponent = (props) => {
 export const RegenerateDeclarationAction: DocumentActionComponent = (props) => {
   const adminFetch = useAdminFetch();
   const { dialog, setDialog, busy, setBusy } = useActionState();
+  // Only Ferienjob cabinets have a ZAV declaration.
+  const service = ((props.draft ?? props.published) as { service?: string } | null)?.service;
+  if (service === "keta") return null;
 
   return {
     label: busy ? "Создаю декларацию…" : "Пересоздать декларацию",

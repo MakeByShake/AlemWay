@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { currentCabinet, displayName } from "@/lib/cabinet/server";
 import { CABINET_TEXT, cabinetLocale } from "@/lib/cabinet/i18n";
-import { FILE_KINDS } from "@/lib/cabinet/fields";
+import { FILE_KINDS, serviceOf } from "@/lib/cabinet/fields";
 import { CabinetApp, type CabinetView } from "@/components/cabinet/CabinetApp";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsAppLink";
 import { whatsappLink } from "@/lib/i18n-content";
@@ -43,6 +43,9 @@ export default async function CabinetPage({ params }: { params: Promise<{ locale
   ) as CabinetView["files"];
 
   const view: CabinetView = {
+    service: serviceOf(cab.service),
+    ketaValidUntil: cab.ketaValidUntil ?? null,
+    today: new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Almaty" }).format(new Date()),
     name: displayName(cab),
     status: cab.status ?? "waiting_data",
     data: cab.data ?? {},

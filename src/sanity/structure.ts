@@ -52,6 +52,20 @@ export const structure: StructureResolver = (S) =>
                 .title("Все кабинеты")
                 .id("all")
                 .child(S.documentTypeList("cabinet").title("Все кабинеты").initialValueTemplates([])),
+              ...(["ferienjob", "keta"] as const).map((sv) =>
+                S.listItem()
+                  .title(sv === "keta" ? "🇰🇷 K-ETA" : "🇩🇪 Ferienjob")
+                  .id(sv)
+                  .child(
+                    S.documentList()
+                      .apiVersion("2025-10-01")
+                      .title(sv === "keta" ? "K-ETA" : "Ferienjob")
+                      .schemaType("cabinet")
+                      .filter(sv === "keta" ? `_type == "cabinet" && service == "keta"` : `_type == "cabinet" && (service == "ferienjob" || !defined(service))`)
+                      .initialValueTemplates([])
+                  )
+              ),
+              S.divider(),
               ...CABINET_STATUSES.map((st) =>
                 S.listItem()
                   .title(st.title)

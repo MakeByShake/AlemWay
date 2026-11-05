@@ -18,8 +18,12 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import {
-  CABINET_SECTIONS,
   FIELD_ERROR_TEXT,
+  SERVICE_FILES,
+  SERVICE_TITLES,
+  ketaNotices,
+  sectionsFor,
+  type ServiceId,
   MAX_UPLOAD_BYTES,
   toGermanDate,
   validateCabinetData,
@@ -36,6 +40,10 @@ import { CABINET_TEXT, type CabinetLocale } from "@/lib/cabinet/i18n";
 type FileMeta = { name: string; size: number; uploadedAt: string } | null;
 
 export type CabinetView = {
+  service: ServiceId;
+  ketaValidUntil: string | null;
+  /** Today in Almaty (YYYY-MM-DD), for the K-ETA timing notice. */
+  today: string;
   name: string;
   status: CabinetStatus;
   data: CabinetData;
@@ -44,7 +52,17 @@ export type CabinetView = {
   job: { employer: string | null; city: string | null; position: string | null; from: string | null; to: string | null; message: string | null };
 };
 
-const STEP_OF: Record<CabinetStatus, number> = { waiting_data: 0, declaration_ready: 1, signed_uploaded: 2, zav_received: 3, done: 3 };
+const STEP_OF: Record<CabinetStatus, number> = {
+  waiting_data: 0,
+  declaration_ready: 1,
+  signed_uploaded: 2,
+  zav_received: 3,
+  keta_applying: 1,
+  keta_applied: 1,
+  keta_approved: 2,
+  keta_rejected: 2,
+  done: 3,
+};
 
 /** Shrinks phone photos to a sensible JPEG so uploads stay under the size limit. */
 async function prepareFile(file: File): Promise<File> {
@@ -73,12 +91,15 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
   const t = CABINET_TEXT[locale];
   const router = useRouter();
   const formId = useId();
-  const editable = view.status === "waiting_data" || view.status === "declaration_ready";
-  const step = STEP_OF[view.status];
+  const keta = view.service === "keta";
+  const sections = sectionsFor(view.service);
+  const steps = keta ? t.ketaSteps : t.steps;
+  const editable = view.status === "waiting_data" || (!keta && view.status === "declaration_ready");
+  const step = Math.min(STEP_OF[view.status], steps.length - 1);
 
   const [data, setData] = useState<CabinetData>(() => {
     const d: CabinetData = { ...view.data };
-    for (const s of CABINET_SECTIONS) for (const f of s.fields) if (!d[f.key] && f.defaultValue) d[f.key] = f.defaultValue;
+    for (const s of sections) for (const f of s.fields) if (!d[f.key] && f.defaultValue) d[f.key] = f.defaultValue;
     return d;
   });
   const [errors, setErrors] = useState<Record<string, FieldError>>({});
@@ -115,8 +136,8 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
 
   async function onSubmit() {
     setNotice(null);
-    const errs = validateCabinetData(data);
-    const missing = !files.passport || !files.enrollment;
+    const errs = validateCabinetData(data, view.service);
+    const missing = SERVICE_FILES[view.service].requiredBeforeSubmit.some((k) => !files[k]);
     setErrors(errs);
     if (Object.keys(errs).length || missing) {
       setNotice({ tone: "err", text: Object.keys(errs).length ? t.fixErrors : t.needFiles });
@@ -178,7 +199,7 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
       <div className="mx-auto max-w-3xl">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="eyebrow">{t.service}</p>
+            <p className="eyebrow">{SERVICE_TITLES[view.service][locale]}</p>
             <h1 className="h-section mt-2">
               {t.hello}, {view.name}
             </h1>
@@ -188,8 +209,8 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
           </button>
         </div>
 
-        <ol className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label={t.title}>
-          {t.steps.map((label, i) => (
+        <ol className={clsx("mt-8 grid gap-2", keta ? "grid-cols-3" : "grid-cols-2 sm:grid-cols-4")} aria-label={t.title}>
+          {steps.map((label, i) => (
             <li
               key={label}
               aria-current={i === step ? "step" : undefined}
@@ -217,9 +238,13 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
           </div>
         )}
 
-        {view.status === "done" && <Banner title={t.doneTitle} text={t.doneText} />}
+        {view.status === "done" && !keta && <Banner title={t.doneTitle} text={t.doneText} />}
+        {view.status === "keta_applying" && <Banner tone="wait" title={t.ketaApplyingTitle} text={t.ketaApplyingText} />}
+        {view.status === "keta_applied" && <Banner tone="wait" title={t.ketaAppliedTitle} text={t.ketaAppliedText} />}
+        {view.status === "keta_rejected" && <Banner tone="warn" title={t.ketaRejectedTitle} text={view.job.message || t.ketaRejectedText} />}
+        {keta && (view.status === "keta_approved" || view.status === "done") && <KetaCard view={view} t={t} hasFile={Boolean(files.keta)} />}
         {view.status === "signed_uploaded" && <Banner tone="wait" title={t.zavWaitTitle} text={t.zavWaitText} />}
-        {(view.status === "zav_received" || view.status === "done") && <ZavCard view={view} t={t} hasFile={Boolean(files.zav)} />}
+        {!keta && (view.status === "zav_received" || view.status === "done") && <ZavCard view={view} t={t} hasFile={Boolean(files.zav)} />}
 
         {files.declaration && (
           <div className="card mt-6 p-5 sm:p-7">
@@ -270,12 +295,12 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
           >
             {!files.declaration && (
               <div className="card p-5 sm:p-7">
-                <h2 className="h-card">{t.introTitle}</h2>
-                <p className="mt-2 text-[15px] leading-relaxed text-muted">{t.introText}</p>
+                <h2 className="h-card">{keta ? t.ketaIntroTitle : t.introTitle}</h2>
+                <p className="mt-2 text-[15px] leading-relaxed text-muted">{keta ? t.ketaIntroText : t.introText}</p>
               </div>
             )}
 
-            {CABINET_SECTIONS.map((section) => (
+            {sections.map((section) => (
               <fieldset key={section.id} className="card p-5 sm:p-7">
                 <legend className="sr-only">{section.title[locale]}</legend>
                 <h2 className="h-card" aria-hidden="true">
@@ -300,12 +325,13 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
 
             <div className="card p-5 sm:p-7">
               <h2 className="h-card">{t.documents}</h2>
-              <p className="mt-2 text-[14px] text-muted">{t.documentsHint}</p>
+              <p className="mt-2 text-[14px] text-muted">{keta ? t.ketaDocsHint : t.documentsHint}</p>
               <div className="mt-5 space-y-4">
-                {(["passport", "enrollment"] as const).map((kind) => (
+                {SERVICE_FILES[view.service].requiredBeforeSubmit.map((kind) => (
                   <FileRow
                     key={kind}
                     label={FILE_LABELS[kind][locale]}
+                    hint={kind === "photo" ? t.ketaPhotoHint : undefined}
                     meta={files[kind]}
                     busy={busy === kind}
                     t={t}
@@ -316,12 +342,22 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
               </div>
             </div>
 
+            {keta &&
+              ketaNotices(data, view.today).map((n) => (
+                <div key={n} role="note" className="flex items-start gap-2 rounded-xl bg-warn-soft px-4 py-3 text-[15px] text-warn">
+                  <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+                  {n === "ageExempt" ? t.noticeAgeExempt : t.noticeTooSoon}
+                </div>
+              ))}
+
             <div className="flex flex-col gap-3 sm:flex-row">
               <button type="submit" className="btn-primary sm:flex-1" disabled={busy !== null}>
                 {busy === "submit" ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" /> {t.submitting}
                   </>
+                ) : keta ? (
+                  t.ketaSubmit
                 ) : (
                   t.submit
                 )}
@@ -345,17 +381,61 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
 
 type T = (typeof CABINET_TEXT)[CabinetLocale];
 
-function Banner({ title, text, tone = "ok" }: { title: string; text: string; tone?: "ok" | "wait" }) {
+function Banner({ title, text, tone = "ok" }: { title: string; text: string; tone?: "ok" | "wait" | "warn" }) {
   return (
-    <div className={clsx("mt-6 flex items-start gap-3 rounded-2xl p-5", tone === "wait" ? "bg-brand-soft" : "bg-accent-soft")}>
+    <div className={clsx("mt-6 flex items-start gap-3 rounded-2xl p-5", tone === "wait" ? "bg-brand-soft" : tone === "warn" ? "bg-warn-soft" : "bg-accent-soft")}>
       {tone === "wait" ? (
         <Hourglass className="mt-0.5 h-6 w-6 shrink-0 text-brand" />
+      ) : tone === "warn" ? (
+        <AlertCircle className="mt-0.5 h-6 w-6 shrink-0 text-warn" />
       ) : (
         <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-accent" />
       )}
       <div>
         <p className="font-semibold">{title}</p>
         <p className="mt-1 text-[15px] leading-relaxed text-muted">{text}</p>
+      </div>
+    </div>
+  );
+}
+
+/** «K-ETA одобрен»: validity, the approval file, manager's note and the official rules for the trip. */
+function KetaCard({ view, t, hasFile }: { view: CabinetView; t: T; hasFile: boolean }) {
+  return (
+    <div className="card mt-6 overflow-hidden">
+      <div className="flex items-start gap-3 bg-accent-soft p-5 sm:p-7">
+        <PartyPopper className="mt-0.5 h-7 w-7 shrink-0 text-accent" />
+        <div>
+          <h2 className="h-card">{t.ketaApprovedTitle}</h2>
+          <p className="mt-1 text-[15px] leading-relaxed text-muted">{t.ketaApprovedText}</p>
+          {view.ketaValidUntil && (
+            <p className="mt-2 text-[15px] font-semibold">
+              {t.ketaValidUntil}: {toGermanDate(view.ketaValidUntil)}
+            </p>
+          )}
+        </div>
+      </div>
+      <div className="p-5 sm:p-7">
+        {hasFile && (
+          <a href="/api/cabinet/file/keta" download className="btn-primary">
+            <Download className="h-4 w-4" /> {t.ketaDownload}
+          </a>
+        )}
+        {view.job.message && (
+          <div className={clsx("rounded-xl bg-surface p-4", hasFile && "mt-5")}>
+            <p className="text-[13px] font-semibold text-muted">{t.ketaMessage}</p>
+            <p className="mt-1 whitespace-pre-line text-[15px] leading-relaxed">{view.job.message}</p>
+          </div>
+        )}
+        <h3 className={clsx("text-[15px] font-semibold", (hasFile || view.job.message) && "mt-6")}>{t.ketaRulesTitle}</h3>
+        <ul className="mt-2 space-y-2">
+          {t.ketaRules.map((r) => (
+            <li key={r} className="flex gap-2.5 text-[15px] leading-relaxed text-ink/85">
+              <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-accent" />
+              {r}
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
@@ -455,6 +535,28 @@ function Field({
             ))}
           </div>
         </fieldset>
+      ) : f.kind === "select" ? (
+        <>
+          <label htmlFor={id} className="mb-1.5 block text-[14px] font-semibold">
+            {f.label[locale]}
+          </label>
+          <select
+            id={id}
+            name={f.key}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="field"
+            aria-invalid={Boolean(error)}
+            aria-describedby={describedBy}
+          >
+            <option value="">—</option>
+            {f.options?.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label[locale]}
+              </option>
+            ))}
+          </select>
+        </>
       ) : (
         <>
           <label htmlFor={id} className="mb-1.5 block text-[14px] font-semibold">
@@ -493,6 +595,7 @@ function Field({
 
 function FileRow({
   label,
+  hint,
   meta,
   busy,
   t,
@@ -500,6 +603,7 @@ function FileRow({
   onPick,
 }: {
   label: string;
+  hint?: string;
   meta: FileMeta;
   busy: boolean;
   t: T;
@@ -511,6 +615,7 @@ function FileRow({
     <div className="flex flex-col gap-3 rounded-xl border border-line p-4 sm:flex-row sm:items-center">
       <div className="flex-1">
         <p className="text-[15px] font-semibold">{label}</p>
+        {hint && <p className="mt-0.5 text-[13px] leading-snug text-muted">{hint}</p>}
         <p className={clsx("mt-0.5 flex items-center gap-1.5 text-[13px]", meta ? "text-accent" : "text-muted")}>
           {meta ? (
             <>

@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import type { SanityClient } from "next-sanity";
 import { getWriteClient } from "@/sanity/client";
 import { siteUrl } from "@/lib/i18n-content";
-import type { CabinetData, CabinetStatus, FileKind } from "./fields";
+import type { CabinetData, CabinetStatus, FileKind, ServiceId } from "./fields";
 
 export const CABINET_COOKIE = "aw_cabinet";
 export const CABINET_COOKIE_MAX_AGE = 60 * 60 * 24 * 180; // 180 days
@@ -22,6 +22,8 @@ export type Cabinet = {
   declarationDate?: string;
   submittedAt?: string;
   signedAt?: string;
+  service?: ServiceId;
+  ketaValidUntil?: string;
   zavReceivedAt?: string;
   employerName?: string;
   workCity?: string;
@@ -31,8 +33,8 @@ export type Cabinet = {
   clientMessage?: string;
 };
 
-const PROJECTION = `{_id, _rev, status, clientName, clientPhone, data, files, declarationDate, submittedAt, signedAt,
-  zavReceivedAt, employerName, workCity, workPosition, workFrom, workTo, clientMessage}`;
+const PROJECTION = `{_id, _rev, service, status, clientName, clientPhone, data, files, declarationDate, submittedAt, signedAt,
+  zavReceivedAt, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil}`;
 
 export function writeClient(): SanityClient {
   const c = getWriteClient();
