@@ -38,7 +38,11 @@
     "trustPeople": "Нам доверяют <b>1000+ клиентов</b> с 2018 года",
     "popular": "Популярное",
     "cardCta": "Оформить",
-    "details": "Подробнее"
+    "details": "Подробнее",
+    "carouselRegion": "Наши услуги",
+    "carouselSlide": "Услуга",
+    "carouselPrev": "Предыдущая услуга",
+    "carouselNext": "Следующая услуга"
   },
   "home": {
     "servicesTitle": "Услуги",

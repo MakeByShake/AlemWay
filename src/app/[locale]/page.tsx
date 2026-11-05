@@ -6,7 +6,8 @@ import { getFaq, getReviews, getService, getServicesByCategory, getSettings } fr
 import { l, siteUrl, whatsappLink } from "@/lib/i18n-content";
 import { pageMetadata } from "@/lib/seo";
 import { Media, PhotoCredit } from "@/components/Media";
-import { PopularCard } from "@/components/PopularCard";
+import { HeroServices, type HeroServiceItem } from "@/components/HeroServices";
+import type { FeaturesBlock } from "@/lib/types";
 import { hasImage, imageUrl } from "@/sanity/image";
 import { ServiceCard } from "@/components/ServiceCard";
 import { FaqList, LeadSection, SectionHeading, Ticker } from "@/components/Sections";
@@ -44,8 +45,22 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     getTranslations("nav"),
   ]);
   const how = t.raw("how") as HowStep[];
-  const popularSlug = groups.flatMap((g) => g.services).find((s) => s.popular && !s.priceOnRequest)?.slug.current;
-  const popular = popularSlug ? await getService(popularSlug) : null;
+  // Hero carousel: every service with what's included, popular ones first.
+  const allServices = groups.flatMap((g) => g.services).sort((a, b) => Number(Boolean(b.popular)) - Number(Boolean(a.popular)));
+  const fullServices = await Promise.all(allServices.map((s) => getService(s.slug.current)));
+  const heroItems: HeroServiceItem[] = allServices.map((s, i) => {
+    const full = fullServices[i];
+    const features = (full?.blocks ?? []).find((b): b is FeaturesBlock => b._type === "features")?.items?.slice(0, 4) ?? [];
+    return {
+      slug: s.slug.current,
+      title: l(s.title, locale),
+      label: s.popular ? th("popular") : l(s.category?.title, locale),
+      countryCode: s.countryCode,
+      flagImage: s.flagImage,
+      features: features.map((f) => l(f, locale)).filter(Boolean),
+      duration: l(s.duration, locale),
+    };
+  });
   const wa = whatsappLink(settings.whatsapp);
 
   return (
@@ -67,8 +82,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         }}
       />
 
-      {/* Hero: full-bleed photo with dark overlay */}
-      <section className="relative isolate overflow-hidden bg-ink text-white">
+      {/* Hero: full-bleed photo with dark overlay, exactly one screen tall; the header floats over it. */}
+      <section className="relative isolate flex min-h-[100svh] flex-col overflow-hidden bg-ink text-white">
         {hasImage(settings.heroImage) && (
           <Image
             src={imageUrl(settings.heroImage, 1920)}
@@ -83,7 +98,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(11,15,36,0.88),rgba(11,15,36,0.55)_45%,rgba(11,15,36,0.1)),linear-gradient(180deg,rgba(11,15,36,0)_40%,rgba(11,15,36,0.7)),radial-gradient(700px_380px_at_85%_-10%,rgba(35,64,255,0.35),transparent_60%)]"
           aria-hidden
         />
-        <div className="container-x grid gap-10 pt-12 pb-16 sm:pt-16 lg:grid-cols-[1.25fr_1fr] lg:items-center lg:gap-14 lg:pt-24 lg:pb-28">
+        <div className="container-x grid flex-1 content-center gap-8 [&>*]:min-w-0 pt-24 pb-10 sm:pt-28 lg:grid-cols-[1.2fr_1fr] lg:items-center lg:gap-14 lg:pt-[104px] lg:pb-12">
           <div>
             <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-[13px] font-medium text-white/90 backdrop-blur-sm">
               <span className="relative flex h-2 w-2">
@@ -92,7 +107,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               </span>
               {th("badge")}
             </p>
-            <h1 className="h-display mt-5 max-w-[16ch] text-balance">
+            <h1 className="h-display mt-5 max-w-[16ch] text-balance [@media(min-width:1024px)_and_(max-height:760px)]:text-[54px]">
               {l(settings.heroTitle, locale)}{" "}
               {l(settings.heroTitleAccent, locale) && <span className="text-[#3ee08f]">{l(settings.heroTitleAccent, locale)}</span>}
             </h1>
@@ -115,7 +130,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 </li>
               ))}
             </ul>
-            <div className="mt-7 flex items-center gap-3">
+            {/* Hidden on short laptop screens so the hero still fits in one screen. */}
+            <div className="mt-7 flex items-center gap-3 [@media(min-width:1024px)_and_(max-height:760px)]:hidden">
               <div className="flex -space-x-2" aria-hidden>
                 {["А", "Д", "М", "Е", "Н"].map((ch, i) => (
                   <span
@@ -131,7 +147,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </div>
           </div>
 
-          {popular && <PopularCard service={popular} locale={locale} />}
+          <HeroServices
+            items={heroItems}
+            labels={{ prev: th("carouselPrev"), next: th("carouselNext"), cta: th("cardCta"), region: th("carouselRegion"), slide: th("carouselSlide") }}
+          />
         </div>
         {settings.heroImage?.credit && <PhotoCredit credit={settings.heroImage.credit} />}
       </section>

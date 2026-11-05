@@ -38,7 +38,11 @@
     "trustPeople": "2018 жылдан бері <b>1000+ клиент</b> бізге сенеді",
     "popular": "Танымал",
     "cardCta": "Рәсімдеу",
-    "details": "Толығырақ"
+    "details": "Толығырақ",
+    "carouselRegion": "Біздің қызметтер",
+    "carouselSlide": "Қызмет",
+    "carouselPrev": "Алдыңғы қызмет",
+    "carouselNext": "Келесі қызмет"
   },
   "home": {
     "servicesTitle": "Қызметтер",

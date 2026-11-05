@@ -17,19 +17,21 @@ export type NavGroup = {
 
 const LOCALE_LABEL: Record<string, string> = { ru: "RU", kk: "KZ" };
 
-function LanguageSwitcher({ className = "" }: { className?: string }) {
+function LanguageSwitcher({ className = "", light = false }: { className?: string; light?: boolean }) {
   const locale = useLocale();
   const pathname = usePathname();
   const t = useTranslations("nav");
   return (
-    <div className={`flex items-center rounded-[10px] border border-line p-0.5 text-[13px] font-semibold ${className}`} role="group" aria-label={t("language")}>
+    <div className={`flex items-center rounded-[10px] border p-0.5 text-[13px] font-semibold transition-colors ${light ? "border-white/25" : "border-line"} ${className}`} role="group" aria-label={t("language")}>
       {routing.locales.map((loc) => (
         <Link
           key={loc}
           href={pathname}
           locale={loc}
           aria-current={loc === locale ? "true" : undefined}
-          className={`rounded-[8px] px-2.5 py-1.5 transition-colors ${loc === locale ? "bg-ink text-white" : "text-muted hover:text-ink"}`}
+          className={`rounded-[8px] px-2.5 py-1.5 transition-colors ${
+            loc === locale ? (light ? "bg-white text-ink" : "bg-ink text-white") : light ? "text-white/75 hover:text-white" : "text-muted hover:text-ink"
+          }`}
         >
           {LOCALE_LABEL[loc]}
         </Link>
@@ -44,6 +46,36 @@ export function HeaderNav({ groups, whatsappHref }: { groups: NavGroup[]; whatsa
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropOpen, setDropOpen] = useState(false);
   const dropRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+
+  // Home page: the header floats transparent over the hero photo and turns white when the pointer
+  // comes near the top, the page is scrolled, a menu is open or focus is inside the header.
+  const overlay = pathname === "/";
+  const [scrolled, setScrolled] = useState(false);
+  const [pointerNear, setPointerNear] = useState(false);
+  const [focusInside, setFocusInside] = useState(false);
+
+  useEffect(() => {
+    if (!overlay) return;
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerType !== "mouse") return;
+      const h = headerRef.current?.offsetHeight ?? 72;
+      setPointerNear(e.clientY < h + 48);
+    };
+    const onLeave = () => setPointerNear(false);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("pointermove", onMove, { passive: true });
+    document.documentElement.addEventListener("pointerleave", onLeave);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("pointermove", onMove);
+      document.documentElement.removeEventListener("pointerleave", onLeave);
+    };
+  }, [overlay]);
+
+  const transparent = overlay && !scrolled && !pointerNear && !focusInside && !menuOpen && !dropOpen;
 
   // Close menus on navigation (state adjusted during render, no effect needed).
   const [prevPath, setPrevPath] = useState(pathname);
@@ -74,20 +106,27 @@ export function HeaderNav({ groups, whatsappHref }: { groups: NavGroup[]; whatsa
     };
   }, [dropOpen]);
 
-  const linkCls = "rounded-lg px-3 py-2 text-[15px] font-medium text-ink/80 transition-colors hover:text-ink";
+  const linkCls = `rounded-lg px-3 py-2 text-[15px] font-medium transition-colors ${transparent ? "text-white/85 hover:text-white" : "text-ink/80 hover:text-ink"}`;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line/80 bg-white/95 backdrop-blur-sm">
+    <header
+      ref={headerRef}
+      onFocus={() => setFocusInside(true)}
+      onBlur={(e) => !e.currentTarget.contains(e.relatedTarget as Node | null) && setFocusInside(false)}
+      className={`top-0 z-40 border-b transition-[background-color,border-color,box-shadow] duration-300 ${overlay ? "fixed inset-x-0" : "sticky"} ${
+        transparent ? "border-transparent bg-transparent" : "border-line/80 bg-white/95 backdrop-blur-sm"
+      }`}
+    >
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2">
         {t("skip")}
       </a>
       <div className="container-x flex h-16 items-center justify-between gap-4 lg:h-[72px]">
         <Link href="/" className="shrink-0" aria-label={`AlemWay Visa — ${t("home")}`}>
-          <Logo className="h-[26px] w-auto sm:h-8" />
+          <Logo variant={transparent ? "white" : "color"} className="h-[26px] w-auto sm:h-8" />
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
-          <Link href="/" className={`${linkCls} ${pathname === "/" ? "text-ink" : ""}`} aria-current={pathname === "/" ? "page" : undefined}>
+          <Link href="/" className={`${linkCls} ${pathname === "/" ? (transparent ? "text-white" : "text-ink") : ""}`} aria-current={pathname === "/" ? "page" : undefined}>
             {t("home")}
           </Link>
           <div className="relative" ref={dropRef}>
@@ -140,7 +179,7 @@ export function HeaderNav({ groups, whatsappHref }: { groups: NavGroup[]; whatsa
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
-          <LanguageSwitcher />
+          <LanguageSwitcher light={transparent} />
           <WhatsAppLink href={whatsappHref} place="header" className="btn-whatsapp min-h-11 px-4 text-[14px]">
             <WhatsAppIcon className="h-[18px] w-[18px]" />
             {t("whatsapp")}
@@ -148,10 +187,10 @@ export function HeaderNav({ groups, whatsappHref }: { groups: NavGroup[]; whatsa
         </div>
 
         <div className="flex items-center gap-2 lg:hidden">
-          <LanguageSwitcher />
+          <LanguageSwitcher light={transparent} />
           <button
             type="button"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-[10px] border border-line"
+            className={`inline-flex h-11 w-11 items-center justify-center rounded-[10px] border transition-colors ${transparent ? "border-white/25 text-white" : "border-line"}`}
             aria-label={menuOpen ? t("close") : t("menu")}
             aria-expanded={menuOpen}
             aria-controls="mobile-menu"
