@@ -1,6 +1,8 @@
 import type { StructureResolver } from "sanity/structure";
-import { Briefcase, Folder, HelpCircle, Inbox, MessageSquareQuote, Settings } from "lucide-react";
+import { Briefcase, Folder, HelpCircle, Inbox, MessageSquareQuote, Settings, UserPlus, UserRound } from "lucide-react";
 import { LEAD_STATUSES } from "./schemaTypes/documents";
+import { CABINET_STATUSES } from "../lib/cabinet/fields";
+import { NewCabinetPane } from "./cabinet/NewCabinetPane";
 
 /** Left menu of the admin panel. The leads list id ("leads") is used in Telegram links. */
 export const structure: StructureResolver = (S) =>
@@ -31,6 +33,39 @@ export const structure: StructureResolver = (S) =>
                       .filter(st.value === "new" ? `_type == "lead" && (status == "new" || !defined(status))` : `_type == "lead" && status == $status`)
                       .params({ status: st.value })
                       .defaultOrdering([{ field: "createdAt", direction: "desc" }])
+                  )
+              ),
+            ])
+        ),
+      S.listItem()
+        .title("Личные кабинеты")
+        .id("cabinets")
+        .icon(UserRound)
+        .child(
+          S.list()
+            .title("Личные кабинеты")
+            .items([
+              S.listItem().title("Новый кабинет").id("new").icon(UserPlus).child(S.component(NewCabinetPane).id("new-cabinet").title("Новый кабинет")),
+              S.divider(),
+              S.listItem()
+                .title("Все кабинеты")
+                .id("all")
+                .child(S.documentTypeList("cabinet").title("Все кабинеты").initialValueTemplates([])),
+              ...CABINET_STATUSES.map((st) =>
+                S.listItem()
+                  .title(st.title)
+                  .id(st.value)
+                  .child(
+                    S.documentList()
+                      .title(st.title)
+                      .schemaType("cabinet")
+                      .filter(
+                        st.value === "waiting_data"
+                          ? `_type == "cabinet" && (status == $status || !defined(status))`
+                          : `_type == "cabinet" && status == $status`
+                      )
+                      .params({ status: st.value })
+                      .initialValueTemplates([])
                   )
               ),
             ])

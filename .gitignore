@@ -43,3 +43,6 @@ next-env.d.ts
 # local screenshots
 .playwright-mcp/
 !.env.example
+
+# local file storage for cabinet uploads (dev only)
+.data/

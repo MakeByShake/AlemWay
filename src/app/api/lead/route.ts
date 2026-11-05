@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { getWriteClient } from "@/sanity/client";
 import { siteUrl } from "@/lib/i18n-content";
+import { isSameOrigin } from "@/lib/http";
+import { escapeHtml, sendTelegram } from "@/lib/telegram";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,21 +27,8 @@ function rateLimited(ip: string) {
 }
 
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
-const escapeHtml = (s: string) =>
-  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 const MAX_BODY_BYTES = 8 * 1024;
-
-/** Only accept form posts from our own pages (blocks cross-site form spam). */
-function isSameOrigin(req: NextRequest) {
-  const origin = req.headers.get("origin");
-  if (!origin) return false;
-  try {
-    return new URL(origin).host === req.headers.get("host");
-  } catch {
-    return false;
-  }
-}
 
 export async function POST(req: NextRequest) {
   if (!isSameOrigin(req)) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
@@ -120,36 +109,20 @@ export async function POST(req: NextRequest) {
   }
 
   // 2) Notify Telegram
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
-  if (token && chatId) {
-    const lines = [
-      "<b>🆕 Новая заявка с сайта</b>",
-      "",
-      `<b>Имя:</b> ${escapeHtml(name)}`,
-      `<b>Телефон:</b> ${escapeHtml(phone)}`,
-      `<b>Услуга:</b> ${escapeHtml(serviceTitle || serviceSlug || "не выбрана")}`,
-      comment && `<b>Комментарий:</b> ${escapeHtml(comment)}`,
-      `<b>Язык:</b> ${locale.toUpperCase()}`,
-      page && `<b>Страница:</b> ${escapeHtml(page)}`,
-      Object.keys(utm).length ? `<b>UTM:</b> ${escapeHtml(Object.entries(utm).map(([k, v]) => `${k}=${v}`).join(", "))}` : "",
-      "",
-      `💬 <a href="https://wa.me/${phone.replace(/\D/g, "")}">Написать в WhatsApp</a>`,
-      leadId && `📋 <a href="${siteUrl()}/studio/structure/leads;all;${leadId}">Открыть в админке</a>`,
-    ].filter((x): x is string => typeof x === "string");
-
-    try {
-      const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: chatId, text: lines.join("\n"), parse_mode: "HTML", disable_web_page_preview: true }),
-      });
-      sentToTelegram = res.ok;
-      if (!res.ok) console.error("[lead] telegram failed", res.status, await res.text());
-    } catch (err) {
-      console.error("[lead] telegram failed", err);
-    }
-  }
+  sentToTelegram = await sendTelegram([
+    "<b>🆕 Новая заявка с сайта</b>",
+    "",
+    `<b>Имя:</b> ${escapeHtml(name)}`,
+    `<b>Телефон:</b> ${escapeHtml(phone)}`,
+    `<b>Услуга:</b> ${escapeHtml(serviceTitle || serviceSlug || "не выбрана")}`,
+    comment && `<b>Комментарий:</b> ${escapeHtml(comment)}`,
+    `<b>Язык:</b> ${locale.toUpperCase()}`,
+    page && `<b>Страница:</b> ${escapeHtml(page)}`,
+    Object.keys(utm).length ? `<b>UTM:</b> ${escapeHtml(Object.entries(utm).map(([k, v]) => `${k}=${v}`).join(", "))}` : "",
+    "",
+    `💬 <a href="https://wa.me/${phone.replace(/\D/g, "")}">Написать в WhatsApp</a>`,
+    leadId && `📋 <a href="${siteUrl()}/studio/structure/leads;all;${leadId}">Открыть в админке</a>`,
+  ]);
 
   // If the lead reached nobody, tell the visitor so they can use WhatsApp instead.
   if (!savedToSanity && !sentToTelegram) {
