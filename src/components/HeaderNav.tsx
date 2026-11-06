@@ -9,6 +9,7 @@ import type { SanityImage } from "@/lib/types";
 import { Flag } from "./Flag";
 import { Logo } from "./Logo";
 import { WhatsAppIcon, WhatsAppLink } from "./WhatsAppLink";
+import { useServiceWhatsapp, type ServiceWhatsapp } from "./useServiceWhatsapp";
 
 export type NavGroup = {
   title: string;
@@ -40,7 +41,17 @@ function LanguageSwitcher({ className = "", light = false }: { className?: strin
   );
 }
 
-export function HeaderNav({ groups, whatsappHref }: { groups: NavGroup[]; whatsappHref: string }) {
+export function HeaderNav({
+  groups,
+  whatsappHref: defaultWhatsappHref,
+  serviceWhatsapp,
+}: {
+  groups: NavGroup[];
+  whatsappHref: string;
+  serviceWhatsapp?: ServiceWhatsapp;
+}) {
+  // On a service page with its own WhatsApp number, header buttons open that number.
+  const whatsappHref = useServiceWhatsapp(defaultWhatsappHref, serviceWhatsapp);
   const t = useTranslations("nav");
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);

@@ -285,6 +285,7 @@ export const seedServices: Service[] = [
     price: 12000,
     priceOnRequest: false,
     duration: t("Подаём в день оплаты, ответ 24–72 ч", "Төлеген күні тапсырамыз, жауап 24–72 сағ"),
+    whatsappNumber: "77778750904",
     whatsappText: t(
       "Здравствуйте! Хочу оформить K-ETA в Южную Корею.",
       "Сәлеметсіз бе! Оңтүстік Кореяға K-ETA рәсімдегім келеді."
@@ -313,6 +314,7 @@ export const seedServices: Service[] = [
     ),
     priceOnRequest: true,
     duration: t("Июнь–сентябрь, до 90 дней", "Маусым–қыркүйек, 90 күнге дейін"),
+    whatsappNumber: "77080701877",
     whatsappText: t(
       "Здравствуйте! Интересует Work&Travel в Германии (Ferienjob).",
       "Сәлеметсіз бе! Германиядағы Work&Travel (Ferienjob) қызықтырады."

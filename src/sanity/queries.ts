@@ -2,7 +2,7 @@ import { defineQuery } from "next-sanity";
 
 const serviceCard = `
   _id, _type, title, slug, countryCode, flagImage, coverImage, excerpt, badge,
-  price, priceOnRequest, duration, whatsappText, order, visible, popular,
+  price, priceOnRequest, duration, whatsappText, whatsappNumber, order, visible, popular,
   "category": category->{_id, _type, title, slug, order}
 `;
 

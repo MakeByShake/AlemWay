@@ -67,7 +67,7 @@ export default async function ServicePage({ params }: Params) {
   const excerpt = l(service.excerpt, locale);
   const duration = l(service.duration, locale);
   const hasPrice = SHOW_PRICES && !service.priceOnRequest && typeof service.price === "number";
-  const wa = whatsappLink(settings.whatsapp, l(service.whatsappText, locale) || undefined);
+  const wa = whatsappLink(service.whatsappNumber || settings.whatsapp, l(service.whatsappText, locale) || undefined);
   const related = relatedFor(service, all);
   const url = `${siteUrl()}/${locale}/services/${slug}`;
   const cover = hasImage(service.coverImage) ? service.coverImage : null;
@@ -177,6 +177,7 @@ export default async function ServicePage({ params }: Params) {
         locale={locale}
         defaultService={slug}
         whatsappText={l(service.whatsappText, locale) || undefined}
+        whatsappNumber={service.whatsappNumber}
         title={t("requestTitle")}
         subtitle={t("requestSubtitle")}
       />

@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { Plus } from "lucide-react";
 import { getServices, getSettings } from "@/lib/data";
-import { l, paragraphs, whatsappLink } from "@/lib/i18n-content";
+import { formatPhoneDisplay, l, paragraphs, whatsappLink } from "@/lib/i18n-content";
 import type { LocaleText } from "@/lib/types";
 import { LeadForm } from "./LeadForm";
 import { WhatsAppIcon, WhatsAppLink } from "./WhatsAppLink";
@@ -45,6 +45,7 @@ export async function LeadSection({
   locale,
   defaultService,
   whatsappText,
+  whatsappNumber,
   title,
   subtitle,
   id = "lead",
@@ -52,13 +53,17 @@ export async function LeadSection({
   locale: string;
   defaultService?: string;
   whatsappText?: string;
+  /** Service-specific WhatsApp number; falls back to the site-wide one. */
+  whatsappNumber?: string;
   title?: string;
   subtitle?: string;
   id?: string;
 }) {
   const [services, settings, t] = await Promise.all([getServices(), getSettings(), getTranslations("home")]);
   const options = services.map((s) => ({ slug: s.slug.current, title: l(s.title, locale) }));
-  const wa = whatsappLink(settings.whatsapp, whatsappText);
+  const number = whatsappNumber || settings.whatsapp;
+  const wa = whatsappLink(number, whatsappText);
+  const phoneLabel = whatsappNumber ? formatPhoneDisplay(whatsappNumber) : settings.phone;
 
   return (
     <section id={id} className="scroll-mt-24 bg-surface py-16 sm:py-24">
@@ -69,7 +74,7 @@ export async function LeadSection({
           <div className="mt-8">
             <p className="text-[14px] font-semibold text-ink/70">{t("orWhatsapp")}</p>
             <WhatsAppLink href={wa} place="lead_section" className="btn-whatsapp mt-3">
-              <WhatsAppIcon /> WhatsApp · {settings.phone}
+              <WhatsAppIcon /> WhatsApp · {phoneLabel}
             </WhatsAppLink>
           </div>
         </div>

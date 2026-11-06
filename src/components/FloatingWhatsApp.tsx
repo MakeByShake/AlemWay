@@ -1,19 +1,17 @@
-import { getTranslations } from "next-intl/server";
-import { getSettings } from "@/lib/data";
+import { getLocale, getTranslations } from "next-intl/server";
+import { getServices, getSettings } from "@/lib/data";
+import { serviceWhatsappMap } from "@/lib/service-whatsapp";
 import { whatsappLink } from "@/lib/i18n-content";
-import { WhatsAppIcon, WhatsAppLink } from "./WhatsAppLink";
+import { FloatingWhatsAppButton } from "./FloatingWhatsAppButton";
 
-/** Floating WhatsApp button for phones (bottom-right). */
+/** Floating WhatsApp button for phones (bottom-right). On a service page it uses that service's number. */
 export async function FloatingWhatsApp() {
-  const [s, t] = await Promise.all([getSettings(), getTranslations("nav")]);
+  const [s, services, t, locale] = await Promise.all([getSettings(), getServices(), getTranslations("nav"), getLocale()]);
   return (
-    <WhatsAppLink
-      href={whatsappLink(s.whatsapp)}
-      place="floating"
-      ariaLabel={t("whatsapp")}
-      className="fixed right-4 bottom-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-[0_10px_30px_-8px_rgba(16,184,100,0.6)] transition-transform hover:scale-105 lg:hidden"
-    >
-      <WhatsAppIcon className="h-7 w-7" />
-    </WhatsAppLink>
+    <FloatingWhatsAppButton
+      defaultHref={whatsappLink(s.whatsapp)}
+      byService={serviceWhatsappMap(services, locale)}
+      label={t("whatsapp")}
+    />
   );
 }

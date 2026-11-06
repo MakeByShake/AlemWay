@@ -119,6 +119,8 @@ export type Service = {
   priceOnRequest?: boolean;
   duration?: LocaleString;
   whatsappText?: LocaleString;
+  /** WhatsApp number for this service (digits). Empty = the site-wide number. */
+  whatsappNumber?: string;
   order?: number;
   visible?: boolean;
   popular?: boolean;

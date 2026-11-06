@@ -33,6 +33,13 @@ export function formatPrice(value: number, locale: string) {
 
 export const WHATSAPP_DEFAULT = "77080701877";
 
+/** 77778750904 → "+7 777 875 09 04" */
+export function formatPhoneDisplay(digits: string) {
+  const d = digits.replace(/\D/g, "");
+  if (d.length !== 11) return `+${d}`;
+  return `+${d[0]} ${d.slice(1, 4)} ${d.slice(4, 7)} ${d.slice(7, 9)} ${d.slice(9, 11)}`;
+}
+
 export function whatsappLink(number: string | undefined, text?: string) {
   const digits = (number || WHATSAPP_DEFAULT).replace(/\D/g, "");
   const q = text ? `?text=${encodeURIComponent(text)}` : "";
