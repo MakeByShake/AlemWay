@@ -6,7 +6,7 @@ import { visionTool } from "@sanity/vision";
 import { apiVersion, dataset, projectId } from "./src/sanity/env";
 import { schemaTypes } from "./src/sanity/schemaTypes";
 import { structure } from "./src/sanity/structure";
-import { NewLinkAction, OpenCabinetFromLeadAction, RegenerateDeclarationAction } from "./src/sanity/cabinet/actions";
+import { DeleteCabinetAction, NewLinkAction, OpenCabinetFromLeadAction, RegenerateDeclarationAction } from "./src/sanity/cabinet/actions";
 
 // Leads and cabinets get private ids ("leads.…", "cabinets.…") from the server. Studio must never create or
 // duplicate them, because a copy would get a normal id and become readable through the public API.
@@ -33,8 +33,16 @@ export default defineConfig({
       }
       if (ctx.schemaType === "lead") return [...actions.filter((a) => a.action !== "duplicate"), OpenCabinetFromLeadAction];
       if (ctx.schemaType === "cabinet") {
-        return [...actions.filter((a) => a.action !== "duplicate"), NewLinkAction, RegenerateDeclarationAction];
+        // The built-in "Delete" would leave the client's files in storage — use the full delete instead.
+        return [
+          ...actions.filter((a) => a.action !== "duplicate" && a.action !== "delete"),
+          NewLinkAction,
+          RegenerateDeclarationAction,
+          DeleteCabinetAction,
+        ];
       }
+      // Feedback is created by the server with a private id — a Studio copy would become public.
+      if (ctx.schemaType === "feedback") return actions.filter((a) => a.action !== "duplicate");
       return actions;
     },
   },

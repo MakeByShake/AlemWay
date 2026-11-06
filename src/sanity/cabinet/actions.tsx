@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Card, Stack, Text } from "@sanity/ui";
-import { FileText as DocumentPdfIcon, Link2 as LinkIcon, UserRound as UserIcon } from "lucide-react";
+import { FileText as DocumentPdfIcon, Link2 as LinkIcon, Trash2, UserRound as UserIcon } from "lucide-react";
 import { IntentLink } from "sanity/router";
 import type { DocumentActionComponent } from "sanity";
 import { useAdminFetch } from "./adminApi";
@@ -142,5 +142,53 @@ export const OpenCabinetFromLeadAction: DocumentActionComponent = (props) => {
       }
     },
     dialog: renderDialog(dialog, () => setDialog(null), "Личный кабинет создан"),
+  };
+};
+
+/** Cabinet: delete the client completely — all files from storage and the cabinet itself. */
+export const DeleteCabinetAction: DocumentActionComponent = (props) => {
+  const adminFetch = useAdminFetch();
+  const { dialog, setDialog, busy, setBusy } = useActionState();
+  const [confirm, setConfirm] = useState(false);
+  const doc = (props.draft ?? props.published) as { clientName?: string } | null;
+
+  return {
+    label: "Удалить клиента полностью",
+    icon: Trash2,
+    tone: "critical",
+    disabled: busy || (!props.published && !props.draft),
+    onHandle: () => setConfirm(true),
+    dialog: confirm
+      ? {
+          type: "confirm",
+          tone: "critical",
+          message: `Удалить кабинет «${doc?.clientName ?? "без имени"}» и все его файлы (паспорт, справка, декларация, ZAV)? Это нельзя отменить.`,
+          onCancel: () => setConfirm(false),
+          onConfirm: async () => {
+            setConfirm(false);
+            setBusy(true);
+            try {
+              const res = await adminFetch("/api/admin/cabinet/delete", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: props.id }),
+              });
+              const j = (await res.json()) as { deletedFiles: number; failedFiles: number };
+              setDialog({
+                kind: "message",
+                tone: j.failedFiles ? "critical" : "positive",
+                text: j.failedFiles
+                  ? `Кабинет удалён. Не удалось удалить файлов: ${j.failedFiles} — удалите их в Vercel → Storage.`
+                  : `Кабинет и файлы удалены (${j.deletedFiles}).`,
+              });
+              props.onComplete();
+            } catch (e) {
+              setDialog({ kind: "message", text: errText(e), tone: "critical" });
+            } finally {
+              setBusy(false);
+            }
+          },
+        }
+      : renderDialog(dialog, () => setDialog(null), "Удаление кабинета"),
   };
 };
