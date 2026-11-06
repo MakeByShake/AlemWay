@@ -31,7 +31,7 @@ export function formatPrice(value: number, locale: string) {
   return `${n} ₸`;
 }
 
-export const WHATSAPP_DEFAULT = "77775882949";
+export const WHATSAPP_DEFAULT = "77080701877";
 
 export function whatsappLink(number: string | undefined, text?: string) {
   const digits = (number || WHATSAPP_DEFAULT).replace(/\D/g, "");
