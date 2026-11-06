@@ -14,6 +14,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...services.map((s) => ({ path: `/services/${s.slug.current}`, priority: 0.8 })),
     { path: "/about", priority: 0.5 },
     { path: "/contacts", priority: 0.6 },
+    { path: "/feedback", priority: 0.3 },
     { path: "/privacy", priority: 0.2 },
   ];
 

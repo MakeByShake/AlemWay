@@ -13,6 +13,7 @@ import { ServiceCard } from "@/components/ServiceCard";
 import { FaqList, LeadSection, SectionHeading, Ticker } from "@/components/Sections";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsAppLink";
 import { JsonLd } from "@/components/JsonLd";
+import { Link } from "@/i18n/navigation";
 
 export const revalidate = 3600;
 
@@ -35,7 +36,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const [settings, groups, reviews, faq, t, th, tn] = await Promise.all([
+  const [settings, groups, reviews, faq, t, th, tn, tf] = await Promise.all([
     getSettings(),
     getServicesByCategory(),
     getReviews(),
@@ -43,6 +44,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     getTranslations("home"),
     getTranslations("hero"),
     getTranslations("nav"),
+    getTranslations("feedback"),
   ]);
   const how = t.raw("how") as HowStep[];
   // Hero carousel: every service with what's included, popular ones first.
@@ -274,6 +276,26 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </div>
         </section>
       )}
+
+      {/* Feedback invite */}
+      <section className="border-t border-line py-12 sm:py-16">
+        <div className="container-x">
+          <div className="flex flex-col items-start gap-5 rounded-[22px] bg-brand-soft p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+            <div className="flex items-start gap-4">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-[#F5B301] shadow-sm" aria-hidden>
+                <Star className="h-6 w-6 fill-current" />
+              </span>
+              <div>
+                <h2 className="text-[22px] leading-tight font-bold tracking-[-0.02em] sm:text-[26px]">{tf("homeTitle")}</h2>
+                <p className="mt-1.5 max-w-xl text-[15px] leading-relaxed text-muted sm:text-[16px]">{tf("homeText")}</p>
+              </div>
+            </div>
+            <Link href="/feedback" className="btn-primary w-full shrink-0 sm:w-auto">
+              {tf("homeCta")}
+            </Link>
+          </div>
+        </div>
+      </section>
 
       <LeadSection locale={locale} />
     </>

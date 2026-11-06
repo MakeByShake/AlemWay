@@ -86,11 +86,22 @@ export function HeaderNav({ groups, whatsappHref }: { groups: NavGroup[]; whatsa
   }
 
   useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : "";
+    if (!menuOpen) return;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMenuOpen(false);
+    // Rotating a tablet to landscape shows the desktop menu — close the mobile one.
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const onWide = () => mq.matches && setMenuOpen(false);
+    document.addEventListener("keydown", onKey);
+    mq.addEventListener("change", onWide);
     return () => {
       document.body.style.overflow = "";
+      document.removeEventListener("keydown", onKey);
+      mq.removeEventListener("change", onWide);
     };
   }, [menuOpen]);
+
+  const closeMenu = () => setMenuOpen(false);
 
   useEffect(() => {
     if (!dropOpen) return;
@@ -109,6 +120,7 @@ export function HeaderNav({ groups, whatsappHref }: { groups: NavGroup[]; whatsa
   const linkCls = `rounded-lg px-3 py-2 text-[15px] font-medium transition-colors ${transparent ? "text-white/85 hover:text-white" : "text-ink/80 hover:text-ink"}`;
 
   return (
+    <>
     <header
       ref={headerRef}
       onFocus={() => setFocusInside(true)}
@@ -173,6 +185,9 @@ export function HeaderNav({ groups, whatsappHref }: { groups: NavGroup[]; whatsa
           <Link href="/about" className={linkCls}>
             {t("about")}
           </Link>
+          <Link href="/feedback" className={linkCls}>
+            {t("feedback")}
+          </Link>
           <Link href="/contacts" className={linkCls}>
             {t("contacts")}
           </Link>
@@ -182,7 +197,8 @@ export function HeaderNav({ groups, whatsappHref }: { groups: NavGroup[]; whatsa
           <LanguageSwitcher light={transparent} />
           <WhatsAppLink href={whatsappHref} place="header" className="btn-whatsapp min-h-11 px-4 text-[14px]">
             <WhatsAppIcon className="h-[18px] w-[18px]" />
-            {t("whatsapp")}
+            <span className="xl:hidden">{t("whatsappShort")}</span>
+            <span className="hidden xl:inline">{t("whatsapp")}</span>
           </WhatsAppLink>
         </div>
 
@@ -201,9 +217,11 @@ export function HeaderNav({ groups, whatsappHref }: { groups: NavGroup[]; whatsa
         </div>
       </div>
 
+    </header>
+
       {menuOpen && (
-        <div id="mobile-menu" className="fixed inset-x-0 top-16 bottom-0 z-40 overflow-y-auto bg-white lg:hidden">
-          <nav className="container-x flex flex-col gap-6 py-6" aria-label="Mobile">
+        <div id="mobile-menu" className="fixed inset-x-0 top-16 bottom-0 z-40 overflow-y-auto overscroll-contain border-t border-line bg-white lg:hidden">
+          <nav className="container-x flex flex-col gap-6 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]" aria-label="Mobile" onClick={(e) => (e.target as HTMLElement).closest("a") && closeMenu()}>
             <Link href="/" className="-mb-2 border-b border-line pb-3.5 text-[17px] font-semibold">
               {t("home")}
             </Link>
@@ -229,6 +247,9 @@ export function HeaderNav({ groups, whatsappHref }: { groups: NavGroup[]; whatsa
               <Link href="/about" className="border-b border-line py-3.5 text-[17px] font-semibold">
                 {t("about")}
               </Link>
+              <Link href="/feedback" className="border-b border-line py-3.5 text-[17px] font-semibold">
+                {t("feedback")}
+              </Link>
               <Link href="/contacts" className="border-b border-line py-3.5 text-[17px] font-semibold">
                 {t("contacts")}
               </Link>
@@ -240,6 +261,6 @@ export function HeaderNav({ groups, whatsappHref }: { groups: NavGroup[]; whatsa
           </nav>
         </div>
       )}
-    </header>
+    </>
   );
 }

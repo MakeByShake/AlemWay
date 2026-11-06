@@ -1,5 +1,5 @@
 import type { StructureResolver } from "sanity/structure";
-import { Briefcase, Folder, HelpCircle, Inbox, MessageSquareQuote, Settings, UserPlus, UserRound } from "lucide-react";
+import { Briefcase, Folder, HelpCircle, Inbox, MessageCircleHeart, MessageSquareQuote, Settings, UserPlus, UserRound } from "lucide-react";
 import { LEAD_STATUSES } from "./schemaTypes/documents";
 import { CABINET_STATUSES } from "../lib/cabinet/fields";
 import { NewCabinetPane } from "./cabinet/NewCabinetPane";
@@ -85,6 +85,19 @@ export const structure: StructureResolver = (S) =>
                   )
               ),
             ])
+        ),
+      S.listItem()
+        .title("Отзывы о сайте")
+        .id("feedback")
+        .icon(MessageCircleHeart)
+        .child(
+          S.documentList()
+            .title("Отзывы о сайте")
+            .apiVersion("2025-10-01")
+            .schemaType("feedback")
+            .filter(`_type == "feedback"`)
+            .defaultOrdering([{ field: "createdAt", direction: "desc" }])
+            .initialValueTemplates([])
         ),
       S.divider(),
       S.documentTypeListItem("service").title("Услуги").icon(Briefcase),

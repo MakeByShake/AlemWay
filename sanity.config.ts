@@ -10,7 +10,7 @@ import { NewLinkAction, OpenCabinetFromLeadAction, RegenerateDeclarationAction }
 
 // Leads and cabinets get private ids ("leads.…", "cabinets.…") from the server. Studio must never create or
 // duplicate them, because a copy would get a normal id and become readable through the public API.
-const SERVER_CREATED = ["lead", "cabinet"];
+const SERVER_CREATED = ["lead", "cabinet", "feedback"];
 
 export default defineConfig({
   name: "alemway",
