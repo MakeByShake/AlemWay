@@ -2,8 +2,7 @@
 
 import { defineConfig } from "sanity";
 import { structureTool } from "sanity/structure";
-import { visionTool } from "@sanity/vision";
-import { apiVersion, dataset, projectId } from "./src/sanity/env";
+import { dataset, projectId } from "./src/sanity/env";
 import { schemaTypes } from "./src/sanity/schemaTypes";
 import { structure } from "./src/sanity/structure";
 import { DeleteCabinetAction, NewLinkAction, OpenCabinetFromLeadAction, RegenerateDeclarationAction } from "./src/sanity/cabinet/actions";
@@ -46,5 +45,6 @@ export default defineConfig({
       return actions;
     },
   },
-  plugins: [structureTool({ structure }), visionTool({ defaultApiVersion: apiVersion })],
+  // No "Vision" (GROQ query console): it is a developer tool and adds ~1 MB of code to the admin.
+  plugins: [structureTool({ structure })],
 });
