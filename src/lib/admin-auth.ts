@@ -2,6 +2,8 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { projectId } from "@/sanity/env";
+import { isSameOrigin } from "@/lib/http";
+import { ADMIN_COOKIE, verifySession } from "@/lib/admin/session";
 
 /**
  * Checks that the request comes from a logged-in member of our Sanity project.
@@ -39,8 +41,19 @@ export async function isProjectMember(req: NextRequest): Promise<boolean> {
   return ok;
 }
 
+/** Logged in to our own admin (/admin) by cookie. Writes must come from our pages (CSRF). */
+async function hasAdminSession(req: NextRequest) {
+  if (req.method !== "GET" && !isSameOrigin(req)) return false;
+  try {
+    return Boolean(await verifySession(req.cookies.get(ADMIN_COOKIE)?.value));
+  } catch (err) {
+    console.error("[admin-auth] session check failed", err);
+    return false;
+  }
+}
+
 export async function requireAdmin(req: NextRequest): Promise<NextResponse | null> {
-  if (await isProjectMember(req)) return null;
+  if ((await hasAdminSession(req)) || (await isProjectMember(req))) return null;
   return NextResponse.json({ ok: false, message: "Нет доступа. Войдите в админку заново." }, { status: 401 });
 }
 

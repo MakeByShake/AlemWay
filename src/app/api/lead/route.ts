@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
     Object.keys(utm).length ? `<b>UTM:</b> ${escapeHtml(Object.entries(utm).map(([k, v]) => `${k}=${v}`).join(", "))}` : "",
     "",
     `💬 <a href="https://wa.me/${phone.replace(/\D/g, "")}">Написать в WhatsApp</a>`,
-    leadId && `📋 <a href="${siteUrl()}/studio/structure/leads;all;${leadId}">Открыть в админке</a>`,
+    leadId && `📋 <a href="${siteUrl()}/admin/leads">Открыть в админке</a>`,
   ]);
 
   // If the lead reached nobody, tell the visitor so they can use WhatsApp instead.

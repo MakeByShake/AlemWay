@@ -56,13 +56,16 @@ const STEP_OF: Record<CabinetStatus, number> = {
   waiting_data: 0,
   declaration_ready: 1,
   signed_uploaded: 2,
-  zav_received: 3,
+  zav_received: 2,
   keta_applying: 1,
   keta_applied: 1,
   keta_approved: 2,
   keta_rejected: 2,
-  done: 3,
+  done: 2,
 };
+
+/** Ferienjob: the client is finished once the signed declaration is in — the team takes it from there. */
+const CLIENT_FINISHED: CabinetStatus[] = ["signed_uploaded", "zav_received", "keta_approved", "done"];
 
 /** Shrinks phone photos to a sensible JPEG so uploads stay under the size limit. */
 async function prepareFile(file: File): Promise<File> {
@@ -209,14 +212,14 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
           </button>
         </div>
 
-        <ol className={clsx("mt-8 grid gap-2", keta ? "grid-cols-3" : "grid-cols-2 sm:grid-cols-4")} aria-label={t.title}>
+        <ol className={clsx("mt-8 grid gap-2", "grid-cols-1 sm:grid-cols-3")} aria-label={t.title}>
           {steps.map((label, i) => (
             <li
               key={label}
               aria-current={i === step ? "step" : undefined}
               className={clsx(
                 "rounded-xl border px-3 py-2.5 text-[13px] font-semibold leading-tight sm:text-[14px]",
-                i < step || view.status === "done" ? "border-accent/30 bg-accent-soft text-ink" : i === step ? "border-brand bg-brand-soft text-ink" : "border-line text-muted"
+                i < step || CLIENT_FINISHED.includes(view.status) ? "border-accent/30 bg-accent-soft text-ink" : i === step ? "border-brand bg-brand-soft text-ink" : "border-line text-muted"
               )}
             >
               <span className="mr-1.5 tabular-nums">{i + 1}.</span>

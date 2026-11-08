@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
     (name || contact) && `<b>От:</b> ${escapeHtml([name, contact].filter(Boolean).join(", "))}`,
     `<b>Язык:</b> ${locale.toUpperCase()}`,
     "",
-    feedbackId && `📋 <a href="${siteUrl()}/studio/structure/feedback;${feedbackId}">Открыть в админке</a>`,
+    feedbackId && `📋 <a href="${siteUrl()}/admin/feedback">Открыть в админке</a>`,
   ]);
 
   if (!feedbackId && !sent) {

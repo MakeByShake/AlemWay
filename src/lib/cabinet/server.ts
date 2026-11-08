@@ -100,7 +100,7 @@ export async function patchCabinet(id: string, set: Record<string, unknown>, uns
   await tx.commit({ visibility: "sync" });
 }
 
-export const cabinetAdminUrl = (id: string) => `${siteUrl()}/studio/structure/cabinets;all;${id}`;
+export const cabinetAdminUrl = (id: string) => `${siteUrl()}/admin/clients/${id}`;
 
 export function displayName(cab: Cabinet) {
   const n = [cab.data?.firstName, cab.data?.lastName].filter(Boolean).join(" ");

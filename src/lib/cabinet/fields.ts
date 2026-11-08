@@ -350,7 +350,7 @@ export const CABINET_STATUSES = [
   { value: "waiting_data", title: "Ждём данные клиента" },
   { value: "declaration_ready", title: "Декларация готова — ждём подпись" },
   // Value kept for existing cabinets: the signed declaration is in, the team now waits for ZAV.
-  { value: "signed_uploaded", title: "Ждём ZAV (декларация подписана)" },
+  { value: "signed_uploaded", title: "✅ Готово — подписанная декларация получена" },
   { value: "zav_received", title: "ZAV получен — контракт есть" },
   { value: "keta_applying", title: "K-ETA: данные получены — подаём заявку" },
   { value: "keta_applied", title: "K-ETA: подано — ждём решения (до 72 ч)" },
