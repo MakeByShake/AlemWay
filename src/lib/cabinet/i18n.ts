@@ -100,6 +100,7 @@ export const CABINET_TEXT = {
     yes: "Да",
     no: "Нет",
     optional: "необязательно",
+    required: "обязательно",
   },
   kk: {
     metaTitle: "Жеке кабинет",
@@ -201,6 +202,7 @@ export const CABINET_TEXT = {
     yes: "Иә",
     no: "Жоқ",
     optional: "міндетті емес",
+    required: "міндетті",
   },
 } as const;
 

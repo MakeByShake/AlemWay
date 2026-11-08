@@ -25,6 +25,8 @@ export type CabinetField = {
   /** Latin letters only — the declaration is in English and must match the passport. */
   latin?: boolean;
   optional?: boolean;
+  /** Shown instead of «необязательно», e.g. «если нет в справке». */
+  optionalNote?: { ru: string; kk: string };
   defaultValue?: string;
   maxLength?: number;
   /** For kind "select". */
@@ -314,6 +316,9 @@ const FULL: Record<string, CabinetField> = Object.fromEntries(FERIENJOB_FULL_SEC
  * Ferienjob form for the client: only what is not in the documents. University, subject, study dates and
  * the name in Latin come from the certificate and passport — the AI «declaration department» reads them.
  */
+const NOTE_CERT = { ru: "если нет в справке", kk: "анықтамада жоқ болса" };
+const NOTE_PASSPORT = { ru: "если нет паспорта", kk: "паспорт жоқ болса" };
+
 export const CABINET_SECTIONS: CabinetSection[] = [
   {
     id: "contacts",
@@ -328,6 +333,7 @@ export const CABINET_SECTIONS: CabinetSection[] = [
         ...FULL.uniName,
         latin: false,
         optional: true,
+        optionalNote: NOTE_CERT,
         label: { ru: "Название университета", kk: "Университет атауы" },
         hint: { ru: "Можно по-русски — переведём сами.", kk: "Орысша жазуға болады — өзіміз аударамыз." },
         placeholder: "КазНУ им. аль-Фараби",
@@ -336,12 +342,13 @@ export const CABINET_SECTIONS: CabinetSection[] = [
         ...FULL.subject,
         latin: false,
         optional: true,
+        optionalNote: NOTE_CERT,
         label: { ru: "Специальность", kk: "Мамандық" },
         placeholder: "Учёт и аудит",
       },
-      { ...FULL.studyYears, optional: true },
-      { ...FULL.enrolledSince, optional: true },
-      { ...FULL.studyEnd, optional: true },
+      { ...FULL.studyYears, optional: true, optionalNote: NOTE_CERT },
+      { ...FULL.enrolledSince, optional: true, optionalNote: NOTE_CERT },
+      { ...FULL.studyEnd, optional: true, optionalNote: NOTE_CERT },
     ],
   },
   {
@@ -351,12 +358,13 @@ export const CABINET_SECTIONS: CabinetSection[] = [
       {
         ...FULL.breakFrom,
         optional: true,
+        optionalNote: NOTE_CERT,
         hint: {
           ru: "Если дат нет в справке или календаре вуза. Не знаете — оставьте пустым.",
           kk: "Егер күндер анықтамада немесе күнтізбеде жоқ болса. Білмесеңіз — бос қалдырыңыз.",
         },
       },
-      { ...FULL.breakTo, optional: true },
+      { ...FULL.breakTo, optional: true, optionalNote: NOTE_CERT },
       FULL.continueStudies,
     ],
   },
@@ -364,10 +372,10 @@ export const CABINET_SECTIONS: CabinetSection[] = [
     id: "nopassport",
     title: { ru: "Если загранпаспорта ещё нет", kk: "Шетелдік паспорт әлі жоқ болса" },
     fields: [
-      { ...FULL.firstName, optional: true, label: { ru: "Имя латиницей (как будет в паспорте)", kk: "Аты латынша (паспортта болатындай)" } },
-      { ...FULL.lastName, optional: true, label: { ru: "Фамилия латиницей (как будет в паспорте)", kk: "Тегі латынша (паспортта болатындай)" } },
-      { ...FULL.birthDate, optional: true },
-      { ...FULL.nationality, optional: true },
+      { ...FULL.firstName, optional: true, optionalNote: NOTE_PASSPORT, label: { ru: "Имя латиницей (как будет в паспорте)", kk: "Аты латынша (паспортта болатындай)" } },
+      { ...FULL.lastName, optional: true, optionalNote: NOTE_PASSPORT, label: { ru: "Фамилия латиницей (как будет в паспорте)", kk: "Тегі латынша (паспортта болатындай)" } },
+      { ...FULL.birthDate, optional: true, optionalNote: NOTE_PASSPORT },
+      { ...FULL.nationality, optional: true, optionalNote: NOTE_PASSPORT },
     ],
   },
 ];

@@ -379,7 +379,9 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
                     label={
                       FILE_LABELS[kind][locale].replace(/ \((необязательно|міндетті емес)\)$/, "") +
                       (SERVICE_FILES[view.service].requiredBeforeSubmit.includes(kind)
-                        ? ""
+                        ? keta
+                          ? ""
+                          : ` (${t.required})`
                         : ` (${kind === "passport" && !keta ? t.passportSuffix : t.optional})`)
                     }
                     hint={kind === "photo" ? t.ketaPhotoHint : kind === "calendar" ? t.calendarHint : kind === "passport" && !keta ? t.passportLater : undefined}
@@ -613,7 +615,7 @@ function Field({
       ) : (
         <>
           <label htmlFor={id} className="mb-1.5 block text-[14px] font-semibold">
-            {f.label[locale]} {f.optional && <span className="font-normal text-muted">({t.optional})</span>}
+            {f.label[locale]} {f.optional && <span className="font-normal text-muted">({f.optionalNote?.[locale] ?? t.optional})</span>}
           </label>
           <input
             id={id}
