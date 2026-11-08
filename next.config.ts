@@ -51,7 +51,14 @@ const nextConfig: NextConfig = {
   },
   // The admin lives at /studio (no language prefix). Typing /ru/studio or /kk/studio still opens it.
   async redirects() {
-    return [{ source: "/:locale(ru|kk)/studio/:path*", destination: "/studio/:path*", permanent: false }];
+    // Old addresses (www, *.vercel.app production URL) → main domain alemway.kz.
+    const toMain = ["www.alemway.kz", "alem-way.vercel.app"].map((host) => ({
+      source: "/:path*",
+      has: [{ type: "host" as const, value: host }],
+      destination: "https://alemway.kz/:path*",
+      permanent: true,
+    }));
+    return [...toMain, { source: "/:locale(ru|kk)/studio/:path*", destination: "/studio/:path*", permanent: false }];
   },
   // Classic ISR model: pages are static and refreshed by the Sanity webhook.
   cacheComponents: false,
