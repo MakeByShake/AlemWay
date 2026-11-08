@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCabinetFull, cabinetName, getManagerOptions } from "@/lib/admin/data";
 import { requireAdminUser } from "@/lib/admin/session";
-import { CABINET_STATUSES, FILE_LABELS, SERVICE_FILES, SERVICE_TITLES, sectionsFor, serviceOf, type CabinetField } from "@/lib/cabinet/fields";
+import { CABINET_STATUSES, FERIENJOB_FULL_SECTIONS, FILE_LABELS, KETA_SECTIONS, SERVICE_FILES, SERVICE_TITLES, serviceOf, type CabinetField } from "@/lib/cabinet/fields";
 import { declarationAction, deleteCabinetAction, deletePaymentAction, newLinkAction, paymentStatusAction, setPriceAction, updateCabinetAction } from "../../../actions";
 import { PAYMENT_METHODS, PAYMENT_STATUS_TITLES, formatTenge, paymentTotals } from "@/lib/cabinet/payments";
 import { Badge, PageTitle, Progress, fmtDate, waLink } from "@/components/admin/bits";
@@ -82,7 +82,10 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
         ← Все клиенты
       </Link>
       <PageTitle title={name}>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <a href={`/api/admin/cabinet/zip?id=${encodeURIComponent(id)}`} className="btn-ghost min-h-10 px-4 text-[14px]">
+            ⬇ Скачать всё (ZIP)
+          </a>
           {wa && (
             <a href={wa} target="_blank" rel="noopener noreferrer" className="btn-whatsapp min-h-10 px-4 text-[14px]">
               WhatsApp
@@ -386,7 +389,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
         <h2 className="text-[18px] font-bold">Анкета клиента</h2>
         <p className="mt-1 text-[14px] text-muted">{cab.submittedAt ? `Отправлена ${fmtDate(cab.submittedAt)}` : "Клиент ещё не отправил анкету"}</p>
         <div className="mt-4 grid gap-6 lg:grid-cols-2">
-          {sectionsFor(service).map((sec) => (
+          {(keta ? KETA_SECTIONS : FERIENJOB_FULL_SECTIONS).map((sec) => (
             <div key={sec.id}>
               <h3 className="mb-2 text-[15px] font-bold text-brand">{sec.title.ru}</h3>
               <dl className="divide-y divide-line text-[14px]">
