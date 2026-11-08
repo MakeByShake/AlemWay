@@ -7,6 +7,7 @@ import { siteUrl } from "@/lib/i18n-content";
 import type { CabinetData, CabinetStatus, FileKind, ServiceId } from "./fields";
 
 export const CABINET_COOKIE = "aw_cabinet";
+export { CABINET_SUPPORT_WHATSAPP } from "./fields";
 export const CABINET_COOKIE_MAX_AGE = 60 * 60 * 24 * 180; // 180 days
 
 export type StoredFile = { path: string; name: string; contentType: string; size: number; uploadedAt: string };
@@ -31,10 +32,12 @@ export type Cabinet = {
   workFrom?: string;
   workTo?: string;
   clientMessage?: string;
+  manager?: string;
+  managerName?: string;
 };
 
 const PROJECTION = `{_id, _rev, service, status, clientName, clientPhone, data, files, declarationDate, submittedAt, signedAt,
-  zavReceivedAt, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil}`;
+  zavReceivedAt, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil, manager, managerName}`;
 
 export function writeClient(): SanityClient {
   const c = getWriteClient();
@@ -101,6 +104,9 @@ export async function patchCabinet(id: string, set: Record<string, unknown>, uns
 }
 
 export const cabinetAdminUrl = (id: string) => `${siteUrl()}/admin/clients/${id}`;
+
+/** «Менеджер: …» line for Telegram messages about a client. */
+export const managerLine = (cab: Pick<Cabinet, "managerName">) => `<b>Менеджер:</b> ${cab.managerName ? cab.managerName.replace(/[<>&]/g, "") : "не назначен"}`;
 
 export function displayName(cab: Cabinet) {
   const n = [cab.data?.firstName, cab.data?.lastName].filter(Boolean).join(" ");

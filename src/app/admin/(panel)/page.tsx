@@ -7,8 +7,9 @@ export const metadata = { title: "Главная" };
 
 export default async function AdminHome() {
   const me = await requireAdminUser();
-  const d = await getDashboard();
+  const d = await getDashboard(me.login);
   const cards = [
+    { label: "Мои клиенты", value: d.myClients, href: `/admin/clients?manager=${me.login}` },
     { label: "Новые заявки", value: d.newLeads, href: "/admin/leads?status=new", hot: d.newLeads > 0 },
     { label: "Заявок за 7 дней", value: d.leadsWeek, href: "/admin/leads" },
     { label: "Клиенты в работе", value: d.activeClients, href: "/admin/clients" },
@@ -18,7 +19,7 @@ export default async function AdminHome() {
   return (
     <>
       <PageTitle title={`Здравствуйте, ${me.name}!`} />
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         {cards.map((c) => (
           <a key={c.label} href={c.href} className={`card p-4 transition-colors hover:border-brand ${c.hot ? "border-brand" : ""}`}>
             <p className="text-[13px] text-muted">{c.label}</p>

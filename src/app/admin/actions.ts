@@ -95,8 +95,17 @@ export async function deleteLeadAction(fd: FormData) {
 
 // ---------- Cabinets (clients) ----------
 
+/** Owner picks the manager; a manager's own new clients are assigned to them. "" = nobody. */
+async function managerFor(me: { login: string; name: string; role: string }, picked: string | null) {
+  if (me.role !== "owner") return { login: me.login, name: me.name };
+  if (picked === null) return { login: me.login, name: me.name };
+  if (!picked) return null;
+  const u = await getAdminUserByLogin(picked);
+  return u ? { login: u.login, name: u.name } : null;
+}
+
 export async function createCabinetAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  await requireAdminUser();
+  const me = await requireAdminUser();
   try {
     const leadId = s(fd, "leadId", 100);
     const service = s(fd, "service", 20);
@@ -105,6 +114,7 @@ export async function createCabinetAction(_prev: ActionState, fd: FormData): Pro
       clientPhone: s(fd, "clientPhone", 30),
       service: service || undefined,
       leadId,
+      manager: await managerFor(me, fd.has("manager") ? s(fd, "manager", 40) : null),
     });
     if (leadId) await patchDoc(leadId, { status: "paid" }).catch(() => {});
     revalidatePath("/admin", "layout");
@@ -115,7 +125,7 @@ export async function createCabinetAction(_prev: ActionState, fd: FormData): Pro
 }
 
 export async function updateCabinetAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  await requireAdminUser();
+  const me = await requireAdminUser();
   const id = s(fd, "id", 100);
   if (!id.startsWith("cabinets.")) return { error: "Некорректный кабинет" };
   const cab = await getCabinet(id);
@@ -127,6 +137,12 @@ export async function updateCabinetAction(_prev: ActionState, fd: FormData): Pro
   if (CABINET_STATUSES.some((x) => x.value === status)) set.status = status;
   for (const key of ["clientName", "clientPhone", "managerNote", "employerName", "workCity", "workPosition", "clientMessage"]) {
     if (fd.has(key)) set[key] = s(fd, key, key === "clientMessage" || key === "managerNote" ? 3000 : 200);
+  }
+  // Only the owner assigns managers.
+  if (fd.has("manager") && me.role === "owner") {
+    const m = await managerFor(me, s(fd, "manager", 40));
+    if (m) Object.assign(set, { manager: m.login, managerName: m.name });
+    else unset.push("manager", "managerName");
   }
   for (const key of ["workFrom", "workTo", "ketaValidUntil"]) {
     if (!fd.has(key)) continue;

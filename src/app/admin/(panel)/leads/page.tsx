@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getLeads, LEAD_STATUSES } from "@/lib/admin/data";
+import { getLeads, getManagerOptions, LEAD_STATUSES } from "@/lib/admin/data";
+import { requireAdminUser } from "@/lib/admin/session";
 import { createCabinetAction, deleteLeadAction, updateLeadAction } from "../../actions";
 import { Empty, FilterTabs, PageTitle, fmtDate, waLink } from "@/components/admin/bits";
 import { ActionForm, AutoSelect, ConfirmForm, NoteForm, SubmitButton } from "@/components/admin/ui";
@@ -9,7 +10,7 @@ export const metadata = { title: "Заявки" };
 export default async function LeadsPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
   const { status } = await searchParams;
   const valid = LEAD_STATUSES.some((s) => s.value === status) ? status : undefined;
-  const leads = await getLeads(valid);
+  const [leads, me, managers] = await Promise.all([getLeads(valid), requireAdminUser(), getManagerOptions()]);
 
   return (
     <>
@@ -59,6 +60,16 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                       <input type="hidden" name="leadId" value={l._id} />
                       <input type="hidden" name="clientName" value={l.name ?? ""} />
                       <input type="hidden" name="clientPhone" value={l.phone ?? ""} />
+                      {me.role === "owner" && (
+                        <select name="manager" defaultValue={me.login} aria-label="Менеджер" className="rounded-lg border border-line bg-white px-2.5 py-1.5 text-[13px]">
+                          <option value="">Менеджер: не назначен</option>
+                          {managers.map((m) => (
+                            <option key={m.login} value={m.login}>
+                              Менеджер: {m.name}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                       <SubmitButton className="btn-primary min-h-9 px-3 text-[13px]" pendingText="Создаём…">
                         Клиент оплатил → создать кабинет
                       </SubmitButton>

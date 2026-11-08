@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isSameOrigin } from "@/lib/http";
 import { SERVICE_FILES, UPLOAD_KINDS, serviceOf, type UploadKind } from "@/lib/cabinet/fields";
-import { cabinetAdminUrl, currentCabinet, displayName, patchCabinet } from "@/lib/cabinet/server";
+import { cabinetAdminUrl, managerLine, currentCabinet, displayName, patchCabinet } from "@/lib/cabinet/server";
 import { readUpload, storeCabinetFile } from "@/lib/cabinet/uploads";
 import { escapeHtml, sendTelegram } from "@/lib/telegram";
 
@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
       "<b>✅ Клиент закончил: подписанная декларация загружена</b>",
       "",
       `<b>Клиент:</b> ${escapeHtml(displayName(cab))}`,
+      managerLine(cab),
       "Деканат поставил подпись и печать. Со стороны клиента всё готово — можно передавать документы работодателю.",
       "",
       `📋 <a href="${cabinetAdminUrl(cab._id)}">Открыть кабинет в админке</a>`,

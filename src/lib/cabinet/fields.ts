@@ -4,6 +4,9 @@
  * for Ferienjob, the ZAV declaration PDF. Shared by client and server code — no server-only imports.
  */
 
+/** WhatsApp for clients' questions from the personal cabinet. */
+export const CABINET_SUPPORT_WHATSAPP = "77775882949";
+
 export type ServiceId = "ferienjob" | "keta";
 export const SERVICE_IDS: ServiceId[] = ["ferienjob", "keta"];
 export const serviceOf = (v: string | undefined | null): ServiceId => (v === "keta" ? "keta" : "ferienjob");

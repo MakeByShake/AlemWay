@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
-import { currentCabinet, displayName } from "@/lib/cabinet/server";
+import { CABINET_SUPPORT_WHATSAPP, currentCabinet, displayName } from "@/lib/cabinet/server";
 import { CABINET_TEXT, cabinetLocale } from "@/lib/cabinet/i18n";
 import { FILE_KINDS, serviceOf } from "@/lib/cabinet/fields";
 import { CabinetApp, type CabinetView } from "@/components/cabinet/CabinetApp";
@@ -26,7 +26,7 @@ export default async function CabinetPage({ params }: { params: Promise<{ locale
         <div className="card mx-auto max-w-lg p-8 text-center">
           <h1 className="h-section">{t.invalidTitle}</h1>
           <p className="mt-4 text-[17px] leading-relaxed text-muted">{t.invalidText}</p>
-          <WhatsAppLink href={whatsappLink(undefined)} place="cabinet_invalid" className="btn-whatsapp mt-8">
+          <WhatsAppLink href={whatsappLink(CABINET_SUPPORT_WHATSAPP, t.helpMessage)} place="cabinet_invalid" className="btn-whatsapp mt-8">
             <WhatsAppIcon /> {t.writeManager}
           </WhatsAppLink>
         </div>
@@ -61,6 +61,23 @@ export default async function CabinetPage({ params }: { params: Promise<{ locale
     },
   };
 
-  return <CabinetApp key={JSON.stringify(view.files) + view.status} view={view} locale={cabinetLocale(locale)} />;
+  return (
+    <>
+      <CabinetApp key={JSON.stringify(view.files) + view.status} view={view} locale={cabinetLocale(locale)} />
+      <section className="container-x pb-16">
+        <div className="card mx-auto flex max-w-3xl flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[18px] font-bold">{t.helpTitle}</p>
+            <p className="mt-1 text-[15px] text-muted">
+              {t.helpText} <span className="whitespace-nowrap font-semibold text-ink">+7 777 588 29 49</span>
+            </p>
+          </div>
+          <WhatsAppLink href={whatsappLink(CABINET_SUPPORT_WHATSAPP, t.helpMessage)} place="cabinet_help" className="btn-whatsapp shrink-0">
+            <WhatsAppIcon /> {t.helpButton}
+          </WhatsAppLink>
+        </div>
+      </section>
+    </>
+  );
 }
 

@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { adminError, requireAdmin } from "@/lib/admin-auth";
 import { MANAGER_UPLOAD_KINDS, SERVICE_FILES, serviceOf, type CabinetStatus, type ManagerUploadKind } from "@/lib/cabinet/fields";
-import { cabinetAdminUrl, displayName, getCabinet, patchCabinet } from "@/lib/cabinet/server";
+import { cabinetAdminUrl, managerLine, displayName, getCabinet, patchCabinet } from "@/lib/cabinet/server";
 import { readUpload, storeCabinetFile } from "@/lib/cabinet/uploads";
 import { escapeHtml, sendTelegram } from "@/lib/telegram";
 
@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
       "<b>🎉 ZAV загружен — контракт есть</b>",
       "",
       `<b>Клиент:</b> ${escapeHtml(displayName(cab))}`,
+      managerLine(cab),
       "Клиент увидит ZAV и данные о работе в своём кабинете.",
       "",
       `📋 <a href="${cabinetAdminUrl(id)}">Открыть кабинет в админке</a>`,
@@ -68,6 +69,7 @@ export async function POST(req: NextRequest) {
       "<b>🇰🇷 K-ETA одобрен</b>",
       "",
       `<b>Клиент:</b> ${escapeHtml(displayName(cab))}`,
+      managerLine(cab),
       "Клиент увидит одобрение и сможет скачать его в кабинете.",
       "",
       `📋 <a href="${cabinetAdminUrl(id)}">Открыть кабинет в админке</a>`,

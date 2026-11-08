@@ -15,7 +15,7 @@ export class AdminOpError extends Error {
 }
 
 /** Creates a cabinet (optionally from a lead) and returns the client's login link (shown once). */
-export async function createCabinet(input: { clientName: string; clientPhone: string; service?: string; leadId?: string }) {
+export async function createCabinet(input: { clientName: string; clientPhone: string; service?: string; leadId?: string; manager?: { login: string; name: string } | null }) {
   const clientName = input.clientName.trim().slice(0, 80);
   const clientPhone = input.clientPhone.trim().slice(0, 30);
   const leadId = (input.leadId ?? "").trim().replace(/^drafts\./, "");
@@ -41,6 +41,7 @@ export async function createCabinet(input: { clientName: string; clientPhone: st
     status: "waiting_data",
     clientName,
     clientPhone,
+    ...(input.manager ? { manager: input.manager.login, managerName: input.manager.name } : {}),
     tokenHash: hash,
     linkCreatedAt: new Date().toISOString(),
     ...(leadId ? { lead: { _type: "reference", _ref: leadId, _weak: true } } : {}),

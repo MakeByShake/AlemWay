@@ -51,6 +51,8 @@ export const cabinet = defineType({
     defineField({ name: "clientName", title: "Имя клиента (для менеджера)", type: "string", group: "main" }),
     defineField({ name: "clientPhone", title: "Телефон клиента", type: "string", group: "main" }),
     defineField({ name: "managerNote", title: "Заметка менеджера", type: "text", rows: 3, group: "main" }),
+    defineField({ name: "managerName", title: "Менеджер клиента", type: "string", group: "main", readOnly: true, description: "Назначает владелец в админке alemway.kz/admin." }),
+    defineField({ name: "manager", title: "Логин менеджера", type: "string", hidden: true, readOnly: true }),
     defineField({
       name: "linkCreatedAt",
       title: "Ссылка для входа создана",

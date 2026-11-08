@@ -56,6 +56,7 @@ export type CabinetRow = {
   clientPhone?: string;
   firstName?: string;
   lastName?: string;
+  managerName?: string;
 };
 
 export type CabinetFull = Cabinet & { _createdAt: string; managerNote?: string; linkCreatedAt?: string; leadId?: string };
@@ -81,17 +82,18 @@ export function getFeedback(status?: string) {
   );
 }
 
-export function getCabinets(filter: { service?: string; status?: string; q?: string }) {
+export function getCabinets(filter: { service?: string; status?: string; q?: string; manager?: string }) {
   const q = filter.q?.trim() ? `*${filter.q.trim().replace(/[*"\\]/g, "")}*` : null;
   return writeClient().fetch<CabinetRow[]>(
     `*[_type == "cabinet" && ${notDraft}
        && (!defined($service) || coalesce(service, "ferienjob") == $service)
        && (!defined($status) || coalesce(status, "waiting_data") == $status)
+       && (!defined($manager) || ($manager == "-" && !defined(manager)) || manager == $manager)
        && (!defined($q) || clientName match $q || clientPhone match $q || data.firstName match $q || data.lastName match $q)
      ] | order(_createdAt desc)[0...300]{
-      _id, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName
+      _id, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName, managerName
     }`,
-    { service: filter.service || null, status: filter.status || null, q }
+    { service: filter.service || null, status: filter.status || null, q, manager: filter.manager || null }
   );
 }
 
@@ -102,13 +104,14 @@ export function getCabinetFull(id: string) {
   );
 }
 
-export function getDashboard() {
+export function getDashboard(login: string) {
   return writeClient().fetch<{
     newLeads: number;
     leadsWeek: number;
     activeClients: number;
     waitingAction: number;
     newFeedback: number;
+    myClients: number;
     latestLeads: Lead[];
     actionClients: CabinetRow[];
   }>(
@@ -117,6 +120,7 @@ export function getDashboard() {
       "leadsWeek": count(*[_type == "lead" && ${notDraft} && dateTime(_createdAt) > dateTime(now()) - 60*60*24*7]),
       "activeClients": count(*[_type == "cabinet" && ${notDraft} && !(status in ["done", "keta_rejected"])]),
       "waitingAction": count(*[_type == "cabinet" && ${notDraft} && status in ["signed_uploaded", "keta_applying"]]),
+      "myClients": count(*[_type == "cabinet" && ${notDraft} && manager == $login && !(status in ["done", "keta_rejected"])]),
       "newFeedback": count(*[_type == "feedback" && ${notDraft} && coalesce(status, "new") == "new"]),
       "latestLeads": *[_type == "lead" && ${notDraft}] | order(coalesce(createdAt, _createdAt) desc)[0...5]{
         _id, status, name, phone, serviceTitle, "createdAt": coalesce(createdAt, _createdAt)
@@ -124,8 +128,14 @@ export function getDashboard() {
       "actionClients": *[_type == "cabinet" && ${notDraft} && status in ["signed_uploaded", "keta_applying"]] | order(_updatedAt desc)[0...8]{
         _id, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName
       }
-    }`
+    }`,
+    { login }
   );
+}
+
+/** Logins and names for the «Менеджер» pickers. */
+export function getManagerOptions() {
+  return writeClient().fetch<{ login: string; name: string }[]>(`*[_type == "adminUser"] | order(name asc){login, name}`);
 }
 
 export function getAdminUsers() {

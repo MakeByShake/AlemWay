@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCabinetFull, cabinetName } from "@/lib/admin/data";
+import { getCabinetFull, cabinetName, getManagerOptions } from "@/lib/admin/data";
+import { requireAdminUser } from "@/lib/admin/session";
 import { CABINET_STATUSES, FILE_LABELS, SERVICE_FILES, SERVICE_TITLES, sectionsFor, serviceOf, type CabinetField } from "@/lib/cabinet/fields";
 import { declarationAction, deleteCabinetAction, newLinkAction, updateCabinetAction } from "../../../actions";
 import { Badge, PageTitle, Progress, fmtDate, waLink } from "@/components/admin/bits";
@@ -37,7 +38,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
   const { id: raw } = await params;
   const id = decodeURIComponent(raw);
   if (!/^cabinets\.[\w-]+$/.test(id)) notFound();
-  const cab = await getCabinetFull(id);
+  const [cab, me, managers] = await Promise.all([getCabinetFull(id), requireAdminUser(), getManagerOptions()]);
   if (!cab) notFound();
 
   const service = serviceOf(cab.service);
@@ -63,6 +64,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
       <div className="-mt-3 mb-6 flex flex-wrap items-center gap-3 text-[14px] text-muted">
         <Badge tone="blue">{SERVICE_TITLES[service].ru}</Badge>
         <Progress service={service} status={cab.status} />
+        <Badge tone={cab.managerName ? "gray" : "amber"}>👤 {cab.managerName || "Без менеджера"}</Badge>
         <span>создан {fmtDate(cab._createdAt)}</span>
       </div>
 
@@ -80,6 +82,23 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
                 ))}
               </select>
             </label>
+            {me.role === "owner" ? (
+              <label className="grid gap-1 text-[14px] font-medium">
+                Менеджер клиента
+                <select name="manager" defaultValue={cab.manager ?? ""} className={input}>
+                  <option value="">— не назначен —</option>
+                  {managers.map((m) => (
+                    <option key={m.login} value={m.login}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <p className="text-[14px]">
+                Менеджер клиента: <b>{cab.managerName || "не назначен"}</b>
+              </p>
+            )}
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="grid gap-1 text-[14px] font-medium">
                 Имя (для нас)

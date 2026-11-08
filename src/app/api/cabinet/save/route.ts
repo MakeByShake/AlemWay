@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isSameOrigin, readJsonObject } from "@/lib/http";
 import { SERVICE_FILES, sanitizeCabinetData, serviceOf, validateCabinetData } from "@/lib/cabinet/fields";
-import { cabinetAdminUrl, currentCabinet, displayName, getCabinet, patchCabinet } from "@/lib/cabinet/server";
+import { cabinetAdminUrl, managerLine, currentCabinet, displayName, getCabinet, patchCabinet } from "@/lib/cabinet/server";
 import { generateDeclaration } from "@/lib/cabinet/declaration";
 import { escapeHtml, sendTelegram } from "@/lib/telegram";
 
@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
       "<b>🇰🇷 Анкета K-ETA заполнена — можно подавать</b>",
       "",
       `<b>Клиент:</b> ${escapeHtml(displayName({ ...cab, data }))}`,
+      managerLine(cab),
       data.phone && `<b>Телефон:</b> ${escapeHtml(data.phone)}`,
       data.arrivalDate && `<b>Въезд:</b> ${escapeHtml(data.arrivalDate)} · <b>цель:</b> ${escapeHtml(PURPOSE_RU[data.purpose ?? ""] ?? "—")}`,
       "Подайте заявку на k-eta.go.kr и поставьте статус «K-ETA: подано».",
@@ -79,6 +80,7 @@ export async function POST(req: NextRequest) {
     "<b>📝 Анкета Ferienjob заполнена — декларация готова</b>",
     "",
     `<b>Клиент:</b> ${escapeHtml(displayName(fresh))}`,
+    managerLine(fresh),
     data.phone && `<b>Телефон:</b> ${escapeHtml(data.phone)}`,
     data.uniName && `<b>Вуз:</b> ${escapeHtml(data.uniName)}`,
     "Клиенту осталось подписать декларацию в деканате и загрузить скан.",
