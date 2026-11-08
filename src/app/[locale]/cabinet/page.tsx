@@ -5,6 +5,7 @@ import { CABINET_TEXT, cabinetLocale } from "@/lib/cabinet/i18n";
 import { FILE_KINDS, serviceOf } from "@/lib/cabinet/fields";
 import { CabinetApp, type CabinetView } from "@/components/cabinet/CabinetApp";
 import { CabinetPayment } from "@/components/cabinet/CabinetPayment";
+import { CabinetChat } from "@/components/cabinet/CabinetChat";
 import { paymentTotals } from "@/lib/cabinet/payments";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsAppLink";
 import { whatsappLink } from "@/lib/i18n-content";
@@ -67,6 +68,7 @@ export default async function CabinetPage({ params }: { params: Promise<{ locale
   return (
     <>
       <CabinetApp key={JSON.stringify(view.files) + view.status} view={view} locale={cabinetLocale(locale)} />
+      {view.service === "ferienjob" && <CabinetChat locale={cabinetLocale(locale)} />}
       <CabinetPayment
         locale={cabinetLocale(locale)}
         view={{

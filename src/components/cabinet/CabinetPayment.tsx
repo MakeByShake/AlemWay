@@ -1,9 +1,5 @@
-"use client";
-
-import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import clsx from "clsx";
-import { CheckCircle2, Loader2, Upload } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { KASPI_PAY_URL, formatTenge } from "@/lib/cabinet/payments";
 
 type Item = { amount: number; status: "pending" | "confirmed" | "rejected"; paidAt?: string };
@@ -18,6 +14,7 @@ const TEXT = {
     noPrice: "Сумму к оплате сообщит менеджер.",
     allPaid: "Оплачено полностью. Спасибо!",
     pay: "Оплатить через Kaspi",
+    afterPay: "После оплаты отправьте чек менеджеру в WhatsApp — он отметит оплату.",
     attach: "Прикрепить чек",
     amount: "Сумма в чеке, ₸",
     file: "Чек (фото или PDF из Kaspi)",
@@ -43,6 +40,7 @@ const TEXT = {
     noPrice: "Төлем сомасын менеджер хабарлайды.",
     allPaid: "Толық төленді. Рақмет!",
     pay: "Kaspi арқылы төлеу",
+    afterPay: "Төлегеннен кейін чекті WhatsApp-та менеджерге жіберіңіз — ол төлемді белгілейді.",
     attach: "Чекті тіркеу",
     amount: "Чектегі сома, ₸",
     file: "Чек (фото немесе Kaspi PDF)",
@@ -64,11 +62,6 @@ const TEXT = {
 
 export function CabinetPayment({ view, locale }: { view: PaymentView; locale: "ru" | "kk" }) {
   const t = TEXT[locale];
-  const router = useRouter();
-  const form = useRef<HTMLFormElement>(null);
-  const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const done = view.hasPrice && view.remaining === 0;
 
   return (
@@ -103,52 +96,10 @@ export function CabinetPayment({ view, locale }: { view: PaymentView; locale: "r
             <a href={KASPI_PAY_URL} target="_blank" rel="noopener noreferrer" className="btn-primary bg-[#f14635] hover:bg-[#d93a2a]">
               {t.pay}
             </a>
-            <button type="button" onClick={() => setOpen((v) => !v)} className="btn-ghost">
-              <Upload className="h-4 w-4" /> {t.attach}
-            </button>
+            <p className="w-full text-[14px] text-muted">{t.afterPay}</p>
           </div>
         )}
 
-        {open && !done && (
-          <form
-            ref={form}
-            className="mt-4 grid gap-3 rounded-xl border border-line p-4 sm:grid-cols-2"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              setBusy(true);
-              setMsg(null);
-              try {
-                const res = await fetch("/api/cabinet/payment", { method: "POST", body: new FormData(e.currentTarget) });
-                const j = (await res.json().catch(() => ({}))) as { error?: string };
-                if (!res.ok) throw new Error(t.errors[j.error ?? ""] ?? t.errors.default);
-                form.current?.reset();
-                setOpen(false);
-                setMsg({ ok: true, text: t.sent });
-                router.refresh();
-              } catch (err) {
-                setMsg({ ok: false, text: err instanceof Error ? err.message : t.errors.default });
-              } finally {
-                setBusy(false);
-              }
-            }}
-          >
-            <label className="grid gap-1 text-[14px] font-medium">
-              {t.amount}
-              <input name="amount" inputMode="numeric" required defaultValue={view.remaining || ""} className="field" />
-            </label>
-            <label className="grid gap-1 text-[14px] font-medium">
-              {t.file}
-              <input name="file" type="file" required accept="application/pdf,image/jpeg,image/png" className="text-[14px]" />
-            </label>
-            <div className="sm:col-span-2">
-              <button type="submit" disabled={busy} className="btn-primary disabled:opacity-60">
-                {busy && <Loader2 className="h-4 w-4 animate-spin" />} {busy ? t.sending : t.send}
-              </button>
-            </div>
-          </form>
-        )}
-
-        {msg && <p className={clsx("mt-4 rounded-xl px-4 py-3 text-[15px]", msg.ok ? "bg-accent-soft" : "bg-warn-soft text-warn")}>{msg.text}</p>}
 
         {view.items.length > 0 && (
           <div className="mt-5">
