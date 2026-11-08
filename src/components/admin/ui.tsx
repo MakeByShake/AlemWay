@@ -1,17 +1,39 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useRef, useState, type ReactNode } from "react";
+import { createContext, useActionState, useContext, useEffect, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { Check, Copy, Loader2, Upload } from "lucide-react";
 import type { ActionState } from "@/app/admin/actions";
 
-/** Small client pieces of the admin: buttons with pending state, auto-saving selects, confirm, copy, upload. */
+/**
+ * Small client pieces of the admin: buttons with pending state, auto-saving selects, confirm, copy, upload.
+ * Forms here submit through onSubmit + a transition instead of the `action` prop: React resets forms
+ * after an `action`, and that snapped <select>s back to their first option (looked like «не назначен»).
+ */
+
+const PendingCtx = createContext<boolean | null>(null);
+
+/** Submit handler that runs `run(formData)` in a transition without resetting the form. */
+function useSubmit(run: (fd: FormData) => Promise<unknown> | void) {
+  const [pending, startTransition] = useTransition();
+  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const native = e.nativeEvent as SubmitEvent;
+    const fd = new FormData(e.currentTarget, native.submitter ?? undefined);
+    startTransition(async () => {
+      await run(fd);
+    });
+  };
+  return { pending, onSubmit };
+}
 
 export function SubmitButton({ children, className, pendingText }: { children: ReactNode; className?: string; pendingText?: string }) {
-  const { pending } = useFormStatus();
+  const ctx = useContext(PendingCtx);
+  const status = useFormStatus();
+  const pending = ctx ?? status.pending;
   return (
     <button type="submit" disabled={pending} className={clsx(className ?? "btn-primary", "disabled:opacity-60")}>
       {pending && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -37,19 +59,9 @@ export function AutoSelect({
   className?: string;
 }) {
   const ref = useRef<HTMLFormElement>(null);
-  const [busy, setBusy] = useState(false);
+  const { pending: busy, onSubmit } = useSubmit(action);
   return (
-    <form
-      ref={ref}
-      action={async (fd) => {
-        setBusy(true);
-        try {
-          await action(fd);
-        } finally {
-          setBusy(false);
-        }
-      }}
-    >
+    <form ref={ref} onSubmit={onSubmit}>
       {Object.entries(hidden).map(([k, v]) => (
         <input key={k} type="hidden" name={k} value={v} />
       ))}
@@ -85,17 +97,20 @@ export function ConfirmForm({
   children: ReactNode;
   className?: string;
 }) {
+  const { pending, onSubmit } = useSubmit(action);
   return (
     <form
-      action={action}
       onSubmit={(e) => {
-        if (!window.confirm(confirmText)) e.preventDefault();
+        if (!window.confirm(confirmText)) return e.preventDefault();
+        onSubmit(e);
       }}
     >
       {Object.entries(hidden).map(([k, v]) => (
         <input key={k} type="hidden" name={k} value={v} />
       ))}
-      <SubmitButton className={className ?? "text-[14px] font-medium text-red-600 hover:underline"}>{children}</SubmitButton>
+      <PendingCtx.Provider value={pending}>
+        <SubmitButton className={className ?? "text-[14px] font-medium text-red-600 hover:underline"}>{children}</SubmitButton>
+      </PendingCtx.Provider>
     </form>
   );
 }
@@ -103,15 +118,13 @@ export function ConfirmForm({
 /** Note field that saves on button press. */
 export function NoteForm({ action, id, value, placeholder }: { action: (fd: FormData) => Promise<void>; id: string; value?: string; placeholder?: string }) {
   const [saved, setSaved] = useState(false);
+  const { pending, onSubmit } = useSubmit(async (fd) => {
+    await action(fd);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  });
   return (
-    <form
-      action={async (fd) => {
-        await action(fd);
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
-      }}
-      className="flex items-start gap-2"
-    >
+    <form onSubmit={onSubmit} className="flex items-start gap-2">
       <input type="hidden" name="id" value={id} />
       <textarea
         name="managerNote"
@@ -120,7 +133,9 @@ export function NoteForm({ action, id, value, placeholder }: { action: (fd: Form
         placeholder={placeholder ?? "Заметка менеджера…"}
         className="min-h-9 flex-1 resize-y rounded-lg border border-line bg-white px-3 py-1.5 text-[14px]"
       />
-      <SubmitButton className="btn-ghost min-h-9 px-3 text-[13px]">{saved ? <Check className="h-4 w-4 text-accent" /> : "Сохранить"}</SubmitButton>
+      <PendingCtx.Provider value={pending}>
+        <SubmitButton className="btn-ghost min-h-9 px-3 text-[13px]">{saved ? <Check className="h-4 w-4 text-accent" /> : "Сохранить"}</SubmitButton>
+      </PendingCtx.Provider>
     </form>
   );
 }
@@ -180,19 +195,25 @@ export function ActionForm({
   phone?: string;
   resetOnSuccess?: boolean;
 }) {
-  const [state, formAction] = useActionState(action, null);
+  const [state, formAction, pending] = useActionState(action, null);
+  const [, startTransition] = useTransition();
   const ref = useRef<HTMLFormElement>(null);
+  // Clear the inputs after a successful «add» form (only where asked); edit forms keep their values.
+  useEffect(() => {
+    if (resetOnSuccess && state?.ok) ref.current?.reset();
+  }, [state, resetOnSuccess]);
   return (
     <div>
       <form
         ref={ref}
-        action={async (fd) => {
-          await formAction(fd);
-          if (resetOnSuccess) ref.current?.reset();
+        onSubmit={(e) => {
+          e.preventDefault();
+          const fd = new FormData(e.currentTarget, (e.nativeEvent as SubmitEvent).submitter ?? undefined);
+          startTransition(() => formAction(fd));
         }}
         className={className}
       >
-        {children}
+        <PendingCtx.Provider value={pending}>{children}</PendingCtx.Provider>
       </form>
       {state?.error && <p className="mt-3 rounded-lg bg-warn-soft px-3 py-2 text-[14px] text-warn">{state.error}</p>}
       {state?.message && <p className="mt-3 rounded-lg bg-accent-soft px-3 py-2 text-[14px]">{state.message}</p>}
