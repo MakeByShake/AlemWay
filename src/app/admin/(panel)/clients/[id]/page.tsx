@@ -9,6 +9,8 @@ import { Badge, PageTitle, Progress, fmtDate, waLink } from "@/components/admin/
 import { ActionForm, AddPaymentForm, ConfirmForm, FileUpload, QuickButton, SubmitButton } from "@/components/admin/ui";
 
 export const metadata = { title: "Клиент" };
+// «Проверить ИИ заново» waits for the AI (up to a couple of minutes).
+export const maxDuration = 300;
 
 const STATUSES_FOR = {
   ferienjob: ["waiting_data", "declaration_ready", "signed_uploaded", "zav_received", "done"],
@@ -34,6 +36,30 @@ function Section({ title, children, hint }: { title: string; children: React.Rea
 }
 
 const input = "field py-2 text-[15px]";
+
+const PDF_FIELD_LABELS: Record<string, string> = {
+  txtfDritteName: "1 Вуз",
+  txtfDritteStr: "2 Улица",
+  txtfDritteHausNr: "3 Дом",
+  txtfDrittePlz: "4 Индекс",
+  txtfDritteOrt: "5 Город",
+  txtfDritteTel: "6 Телефон вуза",
+  txtfDritteEmail: "7 Email вуза",
+  txtfDritteWeb: "8 Сайт",
+  txtfPersonVorname: "9 Имя",
+  txtfPersonNachname: "10 Фамилия",
+  datePersonGebDatum: "11 Дата рождения",
+  txtfPersonNationalitaet: "12 Гражданство",
+  txtfStudiumFach: "13 Специальность",
+  txtfStudiumDauer: "14 Срок обучения",
+  dateStudiumSeit: "15 Зачислен",
+  dateStudiumEnde: "16 Окончание учёбы",
+  dateStudiumFerienVon: "17 Каникулы с",
+  dateStudiumFerienBis: "17 Каникулы по",
+  rbtnStudiumFortsetzung: "18 Продолжит учёбу",
+  txtfUnterschriftOrt: "19 Город подписи",
+  dateUnterschriftDatum: "20 Дата",
+};
 
 export default async function ClientPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: raw } = await params;
@@ -158,8 +184,8 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
             <div className="mt-3 border-t border-line pt-3">
               <ActionForm action={declarationAction}>
                 <input type="hidden" name="id" value={id} />
-                <SubmitButton className="btn-ghost min-h-9 px-3 text-[13px]" pendingText="Создаём…">
-                  Создать декларацию заново из анкеты
+                <SubmitButton className="btn-ghost min-h-9 px-3 text-[13px]" pendingText="ИИ проверяет документы… до 2 минут">
+                  🤖 Проверить ИИ заново и сделать декларацию
                 </SubmitButton>
               </ActionForm>
             </div>
@@ -216,6 +242,58 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
         </Section>
       </div>
 
+
+      {!keta && cab.aiCheck && (
+        <section className="card mt-5 p-4 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-[18px] font-bold">🤖 Проверка документов ИИ</h2>
+            <span className="flex items-center gap-2 text-[13px] text-muted">
+              {fmtDate(cab.aiCheck.checkedAt)}
+              <Badge tone={cab.aiCheck.status === "ГОТОВО" ? "green" : cab.aiCheck.status === "НЕ ГОТОВО" ? "red" : "amber"}>{cab.aiCheck.status}</Badge>
+            </span>
+          </div>
+          <div className="mt-4 grid gap-6 lg:grid-cols-2">
+            <div className="space-y-4 text-[14px]">
+              {cab.aiCheck.missing.length > 0 && (
+                <div>
+                  <p className="font-bold text-warn">Чего не хватает (видит клиент)</p>
+                  <ul className="mt-1 list-disc space-y-1 pl-5">
+                    {cab.aiCheck.missing.map((m, i) => (
+                      <li key={i}>{m}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {cab.aiCheck.checks.length > 0 && (
+                <div>
+                  <p className="font-bold">Проверить / ошибки</p>
+                  <ul className="mt-1 list-disc space-y-1 pl-5">
+                    {cab.aiCheck.checks.map((m, i) => (
+                      <li key={i}>{m}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {cab.aiCheck.clientMessage && (
+                <div>
+                  <p className="font-bold">Сообщение клиенту</p>
+                  <p className="mt-1 rounded-lg bg-surface px-3 py-2 whitespace-pre-line">{cab.aiCheck.clientMessage}</p>
+                </div>
+              )}
+            </div>
+            <dl className="divide-y divide-line text-[13.5px]">
+              {Object.entries(cab.aiCheck.fields)
+                .filter(([, v]) => v)
+                .map(([k, v]) => (
+                  <div key={k} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] gap-3 py-1.5">
+                    <dt className="text-muted">{PDF_FIELD_LABELS[k] ?? k}</dt>
+                    <dd className="font-medium break-words">{v}</dd>
+                  </div>
+                ))}
+            </dl>
+          </div>
+        </section>
+      )}
 
       <section className="card mt-5 p-4 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">

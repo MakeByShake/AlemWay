@@ -53,6 +53,7 @@ export default async function CabinetPage({ params }: { params: Promise<{ locale
     data: cab.data ?? {},
     files,
     declarationDate: cab.declarationDate ?? null,
+    ai: cab.aiCheck ? { status: cab.aiCheck.status, missing: cab.aiCheck.missing, clientMessage: cab.aiCheck.clientMessage } : null,
     job: {
       employer: cab.employerName ?? null,
       city: cab.workCity ?? null,

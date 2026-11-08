@@ -27,6 +27,7 @@ import {
   MAX_UPLOAD_BYTES,
   toGermanDate,
   validateCabinetData,
+  NO_PASSPORT_REQUIRED,
   type CabinetData,
   type CabinetField,
   type CabinetStatus,
@@ -49,6 +50,8 @@ export type CabinetView = {
   data: CabinetData;
   files: Record<FileKind, FileMeta>;
   declarationDate: string | null;
+  /** Last AI check, when it said what is missing. */
+  ai: { status: string; missing: string[]; clientMessage: string } | null;
   job: { employer: string | null; city: string | null; position: string | null; from: string | null; to: string | null; message: string | null };
 };
 
@@ -109,6 +112,7 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
   const [busy, setBusy] = useState<null | "save" | "submit" | UploadKind>(null);
   const [notice, setNotice] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
   const [files, setFiles] = useState(view.files);
+  const [ai, setAi] = useState(view.ai);
 
   const set = (key: string, value: string) => {
     setData((d) => ({ ...d, [key]: value }));
@@ -121,7 +125,15 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ data, submit }),
     });
-    return { res, json: (await res.json().catch(() => ({}))) as { errors?: Record<string, FieldError>; missingFiles?: string[] } };
+    return {
+      res,
+      json: (await res.json().catch(() => ({}))) as {
+        errors?: Record<string, FieldError>;
+        missingFiles?: string[];
+        error?: string;
+        ai?: { missing: string[]; clientMessage: string };
+      },
+    };
   }
 
   async function onSave() {
@@ -140,6 +152,7 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
   async function onSubmit() {
     setNotice(null);
     const errs = validateCabinetData(data, view.service);
+    if (!keta && !files.passport) for (const k of NO_PASSPORT_REQUIRED) if (!data[k]?.trim() && !errs[k]) errs[k] = "required";
     const missing = SERVICE_FILES[view.service].requiredBeforeSubmit.some((k) => !files[k]);
     setErrors(errs);
     if (Object.keys(errs).length || missing) {
@@ -155,10 +168,14 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
       if (res.ok) {
         router.refresh();
         window.scrollTo({ top: 0, behavior: "smooth" });
+      } else if (json.error === "not_ready" && json.ai) {
+        setAi({ status: "НЕ ГОТОВО", ...json.ai });
+        window.scrollTo({ top: 0, behavior: "smooth" });
       } else if (res.status === 422) {
         setErrors(json.errors ?? {});
         setNotice({ tone: "err", text: json.missingFiles?.length ? t.needFiles : t.fixErrors });
-      } else setNotice({ tone: "err", text: t.errorGeneric });
+      } else if (json.error === "ai_failed") setNotice({ tone: "err", text: t.aiFailed });
+      else setNotice({ tone: "err", text: t.errorGeneric });
     } catch {
       setNotice({ tone: "err", text: t.errorGeneric });
     } finally {
@@ -262,6 +279,15 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
                 </ol>
               </>
             )}
+            {ai?.status === "ГОТОВО БЕЗ ПАСПОРТА" && ai.missing.length > 0 && (
+              <div className="mt-4 rounded-xl bg-warn-soft px-4 py-3 text-[15px] text-warn">
+                <ul className="list-disc space-y-1 pl-5">
+                  {ai.missing.map((m) => (
+                    <li key={m}>{m}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {view.declarationDate && (
               <p className="mt-3 text-[14px] text-muted">
                 {t.declDate}: {toGermanDate(view.declarationDate)}
@@ -296,6 +322,23 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
               onSubmit();
             }}
           >
+            {!keta && ai?.status === "НЕ ГОТОВО" && (
+              <div role="alert" className="card border-warn/40 bg-warn-soft p-5 sm:p-7">
+                <h2 className="h-card flex items-center gap-2 text-warn">
+                  <AlertCircle className="h-5 w-5 shrink-0" /> {t.aiNotReadyTitle}
+                </h2>
+                <p className="mt-2 text-[15px]">{t.aiNotReadyText}</p>
+                {ai.missing.length > 0 && (
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-[15px] leading-relaxed">
+                    {ai.missing.map((m) => (
+                      <li key={m}>{m}</li>
+                    ))}
+                  </ul>
+                )}
+                {ai.clientMessage && <p className="mt-3 text-[15px] leading-relaxed whitespace-pre-line text-muted">{ai.clientMessage}</p>}
+              </div>
+            )}
+
             {!files.declaration && (
               <div className="card p-5 sm:p-7">
                 <h2 className="h-card">{keta ? t.ketaIntroTitle : t.introTitle}</h2>
@@ -330,11 +373,14 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
               <h2 className="h-card">{t.documents}</h2>
               <p className="mt-2 text-[14px] text-muted">{keta ? t.ketaDocsHint : t.documentsHint}</p>
               <div className="mt-5 space-y-4">
-                {SERVICE_FILES[view.service].requiredBeforeSubmit.map((kind) => (
+                {SERVICE_FILES[view.service].form.map((kind) => (
                   <FileRow
                     key={kind}
-                    label={FILE_LABELS[kind][locale]}
-                    hint={kind === "photo" ? t.ketaPhotoHint : undefined}
+                    label={
+                      FILE_LABELS[kind][locale].replace(/ \((необязательно|міндетті емес)\)$/, "") +
+                      (SERVICE_FILES[view.service].requiredBeforeSubmit.includes(kind) ? "" : ` (${t.optional})`)
+                    }
+                    hint={kind === "photo" ? t.ketaPhotoHint : kind === "calendar" ? t.calendarHint : kind === "passport" && !keta ? t.passportLater : undefined}
                     meta={files[kind]}
                     busy={busy === kind}
                     t={t}
@@ -361,6 +407,8 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
                   </>
                 ) : keta ? (
                   t.ketaSubmit
+                ) : ai?.status === "НЕ ГОТОВО" ? (
+                  t.resubmit
                 ) : (
                   t.submit
                 )}

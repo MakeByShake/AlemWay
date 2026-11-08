@@ -2,7 +2,8 @@ import "server-only";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { PDFDocument } from "pdf-lib";
-import { CABINET_FIELDS, toGermanDate, validateCabinetData, type CabinetData } from "./fields";
+import { toGermanDate } from "./fields";
+import { DECLARATION_PDF_KEYS, type AiCheck, type DeclarationFields } from "@/lib/ai/declaration";
 import { deleteFile, saveFile } from "./storage";
 import { patchCabinet, type Cabinet, type StoredFile } from "./server";
 
@@ -15,35 +16,25 @@ export function todayAlmaty() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Almaty" }).format(new Date());
 }
 
-export async function buildDeclarationPdf(data: CabinetData, dateIso: string): Promise<Uint8Array> {
+/** Fills the official form with the AI's data (keys = PDF field names, dates DD.MM.YYYY). */
+export async function buildDeclarationPdf(fields: DeclarationFields): Promise<Uint8Array> {
   const doc = await PDFDocument.load(await fs.readFile(BLANK));
   const form = doc.getForm();
-  for (const f of CABINET_FIELDS) {
-    if (!f.pdf) continue;
-    const v = (data[f.key] ?? "").trim();
-    if (f.kind === "yesno") form.getRadioGroup(f.pdf).select(v === "no" ? "nein" : "ja");
-    else form.getTextField(f.pdf).setText(f.kind === "date" && v ? toGermanDate(v) : v);
+  for (const key of DECLARATION_PDF_KEYS) {
+    const v = (fields[key] ?? "").trim();
+    if (key === "rbtnStudiumFortsetzung") form.getRadioGroup(key).select(/^(no|nein|нет)$/i.test(v) ? "nein" : "ja");
+    else form.getTextField(key).setText(v);
   }
-  // 19 Location = university city, 20 Date = the day the declaration is made.
-  form.getTextField("txtfUnterschriftOrt").setText((data.uniCity ?? "").trim());
-  form.getTextField("dateUnterschriftDatum").setText(toGermanDate(dateIso));
   form.flatten();
   return doc.save();
 }
 
-/**
- * Builds the declaration from the cabinet's questionnaire, stores it privately and attaches it to the cabinet.
- * Throws if the questionnaire is incomplete.
- */
-export async function generateDeclaration(cab: Cabinet): Promise<StoredFile> {
-  const data = cab.data ?? {};
-  const errors = validateCabinetData(data);
-  if (Object.keys(errors).length) {
-    throw new Error(`Анкета заполнена не полностью: ${Object.keys(errors).join(", ")}`);
-  }
+/** Stores the declaration made from the AI check and moves the cabinet to «Декларация готова». */
+export async function saveAiDeclaration(cab: Cabinet, ai: AiCheck): Promise<StoredFile> {
   const dateIso = todayAlmaty();
-  const bytes = await buildDeclarationPdf(data, dateIso);
-  const surname = (data.lastName ?? "client").replace(/[^A-Za-z0-9-]/g, "");
+  const fields = { ...ai.fields, dateUnterschriftDatum: ai.fields.dateUnterschriftDatum || toGermanDate(dateIso) };
+  const bytes = await buildDeclarationPdf(fields);
+  const surname = (fields.txtfPersonNachname || "client").replace(/[^A-Za-z0-9-]/g, "");
   const name = `ZAV-Declaration-${surname}-${toGermanDate(dateIso)}.pdf`;
   const stored = await saveFile(`${cab._id}/declaration.pdf`, Buffer.from(bytes), "application/pdf");
   const file: StoredFile = { path: stored, name, contentType: "application/pdf", size: bytes.length, uploadedAt: new Date().toISOString() };

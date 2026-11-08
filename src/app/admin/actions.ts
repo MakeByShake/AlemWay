@@ -19,8 +19,9 @@ import {
 import { deleteDoc, patchDoc } from "@/lib/admin/data";
 import { AdminOpError, createCabinet, deleteCabinetCompletely } from "@/lib/cabinet/admin-ops";
 import { getCabinet, newLoginToken, patchCabinet, writeClient } from "@/lib/cabinet/server";
-import { generateDeclaration } from "@/lib/cabinet/declaration";
-import { CABINET_FIELDS, CABINET_STATUSES, serviceOf, validateCabinetData } from "@/lib/cabinet/fields";
+import { checkAndBuildDeclaration } from "@/lib/cabinet/ai-flow";
+import { aiReady } from "@/lib/ai/declaration";
+import { CABINET_STATUSES, serviceOf } from "@/lib/cabinet/fields";
 import { FEEDBACK_STATUS_LIST, LEAD_STATUSES } from "@/lib/admin/data";
 import { formatTenge, parseAmount } from "@/lib/cabinet/payments";
 import { removePayment, setPaymentStatus } from "@/lib/cabinet/payments-server";
@@ -177,17 +178,16 @@ export async function declarationAction(_prev: ActionState, fd: FormData): Promi
   const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
   if (!cab) return { error: "Кабинет не найден" };
   if (serviceOf(cab.service) !== "ferienjob") return { error: "Декларация ZAV есть только у Ferienjob" };
-  const errors = validateCabinetData(cab.data ?? {});
-  if (Object.keys(errors).length) {
-    const names = Object.keys(errors).map((k) => CABINET_FIELDS.find((f) => f.key === k)?.label.ru ?? k);
-    return { error: `Не заполнено или с ошибкой: ${names.join("; ")}` };
-  }
+  if (!cab.files?.enrollment?.path) return { error: "Нет справки с места учёбы — без неё ИИ не сделает декларацию" };
   try {
-    await generateDeclaration(cab);
+    const ai = await checkAndBuildDeclaration(id, "manager");
     revalidatePath(`/admin/clients/${id}`);
-    return { ok: true, message: "Декларация создана заново (дата — сегодня)" };
+    return aiReady(ai.status)
+      ? { ok: true, message: `ИИ: ${ai.status}. Декларация создана (дата — сегодня).` }
+      : { error: `ИИ: НЕ ГОТОВО. Чего не хватает: ${ai.missing.join("; ") || "см. проверку ниже"}` };
   } catch (err) {
-    return fail(err);
+    console.error("[admin] AI check failed", err);
+    return { error: "ИИ сейчас недоступен. Попробуйте позже." };
   }
 }
 

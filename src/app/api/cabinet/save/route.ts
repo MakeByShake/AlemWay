@@ -1,12 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isSameOrigin, readJsonObject } from "@/lib/http";
-import { SERVICE_FILES, sanitizeCabinetData, serviceOf, validateCabinetData } from "@/lib/cabinet/fields";
+import { NO_PASSPORT_REQUIRED, SERVICE_FILES, sanitizeCabinetData, serviceOf, validateCabinetData, type FieldError } from "@/lib/cabinet/fields";
 import { cabinetAdminUrl, managerLine, currentCabinet, displayName, getCabinet, patchCabinet } from "@/lib/cabinet/server";
-import { generateDeclaration } from "@/lib/cabinet/declaration";
+import { checkAndBuildDeclaration, notifyAiFailed } from "@/lib/cabinet/ai-flow";
 import { escapeHtml, sendTelegram } from "@/lib/telegram";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// The AI reads the documents: usually 20–90 seconds.
+export const maxDuration = 300;
 
 const PURPOSE_RU: Record<string, string> = {
   tourism: "туризм",
@@ -36,7 +38,11 @@ export async function POST(req: NextRequest) {
   const submit = body.submit === true;
 
   if (submit) {
-    const errors = validateCabinetData(data, service);
+    const errors: Record<string, FieldError> = validateCabinetData(data, service);
+    // Ferienjob without a passport yet: the name in Latin and the date of birth are typed in.
+    if (service === "ferienjob" && !cab.files?.passport?.path) {
+      for (const k of NO_PASSPORT_REQUIRED) if (!data[k]?.trim() && !errors[k]) errors[k] = "required";
+    }
     const missingFiles = SERVICE_FILES[service].requiredBeforeSubmit.filter((k) => !cab.files?.[k]?.path);
     if (Object.keys(errors).length || missingFiles.length) {
       await patchCabinet(cab._id, { data });
@@ -67,25 +73,16 @@ export async function POST(req: NextRequest) {
   }
 
   await patchCabinet(cab._id, { data, submittedAt: now });
-  const fresh = await getCabinet(cab._id);
-  if (!fresh) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
   try {
-    await generateDeclaration(fresh);
+    const ai = await checkAndBuildDeclaration(cab._id, "client");
+    if (ai.status === "НЕ ГОТОВО") {
+      return NextResponse.json({ ok: false, error: "not_ready", ai: { missing: ai.missing, clientMessage: ai.clientMessage } }, { status: 422 });
+    }
+    return NextResponse.json({ ok: true, declaration: true });
   } catch (err) {
-    console.error("[cabinet] declaration failed", err);
-    return NextResponse.json({ ok: false, error: "declaration_failed" }, { status: 500 });
+    console.error("[cabinet] AI declaration failed", err);
+    const fresh = await getCabinet(cab._id);
+    if (fresh) await notifyAiFailed(fresh);
+    return NextResponse.json({ ok: false, error: "ai_failed" }, { status: 503 });
   }
-
-  await sendTelegram([
-    "<b>📝 Анкета Ferienjob заполнена — декларация готова</b>",
-    "",
-    `<b>Клиент:</b> ${escapeHtml(displayName(fresh))}`,
-    managerLine(fresh),
-    data.phone && `<b>Телефон:</b> ${escapeHtml(data.phone)}`,
-    data.uniName && `<b>Вуз:</b> ${escapeHtml(data.uniName)}`,
-    "Клиенту осталось подписать декларацию в деканате и загрузить скан.",
-    "",
-    `📋 <a href="${cabinetAdminUrl(cab._id)}">Открыть кабинет в админке</a>`,
-  ]);
-  return NextResponse.json({ ok: true, declaration: true });
 }

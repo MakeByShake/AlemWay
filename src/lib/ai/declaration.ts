@@ -1,0 +1,168 @@
+import "server-only";
+import Anthropic from "@anthropic-ai/sdk";
+import { readFile } from "@/lib/cabinet/storage";
+import type { Cabinet, StoredFile } from "@/lib/cabinet/server";
+import { DECLARATION_PROMPT, UNIVERSITY_DIRECTORY } from "./prompts";
+
+/**
+ * «Декларационный отдел»: Claude reads the certificate, passport and calendar plus the short questionnaire
+ * and returns the data for the official ZAV declaration form, or what is missing.
+ */
+
+export const DECLARATION_PDF_KEYS = [
+  "txtfDritteName",
+  "txtfDritteStr",
+  "txtfDritteHausNr",
+  "txtfDrittePlz",
+  "txtfDritteOrt",
+  "txtfDritteTel",
+  "txtfDritteEmail",
+  "txtfDritteWeb",
+  "txtfPersonVorname",
+  "txtfPersonNachname",
+  "datePersonGebDatum",
+  "txtfPersonNationalitaet",
+  "txtfStudiumFach",
+  "txtfStudiumDauer",
+  "dateStudiumSeit",
+  "dateStudiumEnde",
+  "dateStudiumFerienVon",
+  "dateStudiumFerienBis",
+  "rbtnStudiumFortsetzung",
+  "txtfUnterschriftOrt",
+  "dateUnterschriftDatum",
+] as const;
+export type DeclarationFields = Record<(typeof DECLARATION_PDF_KEYS)[number], string>;
+
+export const AI_STATUSES = ["ГОТОВО", "ГОТОВО БЕЗ ПАСПОРТА", "НЕ ГОТОВО"] as const;
+export type AiStatus = (typeof AI_STATUSES)[number];
+
+export type AiCheck = {
+  status: AiStatus;
+  fields: DeclarationFields;
+  checks: string[];
+  missing: string[];
+  clientMessage: string;
+  checkedAt: string;
+};
+
+const MODEL = "claude-opus-5-5";
+
+const SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["status", "fields", "checks", "missing", "clientMessage"],
+  properties: {
+    status: { type: "string", enum: [...AI_STATUSES] },
+    fields: {
+      type: "object",
+      additionalProperties: false,
+      required: [...DECLARATION_PDF_KEYS],
+      properties: Object.fromEntries(DECLARATION_PDF_KEYS.map((k) => [k, { type: "string" }])),
+    },
+    checks: { type: "array", items: { type: "string" } },
+    missing: { type: "array", items: { type: "string" } },
+    clientMessage: { type: "string" },
+  },
+} as const;
+
+// Our answer format replaces the text format from the prompt: same content, as JSON for the site.
+const OUTPUT_RULES = `## Формат ответа для сайта
+Вместо текстового формата верни JSON по схеме:
+- status — «ГОТОВО», «ГОТОВО БЕЗ ПАСПОРТА» или «НЕ ГОТОВО».
+- fields — данные для бланка по ключам полей. При «НЕ ГОТОВО» все поля пустые строки. Даты ДД.ММ.ГГГГ. rbtnStudiumFortsetzung — «Yes» или «No».
+- checks — «ПРОВЕРИТЬ / ОШИБКИ» (для менеджера).
+- missing — «ЧЕГО НЕ ХВАТАЕТ» (видит клиент, пиши понятно, по одному пункту).
+- clientMessage — «СООБЩЕНИЕ КЛИЕНТУ» (пусто, если всё есть).`;
+
+const SYSTEM = `${DECLARATION_PROMPT}\n\n${UNIVERSITY_DIRECTORY}\n\n${OUTPUT_RULES}`;
+
+const LABELS: Record<string, string> = {
+  passport: "Загранпаспорт",
+  enrollment: "Справка с места учёбы",
+  calendar: "Академический календарь вуза",
+};
+
+async function toBuffer(body: ReadableStream | Buffer): Promise<Buffer> {
+  if (Buffer.isBuffer(body)) return body;
+  const chunks: Uint8Array[] = [];
+  const reader = body.getReader();
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks);
+}
+
+async function fileBlocks(kind: string, file: StoredFile | undefined): Promise<Anthropic.Beta.BetaContentBlockParam[]> {
+  if (!file?.path) return [];
+  const found = await readFile(file.path);
+  if (!found) return [];
+  const data = (await toBuffer(found.body as ReadableStream | Buffer)).toString("base64");
+  const label = { type: "text" as const, text: `Файл: ${LABELS[kind] ?? kind}` };
+  if (found.contentType === "application/pdf") {
+    return [label, { type: "document", source: { type: "base64", media_type: "application/pdf", data }, title: LABELS[kind] }];
+  }
+  const media = found.contentType === "image/png" ? "image/png" : "image/jpeg";
+  return [label, { type: "image", source: { type: "base64", media_type: media, data } }];
+}
+
+const QUESTION_LABELS: Record<string, string> = {
+  phone: "Телефон",
+  city: "Город проживания",
+  driverLicense: "Категория прав",
+  breakFrom: "Каникулы с",
+  breakTo: "Каникулы по",
+  continueStudies: "Продолжает учёбу после каникул",
+  firstName: "Имя латиницей",
+  lastName: "Фамилия латиницей",
+  birthDate: "Дата рождения",
+  nationality: "Гражданство",
+};
+
+/** Runs the check. Throws if the AI is not configured or the request fails. */
+export async function runDeclarationCheck(cab: Cabinet, todayIso: string): Promise<AiCheck> {
+  if (!process.env.ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY is not set");
+  const client = new Anthropic();
+
+  const docs = (await Promise.all((["passport", "enrollment", "calendar"] as const).map((k) => fileBlocks(k, cab.files?.[k])))).flat();
+  const answers = Object.entries(QUESTION_LABELS)
+    .map(([k, label]) => {
+      const v = cab.data?.[k];
+      return `- ${label}: ${v ? (k === "continueStudies" ? (v === "no" ? "Нет" : "Да") : v) : "—"}`;
+    })
+    .join("\n");
+  const today = todayIso.split("-").reverse().join(".");
+  const has = (k: string) => (cab.files?.[k as keyof typeof cab.files]?.path ? "загружен" : "НЕ загружен");
+
+  const stream = client.beta.messages.stream({
+    model: MODEL,
+    max_tokens: 32000,
+    betas: ["server-side-fallback-2026-07-01"],
+    fallbacks: "default",
+    thinking: { type: "adaptive" },
+    output_config: { effort: "high", format: { type: "json_schema", schema: SCHEMA as unknown as Record<string, unknown> } },
+    system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
+    messages: [
+      {
+        role: "user",
+        content: [
+          ...docs,
+          {
+            type: "text",
+            text: `Сегодня: ${today}.\nПаспорт: ${has("passport")}. Справка: ${has("enrollment")}. Календарь вуза: ${has("calendar")}.\n\nАнкета клиента:\n${answers}`,
+          },
+        ],
+      },
+    ],
+  });
+  const msg = await stream.finalMessage();
+  if (msg.stop_reason === "refusal") throw new Error("AI refused the request");
+  const text = msg.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
+  const parsed = JSON.parse(text) as Omit<AiCheck, "checkedAt">;
+  if (!AI_STATUSES.includes(parsed.status)) throw new Error(`Unexpected AI status: ${parsed.status}`);
+  return { ...parsed, checkedAt: new Date().toISOString() };
+}
+
+export const aiReady = (s: AiStatus | undefined) => s === "ГОТОВО" || s === "ГОТОВО БЕЗ ПАСПОРТА";
