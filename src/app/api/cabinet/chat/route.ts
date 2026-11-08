@@ -4,7 +4,6 @@ import { isSameOrigin, readJsonObject } from "@/lib/http";
 import { currentCabinet, displayName } from "@/lib/cabinet/server";
 import { CABINET_FIELDS, CABINET_STATUSES, FILE_LABELS, SERVICE_FILES, serviceOf } from "@/lib/cabinet/fields";
 import { ASSISTANT_PROMPT } from "@/lib/ai/prompts";
-import { paymentTotals, formatTenge } from "@/lib/cabinet/payments";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,7 +30,6 @@ function clientContext(cab: NonNullable<Awaited<ReturnType<typeof currentCabinet
   const filled = CABINET_FIELDS.map((f) => `- ${f.label.ru}: ${cab.data?.[f.key] ? (f.kind === "yesno" ? (cab.data[f.key] === "no" ? "Нет" : "Да") : cab.data[f.key]) : "—"}`).join("\n");
   const files = SERVICE_FILES[service].all.map((k) => `- ${FILE_LABELS[k].ru}: ${cab.files?.[k]?.path ? "загружен" : "нет"}`).join("\n");
   const ai = cab.aiCheck;
-  const money = paymentTotals(cab.price, cab.payments);
   return [
     "## Контекст клиента (данные сайта, не от клиента)",
     `Имя: ${displayName(cab)}`,
@@ -46,7 +44,7 @@ function clientContext(cab: NonNullable<Awaited<ReturnType<typeof currentCabinet
     `Статус декларации (декларационный отдел): ${ai ? ai.status : "ещё не проверялась"}`,
     ai?.missing.length ? `ЧЕГО НЕ ХВАТАЕТ:\n${ai.missing.map((m) => `- ${m}`).join("\n")}` : "",
     "",
-    money.hasPrice ? `Оплата: к оплате ${formatTenge(money.price)}, подтверждено ${formatTenge(money.paid)}, осталось ${formatTenge(money.remaining)}.` : "Сумма к оплате ещё не указана.",
+    "Клиент уже оплатил услугу, в кабинет он заходит только чтобы оформить документы. Про оплату не напоминай; если спросит — к куратору.",
     "",
     "Кнопка «Написать в WhatsApp» под чатом ведёт к куратору AlemWay. Отвечай коротко, обычным текстом без markdown-заголовков и таблиц.",
   ]

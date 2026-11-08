@@ -299,7 +299,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-[18px] font-bold">Оплата</h2>
-            <p className="mt-1 text-[14px] text-muted">Клиент видит сумму и остаток в своём кабинете. Чеки добавляют менеджеры.</p>
+            <p className="mt-1 text-[14px] text-muted">Только для учёта внутри команды — клиент оплату не видит.</p>
           </div>
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="rounded-xl bg-surface px-3 py-2">

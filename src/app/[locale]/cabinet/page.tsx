@@ -4,9 +4,7 @@ import { CABINET_SUPPORT_WHATSAPP, currentCabinet, displayName } from "@/lib/cab
 import { CABINET_TEXT, cabinetLocale } from "@/lib/cabinet/i18n";
 import { FILE_KINDS, serviceOf } from "@/lib/cabinet/fields";
 import { CabinetApp, type CabinetView } from "@/components/cabinet/CabinetApp";
-import { CabinetPayment } from "@/components/cabinet/CabinetPayment";
 import { CabinetChat } from "@/components/cabinet/CabinetChat";
-import { paymentTotals } from "@/lib/cabinet/payments";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsAppLink";
 import { whatsappLink } from "@/lib/i18n-content";
 
@@ -69,15 +67,6 @@ export default async function CabinetPage({ params }: { params: Promise<{ locale
     <>
       <CabinetApp key={JSON.stringify(view.files) + view.status} view={view} locale={cabinetLocale(locale)} />
       {view.service === "ferienjob" && <CabinetChat locale={cabinetLocale(locale)} />}
-      <CabinetPayment
-        locale={cabinetLocale(locale)}
-        view={{
-          ...paymentTotals(cab.price, cab.payments),
-          items: [...(cab.payments ?? [])]
-            .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""))
-            .map((p) => ({ amount: p.amount, status: p.status, paidAt: p.paidAt })),
-        }}
-      />
       <section className="container-x pb-16">
         <div className="card mx-auto flex max-w-3xl flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
