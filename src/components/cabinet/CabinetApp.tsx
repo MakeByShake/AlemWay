@@ -378,7 +378,9 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
                     key={kind}
                     label={
                       FILE_LABELS[kind][locale].replace(/ \((необязательно|міндетті емес)\)$/, "") +
-                      (SERVICE_FILES[view.service].requiredBeforeSubmit.includes(kind) ? "" : ` (${t.optional})`)
+                      (SERVICE_FILES[view.service].requiredBeforeSubmit.includes(kind)
+                        ? ""
+                        : ` (${kind === "passport" && !keta ? t.passportSuffix : t.optional})`)
                     }
                     hint={kind === "photo" ? t.ketaPhotoHint : kind === "calendar" ? t.calendarHint : kind === "passport" && !keta ? t.passportLater : undefined}
                     meta={files[kind]}

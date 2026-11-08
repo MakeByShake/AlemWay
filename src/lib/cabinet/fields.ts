@@ -321,6 +321,30 @@ export const CABINET_SECTIONS: CabinetSection[] = [
     fields: [FULL.phone, FULL.city, FULL.driverLicense],
   },
   {
+    id: "study",
+    title: { ru: "Учёба — если этого нет в справке", kk: "Оқу — анықтамада жоқ болса" },
+    fields: [
+      {
+        ...FULL.uniName,
+        latin: false,
+        optional: true,
+        label: { ru: "Название университета", kk: "Университет атауы" },
+        hint: { ru: "Можно по-русски — переведём сами.", kk: "Орысша жазуға болады — өзіміз аударамыз." },
+        placeholder: "КазНУ им. аль-Фараби",
+      },
+      {
+        ...FULL.subject,
+        latin: false,
+        optional: true,
+        label: { ru: "Специальность", kk: "Мамандық" },
+        placeholder: "Учёт и аудит",
+      },
+      { ...FULL.studyYears, optional: true },
+      { ...FULL.enrolledSince, optional: true },
+      { ...FULL.studyEnd, optional: true },
+    ],
+  },
+  {
     id: "vacation",
     title: { ru: "Летние каникулы 2027", kk: "2027 жазғы демалыс" },
     fields: [
