@@ -1,0 +1,44 @@
+import { NextResponse, type NextRequest } from "next/server";
+import { adminError, requireAdmin } from "@/lib/admin-auth";
+import { verifySession, ADMIN_COOKIE } from "@/lib/admin/session";
+import { getCabinet } from "@/lib/cabinet/server";
+import { readUploadForm } from "@/lib/cabinet/uploads";
+import { addPayment, saveReceipt } from "@/lib/cabinet/payments-server";
+import { PAYMENT_METHODS, parseAmount, type PaymentMethod } from "@/lib/cabinet/payments";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+/** Manager adds a payment (cash, transfer, Kaspi), optionally with a receipt. Counts as confirmed. */
+export async function POST(req: NextRequest) {
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
+  const me = await verifySession(req.cookies.get(ADMIN_COOKIE)?.value).catch(() => null);
+
+  const { form, upload } = await readUploadForm(req);
+  if (!form) return adminError("Не удалось прочитать форму");
+  if (upload && !upload.ok) return adminError(upload.error === "too_large" ? "Файл больше 4 МБ" : "Подойдёт только PDF, JPG или PNG");
+  const id = String(form.get("id") ?? "");
+  const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
+  if (!cab) return adminError("Клиент не найден", 404);
+  const amount = parseAmount(form.get("amount"));
+  if (!amount) return adminError("Укажите сумму");
+  const methodRaw = String(form.get("method") ?? "");
+  const method = (PAYMENT_METHODS.some((m) => m.value === methodRaw) ? methodRaw : "other") as PaymentMethod;
+  const paidAtRaw = String(form.get("paidAt") ?? "");
+  const paidAt = /^\d{4}-\d{2}-\d{2}$/.test(paidAtRaw) ? paidAtRaw : new Date().toISOString().slice(0, 10);
+  const note = String(form.get("note") ?? "").trim().slice(0, 300);
+
+  const receipt = upload?.ok ? await saveReceipt(id, upload) : undefined;
+  await addPayment(id, {
+    amount,
+    method,
+    paidAt,
+    ...(note ? { note } : {}),
+    ...(receipt ? { receipt } : {}),
+    status: "confirmed",
+    by: me?.login ?? "manager",
+    byName: me?.name ?? "Менеджер",
+  });
+  return NextResponse.json({ ok: true });
+}

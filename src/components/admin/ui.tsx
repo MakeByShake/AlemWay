@@ -271,3 +271,100 @@ export function FileUpload({ id, kind, label }: { id: string; kind: string; labe
     </span>
   );
 }
+
+/** One-button form (confirm / reject a payment…) that doesn't reset anything. */
+export function QuickButton({
+  action,
+  hidden,
+  children,
+  className,
+  confirmText,
+}: {
+  action: (fd: FormData) => Promise<void>;
+  hidden: Record<string, string>;
+  children: ReactNode;
+  className?: string;
+  confirmText?: string;
+}) {
+  const { pending, onSubmit } = useSubmit(action);
+  return (
+    <form
+      onSubmit={(e) => {
+        if (confirmText && !window.confirm(confirmText)) return e.preventDefault();
+        onSubmit(e);
+      }}
+    >
+      {Object.entries(hidden).map(([k, v]) => (
+        <input key={k} type="hidden" name={k} value={v} />
+      ))}
+      <PendingCtx.Provider value={pending}>
+        <SubmitButton className={className ?? "btn-ghost min-h-8 px-2.5 text-[13px]"}>{children}</SubmitButton>
+      </PendingCtx.Provider>
+    </form>
+  );
+}
+
+/** Manager adds a payment (optionally with a receipt) via /api/admin/cabinet/payment. */
+export function AddPaymentForm({ id, methods }: { id: string; methods: readonly { value: string; title: string }[] }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const today = new Date().toISOString().slice(0, 10);
+  return (
+    <form
+      className="grid gap-2 sm:grid-cols-2"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+        setBusy(true);
+        setError(null);
+        try {
+          const fd = new FormData(form);
+          fd.set("id", id);
+          const res = await fetch("/api/admin/cabinet/payment", { method: "POST", body: fd });
+          const j = (await res.json().catch(() => ({}))) as { message?: string };
+          if (!res.ok) throw new Error(j.message || `Ошибка ${res.status}`);
+          form.reset();
+          router.refresh();
+        } catch (err) {
+          setError(err instanceof Error ? err.message : String(err));
+        } finally {
+          setBusy(false);
+        }
+      }}
+    >
+      <label className="grid gap-1 text-[13px] font-medium">
+        Сумма, ₸
+        <input name="amount" inputMode="numeric" required placeholder="50000" className="field py-2 text-[15px]" />
+      </label>
+      <label className="grid gap-1 text-[13px] font-medium">
+        Способ
+        <select name="method" className="field py-2 text-[15px]">
+          {methods.map((m) => (
+            <option key={m.value} value={m.value}>
+              {m.title}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="grid gap-1 text-[13px] font-medium">
+        Дата оплаты
+        <input name="paidAt" type="date" defaultValue={today} className="field py-2 text-[15px]" />
+      </label>
+      <label className="grid gap-1 text-[13px] font-medium">
+        Чек (необязательно)
+        <input name="file" type="file" accept="application/pdf,image/jpeg,image/png" className="text-[13px]" />
+      </label>
+      <label className="grid gap-1 text-[13px] font-medium sm:col-span-2">
+        Комментарий
+        <input name="note" placeholder="Например: предоплата 50%" className="field py-2 text-[15px]" />
+      </label>
+      <div className="sm:col-span-2">
+        <button type="submit" disabled={busy} className="btn-primary min-h-10 px-4 text-[14px] disabled:opacity-60">
+          {busy && <Loader2 className="h-4 w-4 animate-spin" />} Добавить оплату
+        </button>
+        {error && <p className="mt-2 text-[13px] text-warn">{error}</p>}
+      </div>
+    </form>
+  );
+}

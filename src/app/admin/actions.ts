@@ -22,6 +22,8 @@ import { getCabinet, newLoginToken, patchCabinet, writeClient } from "@/lib/cabi
 import { generateDeclaration } from "@/lib/cabinet/declaration";
 import { CABINET_FIELDS, CABINET_STATUSES, serviceOf, validateCabinetData } from "@/lib/cabinet/fields";
 import { FEEDBACK_STATUS_LIST, LEAD_STATUSES } from "@/lib/admin/data";
+import { formatTenge, parseAmount } from "@/lib/cabinet/payments";
+import { removePayment, setPaymentStatus } from "@/lib/cabinet/payments-server";
 
 /** Every action re-checks the login: server actions can be called directly by POST. */
 
@@ -271,4 +273,39 @@ export async function setPasswordAction(_prev: ActionState, fd: FormData): Promi
     await setSessionCookie(value, maxAge);
   }
   return { ok: true, message: "Пароль изменён" };
+}
+
+// ---------- Payments ----------
+
+export async function setPriceAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  await requireAdminUser();
+  const id = s(fd, "id", 100);
+  if (!id.startsWith("cabinets.") || !(await getCabinet(id))) return { error: "Клиент не найден" };
+  const raw = s(fd, "price", 30);
+  const price = parseAmount(raw);
+  if (raw && !price) return { error: "Сумма — только число, например 250000" };
+  await patchCabinet(id, price ? { price } : {}, price ? [] : ["price"]);
+  revalidatePath(`/admin/clients/${id}`);
+  return { ok: true, message: price ? `Сумма к оплате: ${formatTenge(price)}` : "Сумма убрана" };
+}
+
+export async function paymentStatusAction(fd: FormData) {
+  await requireAdminUser();
+  const id = s(fd, "id", 100);
+  const key = s(fd, "key", 40);
+  const status = s(fd, "status", 20);
+  if (!id.startsWith("cabinets.") || !["confirmed", "rejected", "pending"].includes(status)) return;
+  await setPaymentStatus(id, key, status as "confirmed" | "rejected" | "pending");
+  revalidatePath(`/admin/clients/${id}`);
+  revalidatePath("/admin/finance");
+}
+
+export async function deletePaymentAction(fd: FormData) {
+  await requireAdminUser();
+  const id = s(fd, "id", 100);
+  const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
+  if (!cab) return;
+  await removePayment(cab, s(fd, "key", 40));
+  revalidatePath(`/admin/clients/${id}`);
+  revalidatePath("/admin/finance");
 }

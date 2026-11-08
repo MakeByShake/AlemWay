@@ -5,6 +5,7 @@ import type { SanityClient } from "next-sanity";
 import { getWriteClient } from "@/sanity/client";
 import { siteUrl } from "@/lib/i18n-content";
 import type { CabinetData, CabinetStatus, FileKind, ServiceId } from "./fields";
+import type { Payment } from "./payments";
 
 export const CABINET_COOKIE = "aw_cabinet";
 export { CABINET_SUPPORT_WHATSAPP } from "./fields";
@@ -34,10 +35,12 @@ export type Cabinet = {
   clientMessage?: string;
   manager?: string;
   managerName?: string;
+  price?: number;
+  payments?: Payment[];
 };
 
 const PROJECTION = `{_id, _rev, service, status, clientName, clientPhone, data, files, declarationDate, submittedAt, signedAt,
-  zavReceivedAt, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil, manager, managerName}`;
+  zavReceivedAt, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil, manager, managerName, price, payments}`;
 
 export function writeClient(): SanityClient {
   const c = getWriteClient();

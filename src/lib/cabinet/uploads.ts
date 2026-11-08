@@ -25,6 +25,25 @@ export async function readUpload(req: NextRequest): Promise<UploadResult> {
   } catch {
     return { ok: false, error: "bad_request", status: 400 };
   }
+  return checkFile(file);
+}
+
+/** Like readUpload, but also returns the other form fields; the file is optional. */
+export async function readUploadForm(req: NextRequest): Promise<{ form: FormData | null; upload: UploadResult | null }> {
+  const declared = Number(req.headers.get("content-length") || 0);
+  if (declared > MAX_UPLOAD_BYTES + 64 * 1024) return { form: null, upload: { ok: false, error: "too_large", status: 413 } };
+  let form: FormData;
+  try {
+    form = await req.formData();
+  } catch {
+    return { form: null, upload: { ok: false, error: "bad_request", status: 400 } };
+  }
+  const f = form.get("file");
+  const file = f instanceof File && f.size > 0 ? f : null;
+  return { form, upload: file ? await checkFile(file) : null };
+}
+
+async function checkFile(file: File | null): Promise<UploadResult> {
   if (!file || file.size === 0) return { ok: false, error: "no_file", status: 400 };
   if (file.size > MAX_UPLOAD_BYTES) return { ok: false, error: "too_large", status: 413 };
   const buf = Buffer.from(await file.arrayBuffer());

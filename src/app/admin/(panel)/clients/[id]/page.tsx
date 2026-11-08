@@ -3,9 +3,10 @@ import { notFound } from "next/navigation";
 import { getCabinetFull, cabinetName, getManagerOptions } from "@/lib/admin/data";
 import { requireAdminUser } from "@/lib/admin/session";
 import { CABINET_STATUSES, FILE_LABELS, SERVICE_FILES, SERVICE_TITLES, sectionsFor, serviceOf, type CabinetField } from "@/lib/cabinet/fields";
-import { declarationAction, deleteCabinetAction, newLinkAction, updateCabinetAction } from "../../../actions";
+import { declarationAction, deleteCabinetAction, deletePaymentAction, newLinkAction, paymentStatusAction, setPriceAction, updateCabinetAction } from "../../../actions";
+import { PAYMENT_METHODS, PAYMENT_STATUS_TITLES, formatTenge, paymentTotals } from "@/lib/cabinet/payments";
 import { Badge, PageTitle, Progress, fmtDate, waLink } from "@/components/admin/bits";
-import { ActionForm, ConfirmForm, FileUpload, SubmitButton } from "@/components/admin/ui";
+import { ActionForm, AddPaymentForm, ConfirmForm, FileUpload, QuickButton, SubmitButton } from "@/components/admin/ui";
 
 export const metadata = { title: "Клиент" };
 
@@ -45,6 +46,8 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
   const keta = service === "keta";
   const name = cabinetName(cab);
   const wa = waLink(cab.clientPhone || cab.data?.phone);
+  const money = paymentTotals(cab.price, cab.payments);
+  const payments = [...(cab.payments ?? [])].sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
   const statusOptions = CABINET_STATUSES.filter((s) => (STATUSES_FOR[service] as readonly string[]).includes(s.value));
 
   return (
@@ -212,6 +215,94 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
           </ActionForm>
         </Section>
       </div>
+
+
+      <section className="card mt-5 p-4 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="text-[18px] font-bold">Оплата</h2>
+            <p className="mt-1 text-[14px] text-muted">Клиент видит сумму и остаток в своём кабинете и может прикрепить чек.</p>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="rounded-xl bg-surface px-3 py-2">
+              <p className="text-[12px] text-muted">К оплате</p>
+              <p className="font-bold tabular-nums">{money.hasPrice ? formatTenge(money.price) : "—"}</p>
+            </div>
+            <div className="rounded-xl bg-accent-soft px-3 py-2">
+              <p className="text-[12px] text-muted">Оплачено</p>
+              <p className="font-bold tabular-nums">{formatTenge(money.paid)}</p>
+            </div>
+            <div className={`rounded-xl px-3 py-2 ${money.remaining > 0 ? "bg-warn-soft" : "bg-surface"}`}>
+              <p className="text-[12px] text-muted">Остаток</p>
+              <p className="font-bold tabular-nums">{money.hasPrice ? formatTenge(money.remaining) : "—"}</p>
+            </div>
+          </div>
+        </div>
+
+        <ActionForm action={setPriceAction} className="mt-4 flex flex-wrap items-end gap-2">
+          <input type="hidden" name="id" value={id} />
+          <label className="grid gap-1 text-[14px] font-medium">
+            Сумма к оплате за услугу, ₸
+            <input name="price" inputMode="numeric" defaultValue={cab.price ?? ""} placeholder="например 250000" className={`${input} w-56`} />
+          </label>
+          <SubmitButton className="btn-ghost min-h-10 px-4 text-[14px]" pendingText="Сохраняем…">
+            Сохранить сумму
+          </SubmitButton>
+        </ActionForm>
+
+        <div className="mt-5 grid gap-6 lg:grid-cols-2">
+          <div>
+            <h3 className="mb-2 text-[15px] font-bold">Платежи и чеки</h3>
+            {payments.length === 0 ? (
+              <p className="text-[14px] text-muted">Платежей пока нет.</p>
+            ) : (
+              <ul className="divide-y divide-line">
+                {payments.map((p) => (
+                  <li key={p._key} className="py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-bold tabular-nums">{formatTenge(p.amount)}</p>
+                      <Badge tone={p.status === "confirmed" ? "green" : p.status === "pending" ? "amber" : "red"}>{PAYMENT_STATUS_TITLES[p.status]}</Badge>
+                    </div>
+                    <p className="text-[13px] text-muted">
+                      {fmtDate(p.paidAt, false)} · {PAYMENT_METHODS.find((m) => m.value === p.method)?.title ?? "—"} · {p.by === "client" ? "чек от клиента" : `добавил ${p.byName ?? "менеджер"}`}
+                      {p.note ? ` · ${p.note}` : ""}
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      {p.receipt && (
+                        <a href={`/api/admin/cabinet/receipt?id=${encodeURIComponent(id)}&key=${p._key}`} className="btn-primary min-h-8 px-2.5 text-[13px]">
+                          Открыть чек
+                        </a>
+                      )}
+                      {p.status !== "confirmed" && (
+                        <QuickButton action={paymentStatusAction} hidden={{ id, key: p._key, status: "confirmed" }} className="btn-whatsapp min-h-8 px-2.5 text-[13px]">
+                          Подтвердить
+                        </QuickButton>
+                      )}
+                      {p.status === "pending" && (
+                        <QuickButton action={paymentStatusAction} hidden={{ id, key: p._key, status: "rejected" }}>
+                          Отклонить
+                        </QuickButton>
+                      )}
+                      <QuickButton
+                        action={deletePaymentAction}
+                        hidden={{ id, key: p._key }}
+                        confirmText={`Удалить платёж ${formatTenge(p.amount)}?`}
+                        className="min-h-8 px-2 text-[13px] text-red-600 hover:underline"
+                      >
+                        Удалить
+                      </QuickButton>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div>
+            <h3 className="mb-2 text-[15px] font-bold">Добавить оплату вручную</h3>
+            <AddPaymentForm id={id} methods={PAYMENT_METHODS} />
+          </div>
+        </div>
+      </section>
 
       <section className="card mt-5 p-4 sm:p-6">
         <h2 className="text-[18px] font-bold">Анкета клиента</h2>

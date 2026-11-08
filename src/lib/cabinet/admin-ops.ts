@@ -2,6 +2,7 @@ import "server-only";
 import { getCabinet, newCabinetId, newLoginToken, writeClient } from "./server";
 import { deleteFile } from "./storage";
 import { serviceOf, type ServiceId } from "./fields";
+import { DEFAULT_PRICE } from "./payments";
 
 /** Manager operations on cabinets, shared by the Studio API routes and the /admin pages. */
 
@@ -39,6 +40,7 @@ export async function createCabinet(input: { clientName: string; clientPhone: st
     _type: "cabinet",
     service,
     status: "waiting_data",
+    ...(DEFAULT_PRICE[service] ? { price: DEFAULT_PRICE[service] } : {}),
     clientName,
     clientPhone,
     ...(input.manager ? { manager: input.manager.login, managerName: input.manager.name } : {}),
@@ -62,6 +64,7 @@ export async function deleteCabinetCompletely(rawId: string) {
   const paths = new Set<string>();
   for (const cab of [published, draft]) {
     for (const f of Object.values(cab?.files ?? {})) if (f?.path) paths.add(f.path);
+    for (const p of cab?.payments ?? []) if (p.receipt?.path) paths.add(p.receipt.path);
   }
   let failed = 0;
   for (const p of paths) {
