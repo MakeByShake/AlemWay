@@ -67,15 +67,15 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
       </details>
 
       <form className="mb-5 flex flex-wrap gap-2" action="/admin/clients">
-        <input name="q" defaultValue={q} placeholder="Поиск по имени или телефону" className="field max-w-xs flex-1" />
-        <select name="service" defaultValue={service} className="field w-auto">
+        <input name="q" defaultValue={q} placeholder="Поиск по имени или телефону" className="field min-w-[220px] flex-1" />
+        <select name="service" defaultValue={service} className="field w-full sm:w-auto sm:max-w-[240px]">
           {SERVICE_FILTER.map((s) => (
             <option key={s.value} value={s.value}>
               {s.title}
             </option>
           ))}
         </select>
-        <select name="manager" defaultValue={sp.manager === undefined && !owner ? me.login : manager || "all"} className="field w-auto">
+        <select name="manager" defaultValue={sp.manager === undefined && !owner ? me.login : manager || "all"} className="field w-full sm:w-auto sm:max-w-[240px]">
           <option value="all">Все менеджеры</option>
           <option value={me.login}>Мои клиенты</option>
           {managers
@@ -87,7 +87,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
             ))}
           <option value="-">Без менеджера</option>
         </select>
-        <select name="status" defaultValue={status} className="field w-auto">
+        <select name="status" defaultValue={status} className="field w-full sm:w-auto sm:max-w-[240px]">
           <option value="">Все этапы</option>
           {CABINET_STATUSES.map((s) => (
             <option key={s.value} value={s.value}>
