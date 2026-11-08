@@ -70,9 +70,11 @@ export async function getAdminUserByLogin(login: string): Promise<AdminUser | nu
 /** Checks a session cookie value; returns the user or null. */
 export async function verifySession(value: string | undefined): Promise<SessionUser | null> {
   if (!value || value.length > 300) return null;
+  // Logins may contain dots, so read the fixed parts from the right: login.exp.ver.sig
   const parts = value.split(".");
-  if (parts.length !== 4) return null;
-  const [login, expStr, ver, sig] = parts;
+  if (parts.length < 4) return null;
+  const [expStr, ver, sig] = parts.slice(-3);
+  const login = parts.slice(0, -3).join(".");
   const expected = sign(`${login}.${expStr}.${ver}`);
   if (sig.length !== expected.length || !timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
   if (!(Number(expStr) > Date.now())) return null;
