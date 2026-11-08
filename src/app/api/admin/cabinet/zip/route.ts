@@ -3,7 +3,7 @@ import { zipSync, strToU8 } from "fflate";
 import { adminError, requireAdmin } from "@/lib/admin-auth";
 import { getCabinet, displayName } from "@/lib/cabinet/server";
 import { readFile } from "@/lib/cabinet/storage";
-import { FERIENJOB_FULL_SECTIONS, FILE_KINDS, FILE_LABELS, KETA_SECTIONS, serviceOf } from "@/lib/cabinet/fields";
+import { FERIENJOB_FULL_SECTIONS, FILE_KINDS, KETA_SECTIONS, serviceOf } from "@/lib/cabinet/fields";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,6 +13,18 @@ async function bytes(body: ReadableStream | Buffer): Promise<Uint8Array> {
   if (Buffer.isBuffer(body)) return new Uint8Array(body);
   return new Uint8Array(await new Response(body).arrayBuffer());
 }
+
+// Latin file names inside the archive: Cyrillic names break in some unzip programs.
+const ZIP_NAMES: Record<string, string> = {
+  passport: "passport",
+  enrollment: "spravka",
+  calendar: "kalendar-vuza",
+  declaration: "deklaraciya",
+  signed: "deklaraciya-podpisannaya",
+  zav: "ZAV",
+  photo: "foto",
+  keta: "K-ETA",
+};
 
 const safe = (s: string) => s.replace(/[^\w.\-а-яА-ЯёЁ ]/g, "_").trim() || "file";
 
@@ -31,7 +43,7 @@ export async function GET(req: NextRequest) {
     const found = await readFile(f.path).catch(() => null);
     if (!found) continue;
     const ext = f.name.split(".").pop() || "bin";
-    files[`${safe(FILE_LABELS[kind].ru).slice(0, 60)}.${ext}`] = await bytes(found.body as ReadableStream | Buffer);
+    files[`${ZIP_NAMES[kind] ?? kind}.${ext}`] = await bytes(found.body as ReadableStream | Buffer);
   }
 
   const sections = serviceOf(cab.service) === "keta" ? KETA_SECTIONS : FERIENJOB_FULL_SECTIONS;
@@ -54,7 +66,7 @@ export async function GET(req: NextRequest) {
     if (cab.aiCheck.missing.length) lines.push("Чего не хватает:", ...cab.aiCheck.missing.map((m) => `- ${m}`), "");
     if (cab.aiCheck.checks.length) lines.push("Проверить:", ...cab.aiCheck.checks.map((m) => `- ${m}`), "");
   }
-  files["Анкета.txt"] = strToU8(lines.join("\n"));
+  files["anketa.txt"] = strToU8(lines.join("\n"));
 
   const zip = zipSync(files, { level: 6 });
   const name = `${safe(displayName(cab))}.zip`;
