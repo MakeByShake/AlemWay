@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { Check, Copy, Loader2, Upload } from "lucide-react";
 import type { ActionState } from "@/app/admin/actions";
+import { compressForUpload } from "@/lib/compress-file";
 
 /**
  * Small client pieces of the admin: buttons with pending state, auto-saving selects, confirm, copy, upload.
@@ -247,12 +248,13 @@ export function FileUpload({ id, kind, label }: { id: string; kind: string; labe
         accept="application/pdf,image/jpeg,image/png"
         className="hidden"
         onChange={async (e) => {
-          const file = e.currentTarget.files?.[0];
+          const picked = e.currentTarget.files?.[0];
           e.currentTarget.value = "";
-          if (!file) return;
+          if (!picked) return;
           setBusy(true);
           setError(null);
           try {
+            const file = await compressForUpload(picked);
             const fd = new FormData();
             fd.append("file", file);
             const res = await fetch(`/api/admin/cabinet/upload?id=${encodeURIComponent(id)}&kind=${kind}`, { method: "POST", body: fd });

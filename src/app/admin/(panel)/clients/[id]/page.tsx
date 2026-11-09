@@ -473,24 +473,36 @@ export default async function ClientPage({
             <ActionForm action={updateAnketaAction} className="mt-4">
               <input type="hidden" name="id" value={id} />
               <div className="grid gap-6 lg:grid-cols-2">
-                {(keta ? KETA_SECTIONS : FERIENJOB_FULL_SECTIONS).map((sec) => (
-                  <fieldset key={sec.id}>
-                    <legend className="mb-2 text-[15px] font-bold text-brand">
-                      {sec.title.ru}
-                    </legend>
+                {(keta ? KETA_SECTIONS : FERIENJOB_FULL_SECTIONS).map((sec) => {
+                  const inputs = (
                     <div className="grid gap-2.5">
                       {sec.fields.map((f) => (
-                        <label
-                          key={f.key}
-                          className="grid gap-1 text-[13px] font-medium text-muted"
-                        >
+                        <label key={f.key} className="grid gap-1 text-[13px] font-medium text-muted">
                           {f.label.ru}
                           <AnketaInput f={f} value={cab.data?.[f.key] ?? ""} />
                         </label>
                       ))}
                     </div>
-                  </fieldset>
-                ))}
+                  );
+                  // University address, phone, email, site: needed only for the declaration form (fields 1–8);
+                  // the AI fills them from the certificate and its list of universities.
+                  if (sec.id === "university")
+                    return (
+                      <details key={sec.id} className="rounded-xl border border-line p-3">
+                        <summary className="cursor-pointer text-[15px] font-bold text-brand">
+                          Данные вуза для декларации
+                          <span className="ml-1 font-normal text-muted">— заполняются автоматически</span>
+                        </summary>
+                        <div className="mt-3">{inputs}</div>
+                      </details>
+                    );
+                  return (
+                    <fieldset key={sec.id}>
+                      <legend className="mb-2 text-[15px] font-bold text-brand">{sec.title.ru}</legend>
+                      {inputs}
+                    </fieldset>
+                  );
+                })}
               </div>
               <div className="mt-5">
                 <SubmitButton pendingText="Сохраняем…">

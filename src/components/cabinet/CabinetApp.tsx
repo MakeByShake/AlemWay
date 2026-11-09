@@ -38,6 +38,7 @@ import {
 } from "@/lib/cabinet/fields";
 import { CABINET_TEXT, type CabinetLocale } from "@/lib/cabinet/i18n";
 import { Pipeline } from "@/components/Pipeline";
+import { compressForUpload } from "@/lib/compress-file";
 
 type FileMeta = { name: string; size: number; uploadedAt: string } | null;
 
@@ -56,28 +57,6 @@ export type CabinetView = {
   job: { employer: string | null; city: string | null; position: string | null; from: string | null; to: string | null; message: string | null };
 };
 
-/** Shrinks phone photos to a sensible JPEG so uploads stay under the size limit. */
-async function prepareFile(file: File): Promise<File> {
-  if (!/^image\/(jpeg|png|webp|heic|heif)$/i.test(file.type)) return file;
-  if (file.type === "image/png" && file.size < 1.5 * 1024 * 1024) return file;
-  if (file.type === "image/jpeg" && file.size < 1.5 * 1024 * 1024) return file;
-  try {
-    const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, 2400 / Math.max(bitmap.width, bitmap.height));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(bitmap.width * scale);
-    canvas.height = Math.round(bitmap.height * scale);
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return file;
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.85));
-    return blob ? new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" }) : file;
-  } catch {
-    return file;
-  }
-}
 
 export function CabinetApp({ view, locale }: { view: CabinetView; locale: CabinetLocale }) {
   const t = CABINET_TEXT[locale];
@@ -85,7 +64,8 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
   const formId = useId();
   const keta = view.service === "keta";
   const sections = sectionsFor(view.service);
-  const editable = view.status === "waiting_data" || (!keta && view.status === "declaration_ready");
+  // Once the declaration is made, the questionnaire is closed: the client only signs and sends it.
+  const editable = view.status === "waiting_data";
 
   const [data, setData] = useState<CabinetData>(() => {
     const d: CabinetData = { ...view.data };
@@ -169,7 +149,8 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
 
   async function upload(kind: UploadKind, picked: File) {
     setNotice(null);
-    const file = await prepareFile(picked);
+    setBusy(kind);
+    const file = await compressForUpload(picked);
     if (file.size > MAX_UPLOAD_BYTES) return setNotice({ tone: "err", text: t.errTooLarge });
     setBusy(kind);
     try {
@@ -318,7 +299,19 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
                 )}
               </div>
             )}
-            {view.status === "declaration_ready" && <p className="mt-5 text-[14px] leading-relaxed text-muted">{t.editAgain}</p>}
+            {view.status === "declaration_ready" && !files.passport && (
+              <div className="mt-6 border-t border-line pt-5">
+                <FileRow
+                  label={FILE_LABELS.passport[locale]}
+                  hint={t.passportLater}
+                  meta={files.passport}
+                  busy={busy === "passport"}
+                  t={t}
+                  buttonText={t.upload}
+                  onPick={(f) => upload("passport", f)}
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -355,7 +348,7 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
               </div>
             )}
 
-            {sections.map((section) => (
+            {sections.filter((section) => !(section.id === "nopassport" && files.passport)).map((section) => (
               <fieldset key={section.id} className="card p-5 sm:p-7">
                 <legend className="sr-only">{section.title[locale]}</legend>
                 <h2 className="h-card" aria-hidden="true">
