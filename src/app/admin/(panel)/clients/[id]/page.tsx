@@ -2,20 +2,21 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCabinetFull, cabinetName, getManagerOptions } from "@/lib/admin/data";
 import { requireAdminUser } from "@/lib/admin/session";
-import { CABINET_STATUSES, FERIENJOB_FULL_SECTIONS, FILE_LABELS, KETA_SECTIONS, SERVICE_FILES, SERVICE_TITLES, serviceOf, type CabinetField } from "@/lib/cabinet/fields";
+import { CABINET_STATUSES, PIPELINES, FERIENJOB_FULL_SECTIONS, FILE_LABELS, KETA_SECTIONS, SERVICE_FILES, SERVICE_TITLES, serviceOf, type CabinetField } from "@/lib/cabinet/fields";
 import { declarationAction, deleteCabinetAction, deletePaymentAction, newLinkAction, paymentStatusAction, setPriceAction, updateCabinetAction } from "../../../actions";
 import { PAYMENT_METHODS, PAYMENT_STATUS_TITLES, formatTenge, paymentTotals } from "@/lib/cabinet/payments";
 import { Badge, PageTitle, Progress, fmtDate, waLink } from "@/components/admin/bits";
+import { Pipeline } from "@/components/Pipeline";
 import { ActionForm, AddPaymentForm, ConfirmForm, FileUpload, QuickButton, SubmitButton } from "@/components/admin/ui";
 
 export const metadata = { title: "Клиент" };
 // «Проверить ИИ заново» waits for the AI (up to a couple of minutes).
 export const maxDuration = 300;
 
-const STATUSES_FOR = {
-  ferienjob: ["waiting_data", "declaration_ready", "signed_uploaded", "zav_received", "done"],
-  keta: ["waiting_data", "keta_applying", "keta_applied", "keta_approved", "keta_rejected", "done"],
-} as const;
+const STATUSES_FOR: Record<string, readonly string[]> = {
+  ferienjob: PIPELINES.ferienjob.map((s) => s.status),
+  keta: [...PIPELINES.keta.map((s) => s.status), "keta_rejected"],
+};
 
 function showValue(f: CabinetField, v: string | undefined) {
   if (!v) return <span className="text-muted">—</span>;
@@ -74,7 +75,10 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
   const wa = waLink(cab.clientPhone || cab.data?.phone);
   const money = paymentTotals(cab.price, cab.payments);
   const payments = [...(cab.payments ?? [])].sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
-  const statusOptions = CABINET_STATUSES.filter((s) => (STATUSES_FOR[service] as readonly string[]).includes(s.value));
+  const statusOptions = STATUSES_FOR[service].map((v, i) => {
+    const step = PIPELINES[service].find((s) => s.status === v);
+    return { value: v, title: step ? `${i + 1}. ${step.title.ru}` : (CABINET_STATUSES.find((s) => s.value === v)?.title ?? v) };
+  });
 
   return (
     <>
@@ -99,6 +103,11 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
         <Badge tone={cab.managerName ? "gray" : "amber"}>👤 {cab.managerName || "Без менеджера"}</Badge>
         <span>создан {fmtDate(cab._createdAt)}</span>
       </div>
+
+      <section className="card mb-5 p-4 sm:p-6">
+        <h2 className="mb-3 text-[18px] font-bold">Процесс клиента</h2>
+        <Pipeline service={service} status={cab.status} />
+      </section>
 
       <div className="grid gap-5 xl:grid-cols-2">
         <Section title="Этап и контакты">

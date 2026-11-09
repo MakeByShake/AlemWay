@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import type { ReactNode } from "react";
-import { serviceOf } from "@/lib/cabinet/fields";
+import { pipelineState, serviceOf, type CabinetStatus } from "@/lib/cabinet/fields";
 
 /** Server-safe pieces of the admin pages. */
 
@@ -69,29 +69,17 @@ export function waLink(phone?: string) {
 }
 
 /** Where the client is in the process — the same steps the client sees in the cabinet. */
-export function clientProgress(service: string | undefined, status: string | undefined): { step: number; total: number; label: string; tone: Tone } {
-  const st = status ?? "waiting_data";
-  if (serviceOf(service) === "keta") {
-    const map: Record<string, [number, string, Tone]> = {
-      waiting_data: [1, "Заполняет анкету", "amber"],
-      keta_applying: [2, "Данные получены — подать K-ETA", "blue"],
-      keta_applied: [2, "Подано — ждём решения", "amber"],
-      keta_approved: [3, "Одобрено ✅", "green"],
-      keta_rejected: [3, "Отказ", "red"],
-      done: [3, "Завершено ✅", "green"],
-    };
-    const [step, label, tone] = map[st] ?? map.waiting_data;
-    return { step, total: 3, label, tone };
-  }
-  const map: Record<string, [number, string, Tone]> = {
-    waiting_data: [1, "Заполняет анкету", "amber"],
-    declaration_ready: [2, "Подпись в деканате", "amber"],
-    signed_uploaded: [3, "Готово ✅ — передать работодателю", "green"],
-    zav_received: [3, "ZAV получен ✅", "green"],
-    done: [3, "Завершено ✅", "green"],
+export function clientProgress(service: string | undefined, status: string | undefined) {
+  const p = pipelineState(serviceOf(service), status as CabinetStatus | undefined);
+  const tone: Tone = p.rejected ? "red" : p.finished ? "green" : p.current.who === "client" ? "amber" : "blue";
+  return {
+    step: p.finished ? p.steps.length : p.index + 1,
+    total: p.steps.length,
+    label: p.rejected ? "Отказ" : p.finished ? "Завершено ✅" : p.current.title.ru,
+    next: p.next?.title.ru ?? null,
+    who: p.current.who,
+    tone,
   };
-  const [step, label, tone] = map[st] ?? map.waiting_data;
-  return { step, total: 3, label, tone };
 }
 
 export function Progress({ service, status }: { service?: string; status?: string }) {
@@ -103,7 +91,10 @@ export function Progress({ service, status }: { service?: string; status?: strin
           <span key={i} className={clsx("h-1.5 w-5 rounded-full", i < p.step ? (p.tone === "green" ? "bg-accent" : p.tone === "red" ? "bg-red-500" : "bg-brand") : "bg-line")} />
         ))}
       </div>
-      <Badge tone={p.tone}>{p.label}</Badge>
+      <Badge tone={p.tone}>
+        {p.step}/{p.total} · {p.label}
+      </Badge>
+      {p.next && <span className="hidden text-[12.5px] text-muted xl:inline">→ {p.next}</span>}
     </div>
   );
 }

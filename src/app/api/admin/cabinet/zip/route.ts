@@ -24,6 +24,7 @@ const ZIP_NAMES: Record<string, string> = {
   zav: "ZAV",
   photo: "foto",
   keta: "K-ETA",
+  contract: "dogovor",
 };
 
 const safe = (s: string) => s.replace(/[^\w.\-а-яА-ЯёЁ ]/g, "_").trim() || "file";

@@ -37,6 +37,7 @@ import {
   FILE_LABELS,
 } from "@/lib/cabinet/fields";
 import { CABINET_TEXT, type CabinetLocale } from "@/lib/cabinet/i18n";
+import { Pipeline } from "@/components/Pipeline";
 
 type FileMeta = { name: string; size: number; uploadedAt: string } | null;
 
@@ -54,21 +55,6 @@ export type CabinetView = {
   ai: { status: string; missing: string[]; clientMessage: string } | null;
   job: { employer: string | null; city: string | null; position: string | null; from: string | null; to: string | null; message: string | null };
 };
-
-const STEP_OF: Record<CabinetStatus, number> = {
-  waiting_data: 0,
-  declaration_ready: 1,
-  signed_uploaded: 2,
-  zav_received: 2,
-  keta_applying: 1,
-  keta_applied: 1,
-  keta_approved: 2,
-  keta_rejected: 2,
-  done: 2,
-};
-
-/** Ferienjob: the client is finished once the signed declaration is in — the team takes it from there. */
-const CLIENT_FINISHED: CabinetStatus[] = ["signed_uploaded", "zav_received", "keta_approved", "done"];
 
 /** Shrinks phone photos to a sensible JPEG so uploads stay under the size limit. */
 async function prepareFile(file: File): Promise<File> {
@@ -99,9 +85,7 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
   const formId = useId();
   const keta = view.service === "keta";
   const sections = sectionsFor(view.service);
-  const steps = keta ? t.ketaSteps : t.steps;
   const editable = view.status === "waiting_data" || (!keta && view.status === "declaration_ready");
-  const step = Math.min(STEP_OF[view.status], steps.length - 1);
 
   const [data, setData] = useState<CabinetData>(() => {
     const d: CabinetData = { ...view.data };
@@ -229,21 +213,9 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
           </button>
         </div>
 
-        <ol className={clsx("mt-8 grid gap-2", "grid-cols-1 sm:grid-cols-3")} aria-label={t.title}>
-          {steps.map((label, i) => (
-            <li
-              key={label}
-              aria-current={i === step ? "step" : undefined}
-              className={clsx(
-                "rounded-xl border px-3 py-2.5 text-[13px] font-semibold leading-tight sm:text-[14px]",
-                i < step || CLIENT_FINISHED.includes(view.status) ? "border-accent/30 bg-accent-soft text-ink" : i === step ? "border-brand bg-brand-soft text-ink" : "border-line text-muted"
-              )}
-            >
-              <span className="mr-1.5 tabular-nums">{i + 1}.</span>
-              {label}
-            </li>
-          ))}
-        </ol>
+        <div className="mt-8" aria-label={t.title}>
+          <Pipeline service={view.service} status={view.status} locale={locale} />
+        </div>
 
         {notice && (
           <div
@@ -263,8 +235,8 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
         {view.status === "keta_applied" && <Banner tone="wait" title={t.ketaAppliedTitle} text={t.ketaAppliedText} />}
         {view.status === "keta_rejected" && <Banner tone="warn" title={t.ketaRejectedTitle} text={view.job.message || t.ketaRejectedText} />}
         {keta && (view.status === "keta_approved" || view.status === "done") && <KetaCard view={view} t={t} hasFile={Boolean(files.keta)} />}
-        {view.status === "signed_uploaded" && <Banner tone="wait" title={t.zavWaitTitle} text={t.zavWaitText} />}
-        {!keta && (view.status === "zav_received" || view.status === "done") && <ZavCard view={view} t={t} hasFile={Boolean(files.zav)} />}
+        {(view.status === "signed_uploaded" || view.status === "sent_partner") && <Banner tone="wait" title={t.zavWaitTitle} text={t.zavWaitText} />}
+        {!keta && ["zav_received", "visa_applying", "visa_received", "done"].includes(view.status) && <ZavCard view={view} t={t} hasFile={Boolean(files.zav)} />}
 
         {files.declaration && (
           <div className="card mt-6 p-5 sm:p-7">

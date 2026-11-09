@@ -8,7 +8,7 @@ import { escapeHtml, sendTelegram } from "@/lib/telegram";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const ORDER: CabinetStatus[] = ["waiting_data", "declaration_ready", "signed_uploaded", "zav_received", "keta_applying", "keta_applied", "keta_approved", "done"];
+const ORDER: CabinetStatus[] = ["waiting_data", "declaration_ready", "signed_uploaded", "sent_partner", "zav_received", "visa_applying", "visa_received", "keta_applying", "keta_applied", "keta_approved", "done"];
 /** Moves the status forward to `target`, never backwards. */
 const atLeast = (current: CabinetStatus | undefined, target: CabinetStatus) =>
   ORDER.indexOf(current ?? "waiting_data") >= ORDER.indexOf(target) ? current! : target;
