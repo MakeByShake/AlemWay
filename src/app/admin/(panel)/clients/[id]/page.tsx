@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getCabinetFull, cabinetName, getManagerOptions } from "@/lib/admin/data";
 import { requireAdminUser } from "@/lib/admin/session";
 import { CABINET_STATUSES, PIPELINES, FERIENJOB_FULL_SECTIONS, FILE_LABELS, KETA_SECTIONS, SERVICE_FILES, SERVICE_TITLES, serviceOf, type CabinetField } from "@/lib/cabinet/fields";
-import { declarationAction, deleteCabinetAction, deletePaymentAction, newLinkAction, paymentStatusAction, setPriceAction, updateCabinetAction } from "../../../actions";
+import { declarationAction, deleteCabinetAction, updateAnketaAction, deletePaymentAction, newLinkAction, paymentStatusAction, setPriceAction, updateCabinetAction } from "../../../actions";
 import { PAYMENT_METHODS, PAYMENT_STATUS_TITLES, formatTenge, paymentTotals } from "@/lib/cabinet/payments";
 import { Badge, PageTitle, Progress, fmtDate, waLink } from "@/components/admin/bits";
 import { Pipeline } from "@/components/Pipeline";
@@ -18,12 +18,30 @@ const STATUSES_FOR: Record<string, readonly string[]> = {
   keta: [...PIPELINES.keta.map((s) => s.status), "keta_rejected"],
 };
 
-function showValue(f: CabinetField, v: string | undefined) {
-  if (!v) return <span className="text-muted">—</span>;
-  if (f.kind === "yesno") return v === "yes" ? "Да" : v === "no" ? "Нет" : v;
-  if (f.kind === "select") return f.options?.find((o) => o.value === v)?.label.ru ?? v;
-  if (f.kind === "date") return fmtDate(v, false);
-  return v;
+function AnketaInput({ f, value }: { f: CabinetField; value: string }) {
+  const name = `d_${f.key}`;
+  const cls = "field py-2 text-[15px] font-normal text-ink";
+  if (f.kind === "yesno")
+    return (
+      <select name={name} defaultValue={value} className={cls}>
+        <option value="">—</option>
+        <option value="yes">Да</option>
+        <option value="no">Нет</option>
+      </select>
+    );
+  if (f.kind === "select")
+    return (
+      <select name={name} defaultValue={value} className={cls}>
+        <option value="">—</option>
+        {f.options?.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label.ru}
+          </option>
+        ))}
+      </select>
+    );
+  const type = f.kind === "date" ? "date" : f.kind === "email" ? "email" : f.kind === "number" ? "number" : "text";
+  return <input name={name} type={type} defaultValue={value} maxLength={f.maxLength ?? 200} placeholder={f.placeholder} className={cls} />;
 }
 
 function Section({ title, children, hint }: { title: string; children: React.ReactNode; hint?: string }) {
@@ -397,21 +415,28 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
       <section className="card mt-5 p-4 sm:p-6">
         <h2 className="text-[18px] font-bold">Анкета клиента</h2>
         <p className="mt-1 text-[14px] text-muted">{cab.submittedAt ? `Отправлена ${fmtDate(cab.submittedAt)}` : "Клиент ещё не отправил анкету"}</p>
-        <div className="mt-4 grid gap-6 lg:grid-cols-2">
-          {(keta ? KETA_SECTIONS : FERIENJOB_FULL_SECTIONS).map((sec) => (
-            <div key={sec.id}>
-              <h3 className="mb-2 text-[15px] font-bold text-brand">{sec.title.ru}</h3>
-              <dl className="divide-y divide-line text-[14px]">
-                {sec.fields.map((f) => (
-                  <div key={f.key} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3 py-1.5">
-                    <dt className="text-muted">{f.label.ru}</dt>
-                    <dd className="font-medium break-words">{showValue(f, cab.data?.[f.key])}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          ))}
-        </div>
+        <p className="mt-1 text-[13px] text-muted">Можно исправить любое поле и нажать «Сохранить анкету». Клиент увидит исправленные данные у себя.</p>
+        <ActionForm action={updateAnketaAction} className="mt-4">
+          <input type="hidden" name="id" value={id} />
+          <div className="grid gap-6 lg:grid-cols-2">
+            {(keta ? KETA_SECTIONS : FERIENJOB_FULL_SECTIONS).map((sec) => (
+              <fieldset key={sec.id}>
+                <legend className="mb-2 text-[15px] font-bold text-brand">{sec.title.ru}</legend>
+                <div className="grid gap-2.5">
+                  {sec.fields.map((f) => (
+                    <label key={f.key} className="grid gap-1 text-[13px] font-medium text-muted">
+                      {f.label.ru}
+                      <AnketaInput f={f} value={cab.data?.[f.key] ?? ""} />
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            ))}
+          </div>
+          <div className="mt-5">
+            <SubmitButton pendingText="Сохраняем…">Сохранить анкету</SubmitButton>
+          </div>
+        </ActionForm>
       </section>
 
       <div className="mt-8 flex justify-end">

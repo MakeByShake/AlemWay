@@ -21,7 +21,9 @@ import { AdminOpError, createCabinet, deleteCabinetCompletely } from "@/lib/cabi
 import { getCabinet, newLoginToken, patchCabinet, writeClient } from "@/lib/cabinet/server";
 import { checkAndBuildDeclaration } from "@/lib/cabinet/ai-flow";
 import { aiReady } from "@/lib/ai/declaration";
-import { CABINET_STATUSES, serviceOf } from "@/lib/cabinet/fields";
+import { CABINET_STATUSES, FERIENJOB_FULL_SECTIONS, KETA_FIELDS, serviceOf } from "@/lib/cabinet/fields";
+
+const FERIENJOB_ALL_FIELDS = FERIENJOB_FULL_SECTIONS.flatMap((sec) => sec.fields);
 import { FEEDBACK_STATUS_LIST, LEAD_STATUSES } from "@/lib/admin/data";
 import { formatTenge, parseAmount } from "@/lib/cabinet/payments";
 import { removePayment, setPaymentStatus } from "@/lib/cabinet/payments-server";
@@ -308,4 +310,28 @@ export async function deletePaymentAction(fd: FormData) {
   await removePayment(cab, s(fd, "key", 40));
   revalidatePath(`/admin/clients/${id}`);
   revalidatePath("/admin/finance");
+}
+
+/** Manager edits the client's questionnaire (any field). Empty = cleared. */
+export async function updateAnketaAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  await requireAdminUser();
+  const id = s(fd, "id", 100);
+  const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
+  if (!cab) return { error: "Кабинет не найден" };
+  const fields = serviceOf(cab.service) === "keta" ? KETA_FIELDS : FERIENJOB_ALL_FIELDS;
+  const set: Record<string, unknown> = {};
+  const unset: string[] = [];
+  for (const f of fields) {
+    if (!fd.has(`d_${f.key}`)) continue;
+    const v = s(fd, `d_${f.key}`, f.maxLength ?? 300);
+    if (v) set[`data.${f.key}`] = v;
+    else unset.push(`data.${f.key}`);
+  }
+  try {
+    await patchCabinet(id, set, unset);
+    revalidatePath(`/admin/clients/${id}`);
+    return { ok: true, message: "Анкета сохранена" };
+  } catch (err) {
+    return fail(err);
+  }
 }
