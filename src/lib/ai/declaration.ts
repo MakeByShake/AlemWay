@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { readFile } from "@/lib/cabinet/storage";
 import type { Cabinet, StoredFile } from "@/lib/cabinet/server";
 import { DECLARATION_PROMPT, UNIVERSITY_DIRECTORY } from "./prompts";
+import { recordUsage } from "./usage";
 
 /**
  * «Декларационный отдел»: Claude reads the certificate, passport and calendar plus the short questionnaire
@@ -163,6 +164,7 @@ export async function runDeclarationCheck(cab: Cabinet, todayIso: string): Promi
     ],
   });
   const msg = await stream.finalMessage();
+  await recordUsage("declaration", msg.usage);
   if (msg.stop_reason === "refusal") throw new Error("AI refused the request");
   const text = msg.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
   const parsed = JSON.parse(text) as Omit<AiCheck, "checkedAt">;

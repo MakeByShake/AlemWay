@@ -4,6 +4,7 @@ import { isSameOrigin, readJsonObject } from "@/lib/http";
 import { currentCabinet, displayName } from "@/lib/cabinet/server";
 import { CABINET_FIELDS, CABINET_STATUSES, FILE_LABELS, SERVICE_FILES, serviceOf } from "@/lib/cabinet/fields";
 import { ASSISTANT_PROMPT } from "@/lib/ai/prompts";
+import { recordUsage } from "@/lib/ai/usage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -97,6 +98,7 @@ export async function POST(req: NextRequest) {
           if (event.type === "content_block_delta" && event.delta.type === "text_delta") controller.enqueue(encoder.encode(event.delta.text));
         }
         const final = await stream.finalMessage();
+        await recordUsage("chat", final.usage);
         if (final.stop_reason === "refusal") controller.enqueue(encoder.encode("Лучше уточните это у куратора в WhatsApp."));
       } catch (err) {
         console.error("[chat] failed", err);

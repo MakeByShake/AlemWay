@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { cabinetName, getFinanceRows } from "@/lib/admin/data";
 import { requireAdminUser } from "@/lib/admin/session";
+import { getAiStats } from "@/lib/ai/usage";
+import { AiBalance } from "@/components/admin/AiBalance";
 import { formatTenge, paymentTotals } from "@/lib/cabinet/payments";
 import { Badge, Empty, FilterTabs, PageTitle, SERVICE_SHORT, fmtDate } from "@/components/admin/bits";
 
@@ -15,7 +17,8 @@ const FILTERS = [
 export default async function FinancePage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
   await requireAdminUser({ owner: true });
   const { status } = await searchParams;
-  const rows = (await getFinanceRows()).map((r) => ({ ...r, money: paymentTotals(r.price, r.payments) }));
+  const [rawRows, ai] = await Promise.all([getFinanceRows(), getAiStats()]);
+  const rows = rawRows.map((r) => ({ ...r, money: paymentTotals(r.price, r.payments) }));
 
   const month = new Date().toISOString().slice(0, 7);
   const all = rows.flatMap((r) => (r.payments ?? []).map((p) => ({ ...p, row: r })));
@@ -155,6 +158,9 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
           </div>
         )}
       </section>
+      <div className="mt-8">
+        <AiBalance stats={ai} />
+      </div>
     </>
   );
 }

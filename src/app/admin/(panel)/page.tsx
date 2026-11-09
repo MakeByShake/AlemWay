@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { getDashboard, cabinetName, LEAD_STATUSES } from "@/lib/admin/data";
 import { requireAdminUser } from "@/lib/admin/session";
+import { getAiStats } from "@/lib/ai/usage";
+import { AiBalance } from "@/components/admin/AiBalance";
 import { Badge, Empty, PageTitle, Progress, SERVICE_SHORT, fmtDate } from "@/components/admin/bits";
 
 export const metadata = { title: "Главная" };
 
 export default async function AdminHome() {
   const me = await requireAdminUser();
-  const d = await getDashboard(me.login);
+  const [d, ai] = await Promise.all([getDashboard(me.login), me.role === "owner" ? getAiStats() : null]);
   const cards = [
     { label: "Мои клиенты", value: d.myClients, href: `/admin/clients?manager=${me.login}` },
     { label: "Новые заявки", value: d.newLeads, href: "/admin/leads?status=new", hot: d.newLeads > 0 },
@@ -26,6 +28,11 @@ export default async function AdminHome() {
             <p className={`mt-1 text-[30px] font-bold tabular-nums ${c.hot ? "text-brand" : ""}`}>{c.value}</p>
           </a>
         ))}
+        {ai && (
+          <Link href="/admin/finance" className="block hover:opacity-90">
+            <AiBalance stats={ai} compact />
+          </Link>
+        )}
       </div>
 
       <div className="mt-8 grid gap-6 xl:grid-cols-2">

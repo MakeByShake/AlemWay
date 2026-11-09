@@ -28,6 +28,7 @@ const FERIENJOB_ALL_FIELDS = FERIENJOB_FULL_SECTIONS.flatMap((sec) => sec.fields
 import { FEEDBACK_STATUS_LIST, LEAD_STATUSES } from "@/lib/admin/data";
 import { formatTenge, parseAmount } from "@/lib/cabinet/payments";
 import { removePayment, setPaymentStatus } from "@/lib/cabinet/payments-server";
+import { setAiBalance } from "@/lib/ai/usage";
 
 /** Every action re-checks the login: server actions can be called directly by POST. */
 
@@ -375,4 +376,15 @@ export async function deleteClientFileAction(fd: FormData) {
   await patchCabinet(id, {}, [`files.${kind}`]);
   if (path) await deleteFile(path);
   revalidatePath(`/admin/clients/${id}`);
+}
+
+/** Owner types the balance shown in the Claude Console; the site counts spending from now on. */
+export async function setAiBalanceAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  await requireAdminUser({ owner: true });
+  const amount = Number(s(fd, "amount", 20).replace(",", ".").replace(/[^\d.]/g, ""));
+  if (!Number.isFinite(amount) || amount < 0 || amount > 100000) return { error: "Укажите сумму в долларах, например 97.40" };
+  await setAiBalance(amount);
+  revalidatePath("/admin/finance");
+  revalidatePath("/admin");
+  return { ok: true, message: `Остаток ${amount.toFixed(2)} $ сохранён — дальше сайт считает расходы сам` };
 }
