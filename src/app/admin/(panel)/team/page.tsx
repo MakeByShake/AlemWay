@@ -1,8 +1,8 @@
 import { getAdminUsers } from "@/lib/admin/data";
 import { requireAdminUser } from "@/lib/admin/session";
-import { addManagerAction, removeManagerAction, setPasswordAction } from "../../actions";
+import { addManagerAction, removeManagerAction, setPasswordAction, setRoleAction } from "../../actions";
 import { Badge, PageTitle, fmtDate } from "@/components/admin/bits";
-import { ActionForm, ConfirmForm, SubmitButton } from "@/components/admin/ui";
+import { ActionForm, AutoSelect, ConfirmForm, SubmitButton } from "@/components/admin/ui";
 
 export const metadata = { title: "Команда" };
 
@@ -73,6 +73,17 @@ export default async function TeamPage() {
                 </div>
                 {u.login !== me.login && (
                   <div className="flex flex-wrap items-center gap-3">
+                    <AutoSelect
+                      action={setRoleAction}
+                      hidden={{ login: u.login }}
+                      name="role"
+                      label="Роль"
+                      value={u.role === "owner" ? "owner" : "manager"}
+                      options={[
+                        { value: "manager", title: "Менеджер" },
+                        { value: "owner", title: "Владелец" },
+                      ]}
+                    />
                     <ActionForm action={setPasswordAction} className="flex gap-2" resetOnSuccess>
                       <input type="hidden" name="login" value={u.login} />
                       <input name="password" type="text" minLength={8} required placeholder="Новый пароль" className="field w-40 py-1.5 text-[14px]" />

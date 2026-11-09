@@ -335,3 +335,15 @@ export async function updateAnketaAction(_prev: ActionState, fd: FormData): Prom
     return fail(err);
   }
 }
+
+/** Owner changes someone's role (manager ↔ owner). You can't change your own role. */
+export async function setRoleAction(fd: FormData) {
+  const me = await requireAdminUser({ owner: true });
+  const login = s(fd, "login", 40);
+  const role = s(fd, "role", 10) === "owner" ? "owner" : "manager";
+  if (!LOGIN_RE.test(login) || login === me.login) return;
+  const user = await getAdminUserByLogin(login);
+  if (!user) return;
+  await writeClient().patch(user._id).set({ role }).commit();
+  revalidatePath("/admin/team");
+}

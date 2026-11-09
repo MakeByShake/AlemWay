@@ -50,6 +50,7 @@ export function AutoSelect({
   value,
   options,
   className,
+  label = "Статус",
 }: {
   action: (fd: FormData) => Promise<void>;
   hidden: Record<string, string>;
@@ -57,6 +58,7 @@ export function AutoSelect({
   value: string;
   options: readonly { value: string; title: string }[];
   className?: string;
+  label?: string;
 }) {
   const ref = useRef<HTMLFormElement>(null);
   const { pending: busy, onSubmit } = useSubmit(action);
@@ -71,7 +73,7 @@ export function AutoSelect({
         disabled={busy}
         onChange={() => ref.current?.requestSubmit()}
         className={clsx("rounded-lg border border-line bg-white px-2.5 py-1.5 text-[14px] font-medium disabled:opacity-60", className)}
-        aria-label="Статус"
+        aria-label={label}
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
