@@ -21,7 +21,8 @@ import { AdminOpError, createCabinet, deleteCabinetCompletely } from "@/lib/cabi
 import { getCabinet, newLoginToken, patchCabinet, writeClient } from "@/lib/cabinet/server";
 import { checkAndBuildDeclaration } from "@/lib/cabinet/ai-flow";
 import { aiReady } from "@/lib/ai/declaration";
-import { CABINET_STATUSES, FERIENJOB_FULL_SECTIONS, KETA_FIELDS, serviceOf } from "@/lib/cabinet/fields";
+import { CABINET_STATUSES, FERIENJOB_FULL_SECTIONS, FILE_KINDS, KETA_FIELDS, serviceOf, type FileKind } from "@/lib/cabinet/fields";
+import { deleteFile } from "@/lib/cabinet/storage";
 
 const FERIENJOB_ALL_FIELDS = FERIENJOB_FULL_SECTIONS.flatMap((sec) => sec.fields);
 import { FEEDBACK_STATUS_LIST, LEAD_STATUSES } from "@/lib/admin/data";
@@ -346,4 +347,17 @@ export async function setRoleAction(fd: FormData) {
   if (!user) return;
   await writeClient().patch(user._id).set({ role }).commit();
   revalidatePath("/admin/team");
+}
+
+/** Manager deletes one file of a client (from storage too). */
+export async function deleteClientFileAction(fd: FormData) {
+  await requireAdminUser();
+  const id = s(fd, "id", 100);
+  const kind = s(fd, "kind", 20) as FileKind;
+  const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
+  if (!cab || !FILE_KINDS.includes(kind)) return;
+  const path = cab.files?.[kind]?.path;
+  await patchCabinet(id, {}, [`files.${kind}`]);
+  if (path) await deleteFile(path);
+  revalidatePath(`/admin/clients/${id}`);
 }

@@ -39,7 +39,7 @@ const nextConfig: NextConfig = {
       { source: "/:path*", headers: commonHeaders },
       // Public site gets a strict CSP. The admin (/studio) is a large Sanity app with its own needs,
       // so it only gets the anti-framing rule plus the common headers above.
-      { source: "/((?!studio).*)", headers: [{ key: "Content-Security-Policy", value: siteCsp }] },
+      { source: "/((?!studio|api/admin/cabinet/file|api/admin/cabinet/receipt).*)", headers: [{ key: "Content-Security-Policy", value: siteCsp }] },
       { source: "/admin/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }, { key: "Cache-Control", value: "no-store" }] },
       {
         source: "/studio/:path*",

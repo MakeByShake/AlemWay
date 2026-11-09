@@ -20,6 +20,7 @@ import {
 import {
   declarationAction,
   deleteCabinetAction,
+  deleteClientFileAction,
   updateAnketaAction,
   deletePaymentAction,
   newLinkAction,
@@ -528,18 +529,38 @@ export default async function ClientPage({
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         {f && (
-                          <a
-                            href={`/api/admin/cabinet/file?id=${encodeURIComponent(id)}&kind=${kind}`}
-                            className="btn-primary min-h-9 px-3 text-[13px]"
-                          >
-                            Скачать
-                          </a>
+                          <>
+                            <a
+                              href={`/api/admin/cabinet/file?id=${encodeURIComponent(id)}&kind=${kind}&view=1`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn-primary min-h-9 px-3 text-[13px]"
+                            >
+                              Открыть
+                            </a>
+                            <a
+                              href={`/api/admin/cabinet/file?id=${encodeURIComponent(id)}&kind=${kind}`}
+                              className="btn-ghost min-h-9 px-3 text-[13px]"
+                            >
+                              Скачать
+                            </a>
+                          </>
                         )}
                         <FileUpload
                           id={id}
                           kind={kind}
                           label={f ? "Заменить" : "Загрузить"}
                         />
+                        {f && (
+                          <QuickButton
+                            action={deleteClientFileAction}
+                            hidden={{ id, kind }}
+                            confirmText={`Удалить файл «${FILE_LABELS[kind].ru}»? Это нельзя отменить.`}
+                            className="min-h-9 px-2 text-[13px] font-medium text-red-600 hover:underline"
+                          >
+                            Удалить
+                          </QuickButton>
+                        )}
                       </div>
                     </li>
                   );
@@ -730,7 +751,9 @@ export default async function ClientPage({
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                           {p.receipt && (
                             <a
-                              href={`/api/admin/cabinet/receipt?id=${encodeURIComponent(id)}&key=${p._key}`}
+                              href={`/api/admin/cabinet/receipt?id=${encodeURIComponent(id)}&key=${p._key}&view=1`}
+                              target="_blank"
+                              rel="noopener noreferrer"
                               className="btn-primary min-h-8 px-2.5 text-[13px]"
                             >
                               Открыть чек

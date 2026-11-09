@@ -4,7 +4,7 @@ import { readFile } from "./storage";
 import type { StoredFile } from "./server";
 
 /** Streams a private file as a download. Never cached by browsers or CDNs. */
-export async function fileResponse(file: StoredFile | undefined) {
+export async function fileResponse(file: StoredFile | undefined, opts: { inline?: boolean } = {}) {
   if (!file?.path) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
   const found = await readFile(file.path);
   if (!found) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
@@ -12,7 +12,7 @@ export async function fileResponse(file: StoredFile | undefined) {
   return new NextResponse(found.body as BodyInit, {
     headers: {
       "Content-Type": found.contentType,
-      "Content-Disposition": `attachment; filename="${safeName}"`,
+      "Content-Disposition": `${opts.inline ? "inline" : "attachment"}; filename="${safeName}"`,
       "Cache-Control": "private, no-store",
       "X-Content-Type-Options": "nosniff",
     },
