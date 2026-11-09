@@ -50,6 +50,7 @@ export type Feedback = {
 
 export type CabinetRow = {
   _id: string;
+  number?: number;
   _createdAt: string;
   service?: ServiceId;
   status?: string;
@@ -90,11 +91,11 @@ export function getCabinets(filter: { service?: string; status?: string; q?: str
        && (!defined($service) || coalesce(service, "ferienjob") == $service)
        && (!defined($status) || coalesce(status, "waiting_data") == $status)
        && (!defined($manager) || ($manager == "-" && !defined(manager)) || manager == $manager)
-       && (!defined($q) || clientName match $q || clientPhone match $q || data.firstName match $q || data.lastName match $q)
-     ] | order(_createdAt desc)[0...300]{
-      _id, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName, managerName
+       && (!defined($q) || string(number) == $num || clientName match $q || clientPhone match $q || data.firstName match $q || data.lastName match $q)
+     ] | order(coalesce(number, 0) desc, _createdAt desc)[0...300]{
+      _id, number, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName, managerName
     }`,
-    { service: filter.service || null, status: filter.status || null, q, manager: filter.manager || null }
+    { service: filter.service || null, status: filter.status || null, q, num: filter.q?.trim().replace(/^№\s*/, "") || null, manager: filter.manager || null }
   );
 }
 
@@ -127,7 +128,7 @@ export function getDashboard(login: string) {
         _id, status, name, phone, serviceTitle, "createdAt": coalesce(createdAt, _createdAt)
       },
       "actionClients": *[_type == "cabinet" && ${notDraft} && status in ["signed_uploaded", "keta_applying"]] | order(_updatedAt desc)[0...8]{
-        _id, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName
+        _id, number, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName
       }
     }`,
     { login }
@@ -171,8 +172,8 @@ export type FinanceRow = CabinetRow & { price?: number; payments?: Payment[]; ma
 
 export function getFinanceRows() {
   return writeClient().fetch<FinanceRow[]>(
-    `*[_type == "cabinet" && ${notDraft}] | order(_createdAt desc){
-      _id, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName,
+    `*[_type == "cabinet" && ${notDraft}] | order(coalesce(number, 0) desc){
+      _id, number, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName,
       manager, managerName, price, payments
     }`
   );

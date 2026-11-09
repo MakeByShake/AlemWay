@@ -200,7 +200,7 @@ export default async function ClientPage({
       >
         ← Все клиенты
       </Link>
-      <PageTitle title={name}>
+      <PageTitle title={cab.number ? `№${cab.number} · ${name}` : name}>
         <div className="flex flex-wrap items-center gap-3">
           <a
             href={`/api/admin/cabinet/zip?id=${encodeURIComponent(id)}`}

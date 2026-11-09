@@ -16,6 +16,7 @@ export type StoredFile = { path: string; name: string; contentType: string; size
 
 export type Cabinet = {
   _id: string;
+  number?: number;
   _rev?: string;
   status?: CabinetStatus;
   clientName?: string;
@@ -41,7 +42,7 @@ export type Cabinet = {
   aiCheck?: AiCheck;
 };
 
-const PROJECTION = `{_id, _rev, service, status, clientName, clientPhone, data, files, declarationDate, submittedAt, signedAt,
+const PROJECTION = `{_id, number, _rev, service, status, clientName, clientPhone, data, files, declarationDate, submittedAt, signedAt,
   zavReceivedAt, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil, manager, managerName, price, payments, aiCheck}`;
 
 export function writeClient(): SanityClient {

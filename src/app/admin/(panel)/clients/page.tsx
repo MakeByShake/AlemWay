@@ -67,7 +67,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
       </details>
 
       <form className="mb-5 flex flex-wrap gap-2" action="/admin/clients">
-        <input name="q" defaultValue={q} placeholder="Поиск по имени или телефону" className="field min-w-[220px] flex-1" />
+        <input name="q" defaultValue={q} placeholder="Поиск: имя, телефон или №" className="field min-w-[220px] flex-1" />
         <select name="service" defaultValue={service} className="field w-full sm:w-auto sm:max-w-[240px]">
           {SERVICE_FILTER.map((s) => (
             <option key={s.value} value={s.value}>
@@ -107,7 +107,10 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
             return (
               <li key={c._id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                 <Link href={`/admin/clients/${c._id}`} className="min-w-0 flex-1 hover:text-brand">
-                  <span className="block font-semibold">{cabinetName(c)}</span>
+                  <span className="block font-semibold">
+                    {c.number && <span className="mr-1.5 text-muted tabular-nums">№{c.number}</span>}
+                    {cabinetName(c)}
+                  </span>
                   <span className="text-[13px] text-muted">
                     {SERVICE_SHORT[c.service ?? "ferienjob"]} · {c.clientPhone || "без телефона"} · создан {fmtDate(c._createdAt, false)}
                   </span>

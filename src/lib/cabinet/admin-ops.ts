@@ -35,9 +35,12 @@ export async function createCabinet(input: { clientName: string; clientPhone: st
 
   const id = newCabinetId();
   const { hash, link } = newLoginToken();
+  // Client number: the next after the largest one (never reused).
+  const last = await client.fetch<number | null>(`*[_type == "cabinet" && defined(number)] | order(number desc)[0].number`);
   await client.create({
     _id: id,
     _type: "cabinet",
+    number: (last ?? 0) + 1,
     service,
     status: "waiting_data",
     ...(DEFAULT_PRICE[service] ? { price: DEFAULT_PRICE[service] } : {}),

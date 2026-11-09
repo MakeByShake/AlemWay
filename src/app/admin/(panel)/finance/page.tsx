@@ -134,6 +134,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
                   <tr key={r._id} className="hover:bg-surface">
                     <td className="px-4 py-2.5">
                       <Link href={`/admin/clients/${r._id}`} className="font-semibold hover:text-brand">
+                        {r.number ? `№${r.number} · ` : ""}
                         {cabinetName(r)}
                       </Link>
                       <span className="block text-[12.5px] text-muted">{SERVICE_SHORT[r.service ?? "ferienjob"]}</span>

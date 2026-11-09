@@ -39,6 +39,7 @@ export default async function AdminHome() {
                 <li key={c._id}>
                   <Link href={`/admin/clients/${c._id}`} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 hover:bg-surface">
                     <span className="font-semibold">
+                      {c.number ? `№${c.number} · ` : ""}
                       {cabinetName(c)} <span className="ml-1 text-[13px] font-normal text-muted">{SERVICE_SHORT[c.service ?? "ferienjob"]}</span>
                     </span>
                     <Progress service={c.service} status={c.status} />
