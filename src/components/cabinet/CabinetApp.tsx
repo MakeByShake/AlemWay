@@ -93,7 +93,7 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
     return d;
   });
   const [errors, setErrors] = useState<Record<string, FieldError>>({});
-  const [busy, setBusy] = useState<null | "save" | "submit" | UploadKind>(null);
+  const [busy, setBusy] = useState<null | "save" | "submit" | "submitSigned" | UploadKind>(null);
   const [notice, setNotice] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
   const [files, setFiles] = useState(view.files);
   const [ai, setAi] = useState(view.ai);
@@ -193,6 +193,21 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
     }
   }
 
+  async function submitSigned() {
+    setNotice(null);
+    setBusy("submitSigned");
+    try {
+      const res = await fetch("/api/cabinet/submit-signed", { method: "POST" });
+      if (!res.ok) throw new Error();
+      router.refresh();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch {
+      setNotice({ tone: "err", text: t.errorGeneric });
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function logout() {
     await fetch("/api/cabinet/logout", { method: "POST" }).catch(() => null);
     router.refresh();
@@ -235,7 +250,15 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
         {view.status === "keta_applied" && <Banner tone="wait" title={t.ketaAppliedTitle} text={t.ketaAppliedText} />}
         {view.status === "keta_rejected" && <Banner tone="warn" title={t.ketaRejectedTitle} text={view.job.message || t.ketaRejectedText} />}
         {keta && (view.status === "keta_approved" || view.status === "done") && <KetaCard view={view} t={t} hasFile={Boolean(files.keta)} />}
-        {(view.status === "signed_uploaded" || view.status === "sent_partner") && <Banner tone="wait" title={t.zavWaitTitle} text={t.zavWaitText} />}
+        {!keta && (view.status === "signed_uploaded" || view.status === "sent_partner") && (
+          <div className="card mt-6 border-accent/40 bg-accent-soft p-6 text-center sm:p-10">
+            <p className="text-[56px] leading-none" aria-hidden>
+              🎉
+            </p>
+            <h2 className="mt-4 text-[24px] font-bold sm:text-[28px]">{t.zavWaitTitle.replace(/^🎉\s*/, "")}</h2>
+            <p className="mx-auto mt-3 max-w-xl text-[16px] leading-relaxed text-muted">{t.zavWaitText}</p>
+          </div>
+        )}
         {!keta && ["zav_received", "visa_applying", "visa_received", "done"].includes(view.status) && <ZavCard view={view} t={t} hasFile={Boolean(files.zav)} />}
 
         {files.declaration && (
@@ -269,7 +292,7 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
               <Download className="h-4 w-4" /> {t.download}
             </a>
 
-            {(view.status === "declaration_ready" || view.status === "signed_uploaded") && (
+            {view.status === "declaration_ready" && (
               <div className="mt-6 border-t border-line pt-5">
                 <FileRow
                   label={t.signedTitle}
@@ -279,6 +302,20 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
                   buttonText={files.signed ? t.replace : t.signedUpload}
                   onPick={(f) => upload("signed", f)}
                 />
+                {files.signed && (
+                  <div className="mt-4 rounded-xl bg-brand-soft p-4">
+                    <p className="text-[15px]">{t.submitSignedHint}</p>
+                    <button type="button" onClick={submitSigned} disabled={busy !== null} className="btn-primary mt-3 w-full sm:w-auto">
+                      {busy === "submitSigned" ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" /> {t.submittingSigned}
+                        </>
+                      ) : (
+                        t.submitSigned
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
             {view.status === "declaration_ready" && <p className="mt-5 text-[14px] leading-relaxed text-muted">{t.editAgain}</p>}

@@ -1,9 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isSameOrigin } from "@/lib/http";
 import { SERVICE_FILES, UPLOAD_KINDS, serviceOf, type UploadKind } from "@/lib/cabinet/fields";
-import { cabinetAdminUrl, managerLine, currentCabinet, displayName, patchCabinet } from "@/lib/cabinet/server";
+import { currentCabinet, patchCabinet } from "@/lib/cabinet/server";
 import { readUpload, storeCabinetFile } from "@/lib/cabinet/uploads";
-import { escapeHtml, sendTelegram } from "@/lib/telegram";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,22 +34,9 @@ export async function POST(req: NextRequest) {
   if (!up.ok) return fail(up.error, up.status);
   const { file, cleanup } = await storeCabinetFile(cab, kind, up);
 
-  const set: Record<string, unknown> = { [`files.${kind}`]: file };
-  if (kind === "signed") Object.assign(set, { status: "signed_uploaded", signedAt: file.uploadedAt });
-  await patchCabinet(cab._id, set);
+  // The signed declaration is only stored here; the client then presses «Отправить декларацию с печатью».
+  await patchCabinet(cab._id, { [`files.${kind}`]: file });
   await cleanup();
-
-  if (kind === "signed") {
-    await sendTelegram([
-      "<b>✅ Клиент закончил: подписанная декларация загружена</b>",
-      "",
-      `<b>Клиент:</b> ${escapeHtml(displayName(cab))}`,
-      managerLine(cab),
-      "Деканат поставил подпись и печать. Со стороны клиента всё готово — можно передавать документы работодателю.",
-      "",
-      `📋 <a href="${cabinetAdminUrl(cab._id)}">Открыть кабинет в админке</a>`,
-    ]);
-  }
 
   return NextResponse.json({ ok: true, file: { name: file.name, size: file.size, uploadedAt: file.uploadedAt } });
 }

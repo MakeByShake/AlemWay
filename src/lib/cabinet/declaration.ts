@@ -2,7 +2,7 @@ import "server-only";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { PDFDocument } from "pdf-lib";
-import { toGermanDate } from "./fields";
+import { FERIENJOB_FULL_SECTIONS, toGermanDate } from "./fields";
 import { DECLARATION_PDF_KEYS, type AiCheck, type DeclarationFields } from "@/lib/ai/declaration";
 import { deleteFile, saveFile } from "./storage";
 import { patchCabinet, type Cabinet, type StoredFile } from "./server";
@@ -29,6 +29,25 @@ export async function buildDeclarationPdf(fields: DeclarationFields): Promise<Ui
   return doc.save();
 }
 
+/**
+ * The questionnaire gets everything the AI took from the documents (university, address, subject, study dates,
+ * name in Latin…), so the team sees a complete client card. Keys come from the form's `pdf` field names.
+ */
+export function anketaFromDeclaration(fields: Partial<DeclarationFields>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const f of FERIENJOB_FULL_SECTIONS.flatMap((s) => s.fields)) {
+    if (!f.pdf) continue;
+    const v = (fields[f.pdf as keyof DeclarationFields] ?? "").trim();
+    if (!v) continue;
+    if (f.kind === "date") {
+      const m = v.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+      if (m) out[f.key] = `${m[3]}-${m[2]}-${m[1]}`;
+    } else if (f.kind === "yesno") out[f.key] = /^(no|nein|нет)$/i.test(v) ? "no" : "yes";
+    else out[f.key] = v;
+  }
+  return out;
+}
+
 /** Stores the declaration made from the AI check and moves the cabinet to «Декларация готова». */
 export async function saveAiDeclaration(cab: Cabinet, ai: AiCheck): Promise<StoredFile> {
   const dateIso = todayAlmaty();
@@ -42,7 +61,8 @@ export async function saveAiDeclaration(cab: Cabinet, ai: AiCheck): Promise<Stor
   const previous = cab.files?.declaration?.path;
   // Rebuilding the declaration never moves a cabinet back from later stages (signed, ZAV, done).
   const nextStatus = !cab.status || cab.status === "waiting_data" ? "declaration_ready" : cab.status;
-  await patchCabinet(cab._id, { "files.declaration": file, declarationDate: dateIso, status: nextStatus });
+  const anketa = Object.fromEntries(Object.entries(anketaFromDeclaration(fields)).map(([k, v]) => [`data.${k}`, v]));
+  await patchCabinet(cab._id, { ...anketa, "files.declaration": file, declarationDate: dateIso, status: nextStatus });
   if (previous && previous !== stored) await deleteFile(previous);
   return file;
 }
