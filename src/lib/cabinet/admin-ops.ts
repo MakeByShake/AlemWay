@@ -41,6 +41,8 @@ export async function createCabinet(input: { clientName: string; clientPhone: st
     _id: id,
     _type: "cabinet",
     number: (last ?? 0) + 1,
+    // «Новые» fill in the questionnaire themselves; imported «старые» were filled in by the team.
+    group: "new",
     service,
     status: "waiting_data",
     ...(DEFAULT_PRICE[service] ? { price: DEFAULT_PRICE[service] } : {}),

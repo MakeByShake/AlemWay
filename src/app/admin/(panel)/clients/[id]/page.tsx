@@ -279,6 +279,13 @@ export default async function ClientPage({
                     ))}
                   </select>
                 </label>
+                <label className="grid gap-1 text-[14px] font-medium">
+                  Группа
+                  <select name="group" defaultValue={cab.group ?? "new"} className={input}>
+                    <option value="new">Новый — заполняет анкету сам</option>
+                    <option value="old">Старый — данные заполняем мы</option>
+                  </select>
+                </label>
                 {me.role === "owner" ? (
                   <label className="grid gap-1 text-[14px] font-medium">
                     Менеджер клиента

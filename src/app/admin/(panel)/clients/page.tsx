@@ -14,7 +14,7 @@ const SERVICE_FILTER = [
   { value: "keta", title: "🇰🇷 K-ETA" },
 ];
 
-export default async function ClientsPage({ searchParams }: { searchParams: Promise<{ service?: string; status?: string; q?: string; manager?: string }> }) {
+export default async function ClientsPage({ searchParams }: { searchParams: Promise<{ service?: string; status?: string; q?: string; manager?: string; group?: string }> }) {
   const sp = await searchParams;
   const service = sp.service === "ferienjob" || sp.service === "keta" ? sp.service : "";
   const status = CABINET_STATUSES.some((s) => s.value === sp.status) ? sp.status! : "";
@@ -24,11 +24,35 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
   // Managers open «Мои клиенты» by default; "all" shows everyone.
   const managerParam = sp.manager ?? (owner ? "" : me.login);
   const manager = managerParam === "-" || managers.some((m) => m.login === managerParam) ? managerParam : "";
-  const rows = await getCabinets({ service, status, q, manager });
+  const group = sp.group === "old" || sp.group === "new" ? sp.group : "";
+  const rows = await getCabinets({ service, status, q, manager, group });
+  const tabHref = (g: string) => {
+    const u = new URLSearchParams();
+    if (g) u.set("group", g);
+    if (sp.manager) u.set("manager", sp.manager);
+    const qs = u.toString();
+    return qs ? `/admin/clients?${qs}` : "/admin/clients";
+  };
 
   return (
     <>
       <PageTitle title="Клиенты (личные кабинеты)" />
+
+      <nav className="mb-5 flex gap-1 overflow-x-auto border-b border-line" aria-label="Группы клиентов">
+        {[
+          { g: "", label: "Все" },
+          { g: "new", label: "Новые — заполняют сами" },
+          { g: "old", label: "Старые — данные заполняем мы" },
+        ].map((x) => (
+          <Link
+            key={x.g || "all"}
+            href={tabHref(x.g)}
+            className={`-mb-px shrink-0 border-b-2 px-4 py-2.5 text-[15px] font-semibold ${group === x.g ? "border-brand text-brand" : "border-transparent text-muted hover:text-ink"}`}
+          >
+            {x.label}
+          </Link>
+        ))}
+      </nav>
 
       <details className="card mb-6 p-4 sm:p-5">
         <summary className="cursor-pointer text-[16px] font-bold text-brand">+ Новый клиент (без заявки с сайта)</summary>
@@ -67,6 +91,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
       </details>
 
       <form className="mb-5 flex flex-wrap gap-2" action="/admin/clients">
+        {group && <input type="hidden" name="group" value={group} />}
         <input name="q" defaultValue={q} placeholder="Поиск: имя, телефон или №" className="field min-w-[220px] flex-1" />
         <select name="service" defaultValue={service} className="field w-full sm:w-auto sm:max-w-[240px]">
           {SERVICE_FILTER.map((s) => (

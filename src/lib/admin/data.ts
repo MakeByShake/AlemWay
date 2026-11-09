@@ -84,18 +84,19 @@ export function getFeedback(status?: string) {
   );
 }
 
-export function getCabinets(filter: { service?: string; status?: string; q?: string; manager?: string }) {
+export function getCabinets(filter: { service?: string; status?: string; q?: string; manager?: string; group?: string }) {
   const q = filter.q?.trim() ? `*${filter.q.trim().replace(/[*"\\]/g, "")}*` : null;
   return writeClient().fetch<CabinetRow[]>(
     `*[_type == "cabinet" && ${notDraft}
        && (!defined($service) || coalesce(service, "ferienjob") == $service)
        && (!defined($status) || coalesce(status, "waiting_data") == $status)
+       && (!defined($group) || coalesce(group, "new") == $group)
        && (!defined($manager) || ($manager == "-" && !defined(manager)) || manager == $manager)
        && (!defined($q) || string(number) == $num || clientName match $q || clientPhone match $q || data.firstName match $q || data.lastName match $q)
      ] | order(coalesce(number, 0) desc, _createdAt desc)[0...300]{
       _id, number, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName, managerName
     }`,
-    { service: filter.service || null, status: filter.status || null, q, num: filter.q?.trim().replace(/^№\s*/, "") || null, manager: filter.manager || null }
+    { service: filter.service || null, status: filter.status || null, q, num: filter.q?.trim().replace(/^№\s*/, "") || null, manager: filter.manager || null, group: filter.group || null }
   );
 }
 

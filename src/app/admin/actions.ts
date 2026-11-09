@@ -31,7 +31,18 @@ import { removePayment, setPaymentStatus } from "@/lib/cabinet/payments-server";
 
 /** Every action re-checks the login: server actions can be called directly by POST. */
 
-export type ActionState = { ok?: boolean; error?: string; message?: string; link?: string; id?: string; login?: string } | null;
+export type ActionState = {
+  ok?: boolean;
+  error?: string;
+  message?: string;
+  link?: string;
+  id?: string;
+  login?: string;
+  clientName?: string;
+  phone?: string;
+  curator?: string;
+  service?: string;
+} | null;
 
 const s = (fd: FormData, key: string, max = 2000) => {
   const v = fd.get(key);
@@ -124,7 +135,7 @@ export async function createCabinetAction(_prev: ActionState, fd: FormData): Pro
     });
     if (leadId) await patchDoc(leadId, { status: "paid" }).catch(() => {});
     revalidatePath("/admin", "layout");
-    return { ok: true, ...res };
+    return { ok: true, ...res, clientName: s(fd, "clientName", 80), phone: s(fd, "clientPhone", 30), curator: me.role === "owner" ? undefined : me.name, service: service || undefined };
   } catch (err) {
     return fail(err);
   }
@@ -141,6 +152,8 @@ export async function updateCabinetAction(_prev: ActionState, fd: FormData): Pro
   const unset: string[] = [];
   const status = s(fd, "status", 40);
   if (CABINET_STATUSES.some((x) => x.value === status)) set.status = status;
+  const group = s(fd, "group", 5);
+  if (group === "old" || group === "new") set.group = group;
   for (const key of ["clientName", "clientPhone", "managerNote", "employerName", "workCity", "workPosition", "clientMessage"]) {
     if (fd.has(key)) set[key] = s(fd, key, key === "clientMessage" || key === "managerNote" ? 3000 : 200);
   }
@@ -169,10 +182,12 @@ export async function newLinkAction(_prev: ActionState, fd: FormData): Promise<A
   await requireAdminUser();
   const id = s(fd, "id", 100);
   if (!id.startsWith("cabinets.") || !(await getCabinet(id))) return { error: "Кабинет не найден" };
+  const cab = await getCabinet(id);
   const { hash, link } = newLoginToken();
   await patchCabinet(id, { tokenHash: hash, linkCreatedAt: new Date().toISOString() });
   revalidatePath(`/admin/clients/${id}`);
-  return { ok: true, link };
+  const curator = cab?.managerName && cab.managerName !== "AlemWay" ? cab.managerName : undefined;
+  return { ok: true, link, clientName: cab?.clientName, phone: cab?.clientPhone || cab?.data?.phone, curator, service: cab?.service };
 }
 
 export async function declarationAction(_prev: ActionState, fd: FormData): Promise<ActionState> {

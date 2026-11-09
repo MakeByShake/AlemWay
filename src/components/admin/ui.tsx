@@ -8,6 +8,7 @@ import clsx from "clsx";
 import { Check, Copy, Loader2, Upload } from "lucide-react";
 import type { ActionState } from "@/app/admin/actions";
 import { compressForUpload } from "@/lib/compress-file";
+import { welcomeMessage } from "@/lib/cabinet/whatsapp-template";
 
 /**
  * Small client pieces of the admin: buttons with pending state, auto-saving selects, confirm, copy, upload.
@@ -165,18 +166,19 @@ export function CopyButton({ text, label = "Скопировать" }: { text: s
 }
 
 /** Shows a fresh client login link with copy + «send to WhatsApp». */
-export function LinkBox({ link, phone }: { link: string; phone?: string }) {
+export function LinkBox({ link, phone, name, curator, service }: { link: string; phone?: string; name?: string; curator?: string; service?: string }) {
   const digits = (phone ?? "").replace(/\D/g, "").replace(/^8(\d{10})$/, "7$1");
-  const text = `Здравствуйте! Ваш личный кабинет AlemWay: ${link}\nСсылка личная — не пересылайте её никому.`;
+  const text = welcomeMessage({ name, link, curator, service });
   return (
     <div className="rounded-xl border border-accent/40 bg-accent-soft p-4">
       <p className="text-[14px] font-semibold">Ссылка для клиента (видна только сейчас — скопируйте):</p>
       <p className="mt-2 break-all rounded-lg bg-white px-3 py-2 font-mono text-[13px]">{link}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <CopyButton text={link} label="Скопировать ссылку" />
+        <CopyButton text={text} label="Скопировать шаблон" />
         {digits.length >= 11 && (
           <a className="btn-whatsapp min-h-9 px-3 text-[13px]" href={`https://wa.me/${digits}?text=${encodeURIComponent(text)}`} target="_blank" rel="noopener noreferrer">
-            Отправить в WhatsApp
+            Отправить шаблон в WhatsApp
           </a>
         )}
       </div>
@@ -222,7 +224,7 @@ export function ActionForm({
       {state?.message && <p className="mt-3 rounded-lg bg-accent-soft px-3 py-2 text-[14px]">{state.message}</p>}
       {state?.link && (
         <div className="mt-3">
-          <LinkBox link={state.link} phone={phone} />
+          <LinkBox link={state.link} phone={state.phone || phone} name={state.clientName} curator={state.curator} service={state.service} />
           {state.id && (
             <Link href={`/admin/clients/${state.id}`} className="mt-2 inline-block text-[14px] font-medium text-brand hover:underline">
               Открыть карточку клиента →
