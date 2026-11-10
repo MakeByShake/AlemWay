@@ -4,7 +4,7 @@ import { requireAdminUser } from "@/lib/admin/session";
 import { CABINET_STATUSES } from "@/lib/cabinet/fields";
 import { createCabinetAction } from "../../actions";
 import { Badge, Empty, PageTitle, Progress, SERVICE_SHORT, fmtDate, waLink } from "@/components/admin/bits";
-import { ActionForm, SubmitButton } from "@/components/admin/ui";
+import { ActionForm, CloseDetailsButton, SubmitButton } from "@/components/admin/ui";
 
 export const metadata = { title: "Клиенты" };
 
@@ -86,7 +86,10 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
               </select>
             </label>
           )}
-          <SubmitButton pendingText="Создаём…">Создать</SubmitButton>
+          <div className="flex gap-2">
+            <SubmitButton pendingText="Создаём…">Создать</SubmitButton>
+            <CloseDetailsButton />
+          </div>
         </ActionForm>
       </details>
 

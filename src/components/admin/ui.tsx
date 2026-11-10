@@ -374,3 +374,20 @@ export function AddPaymentForm({ id, methods }: { id: string; methods: readonly 
     </form>
   );
 }
+
+/** Closes the surrounding <details> (e.g. «+ Новый клиент») and clears its form. */
+export function CloseDetailsButton({ label = "Отмена" }: { label?: string }) {
+  return (
+    <button
+      type="button"
+      className="btn-ghost"
+      onClick={(e) => {
+        const details = e.currentTarget.closest("details");
+        details?.querySelector("form")?.reset();
+        if (details) details.open = false;
+      }}
+    >
+      {label}
+    </button>
+  );
+}
