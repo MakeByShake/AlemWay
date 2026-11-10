@@ -29,6 +29,7 @@ import { FEEDBACK_STATUS_LIST, LEAD_STATUSES } from "@/lib/admin/data";
 import { formatTenge, parseAmount } from "@/lib/cabinet/payments";
 import { removePayment, setPaymentStatus } from "@/lib/cabinet/payments-server";
 import { setAiBalance } from "@/lib/ai/usage";
+import { CONSULTATION_STATUSES } from "@/lib/consultation";
 
 /** Every action re-checks the login: server actions can be called directly by POST. */
 
@@ -387,4 +388,38 @@ export async function setAiBalanceAction(_prev: ActionState, fd: FormData): Prom
   revalidatePath("/admin/finance");
   revalidatePath("/admin");
   return { ok: true, message: `Остаток ${amount.toFixed(2)} $ сохранён — дальше сайт считает расходы сам` };
+}
+
+// ---------- Consultations ----------
+
+export async function updateConsultationAction(fd: FormData) {
+  const me = await requireAdminUser();
+  const id = s(fd, "id", 100);
+  if (!id.startsWith("consultations.")) return;
+  const set: Record<string, unknown> = {};
+  const unset: string[] = [];
+  const status = s(fd, "status", 20);
+  if (CONSULTATION_STATUSES.some((x) => x.value === status)) set.status = status;
+  if (fd.has("paid")) set.paid = s(fd, "paid", 5) === "yes";
+  if (fd.has("managerNote")) set.managerNote = s(fd, "managerNote", 2000);
+  // Who takes the consultation: the owner assigns anyone; a manager can take a free one for himself.
+  if (fd.has("manager")) {
+    const login = s(fd, "manager", 40);
+    if (me.role === "owner" || login === me.login) {
+      const u = login ? await getAdminUserByLogin(login) : null;
+      if (u) Object.assign(set, { manager: u.login, managerName: u.name });
+      else if (me.role === "owner") unset.push("manager", "managerName");
+    }
+  }
+  if (Object.keys(set).length || unset.length) await patchDoc(id, set, unset);
+  revalidatePath("/admin/consultations");
+  revalidatePath("/admin");
+}
+
+export async function deleteConsultationAction(fd: FormData) {
+  await requireAdminUser({ owner: true });
+  const id = s(fd, "id", 100);
+  if (!id.startsWith("consultations.")) return;
+  await deleteDoc(id);
+  revalidatePath("/admin/consultations");
 }

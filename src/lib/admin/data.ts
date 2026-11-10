@@ -179,3 +179,39 @@ export function getFinanceRows() {
     }`
   );
 }
+
+export type Consultation = {
+  _id: string;
+  status?: string;
+  name?: string;
+  phone?: string;
+  date?: string;
+  time?: string;
+  topicTitle?: string;
+  comment?: string;
+  price?: number;
+  paid?: boolean;
+  manager?: string;
+  managerName?: string;
+  managerNote?: string;
+  createdAt?: string;
+};
+
+/** Upcoming (from today) or past consultations; optional status and manager filters. */
+export function getConsultations(filter: { when: "upcoming" | "past"; today: string; status?: string; manager?: string }) {
+  const upcoming = filter.when === "upcoming";
+  return writeClient().fetch<Consultation[]>(
+    `*[_type == "consultation" && !(_id in path("drafts.**"))
+       && (${upcoming ? "date >= $today" : "date < $today"})
+       && (!defined($status) || status == $status)
+       && (!defined($manager) || manager == $manager)
+     ] | order(date ${upcoming ? "asc" : "desc"}, time ${upcoming ? "asc" : "desc"})[0...300]{
+      _id, status, name, phone, date, time, topicTitle, comment, price, paid, manager, managerName, managerNote, createdAt
+    }`,
+    { today: filter.today, status: filter.status || null, manager: filter.manager || null }
+  );
+}
+
+export function countConsultationsToday(today: string) {
+  return writeClient().fetch<number>(`count(*[_type == "consultation" && date == $today && status in ["new", "confirmed"]])`, { today });
+}

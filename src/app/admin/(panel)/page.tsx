@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getDashboard, cabinetName, LEAD_STATUSES } from "@/lib/admin/data";
+import { getDashboard, cabinetName, countConsultationsToday, LEAD_STATUSES } from "@/lib/admin/data";
+import { almatyNow } from "@/lib/consultation";
 import { requireAdminUser } from "@/lib/admin/session";
 import { getAiStats } from "@/lib/ai/usage";
 import { AiBalance } from "@/components/admin/AiBalance";
@@ -9,9 +10,10 @@ export const metadata = { title: "Главная" };
 
 export default async function AdminHome() {
   const me = await requireAdminUser();
-  const [d, ai] = await Promise.all([getDashboard(me.login), me.role === "owner" ? getAiStats() : null]);
+  const [d, ai, consToday] = await Promise.all([getDashboard(me.login), me.role === "owner" ? getAiStats() : null, countConsultationsToday(almatyNow().date)]);
   const cards = [
     { label: "Мои клиенты", value: d.myClients, href: `/admin/clients?manager=${me.login}` },
+    { label: "Консультации сегодня", value: consToday, href: "/admin/consultations", hot: consToday > 0 },
     { label: "Новые заявки", value: d.newLeads, href: "/admin/leads?status=new", hot: d.newLeads > 0 },
     { label: "Заявок за 7 дней", value: d.leadsWeek, href: "/admin/leads" },
     { label: "Клиенты в работе", value: d.activeClients, href: "/admin/clients" },

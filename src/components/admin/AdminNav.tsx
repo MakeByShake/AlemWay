@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
-import { Home, Inbox, MessageSquare, PenSquare, Users, UserCog, Wallet } from "lucide-react";
+import { CalendarClock, Home, Inbox, MessageSquare, PenSquare, Users, UserCog, Wallet } from "lucide-react";
 
 const ITEMS = [
   { href: "/admin", label: "Главная", icon: Home },
   { href: "/admin/leads", label: "Заявки", icon: Inbox },
   { href: "/admin/clients", label: "Клиенты", icon: Users },
+  { href: "/admin/consultations", label: "Консультации", icon: CalendarClock },
   { href: "/admin/finance", label: "Финансы", icon: Wallet, ownerOnly: true },
   { href: "/admin/feedback", label: "Отзывы", icon: MessageSquare },
   { href: "/admin/team", label: "Команда", icon: UserCog },

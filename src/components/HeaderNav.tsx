@@ -196,6 +196,9 @@ export function HeaderNav({
           <Link href="/about" className={linkCls}>
             {t("about")}
           </Link>
+          <Link href="/consultation" className={linkCls}>
+            {t("consultation")}
+          </Link>
           <Link href="/feedback" className={linkCls}>
             {t("feedback")}
           </Link>
@@ -257,6 +260,9 @@ export function HeaderNav({
               </Link>
               <Link href="/about" className="border-b border-line py-3.5 text-[17px] font-semibold">
                 {t("about")}
+              </Link>
+              <Link href="/consultation" className="border-b border-line py-3.5 text-[17px] font-semibold">
+                {t("consultation")}
               </Link>
               <Link href="/feedback" className="border-b border-line py-3.5 text-[17px] font-semibold">
                 {t("feedback")}
