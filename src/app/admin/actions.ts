@@ -429,3 +429,15 @@ export async function deleteConsultationAction(fd: FormData) {
   await deleteDoc(id);
   revalidatePath("/admin/consultations");
 }
+
+/** Owner marks who takes consultations (they appear on the booking page). */
+export async function setConsultantAction(fd: FormData) {
+  await requireAdminUser({ owner: true });
+  const login = s(fd, "login", 40);
+  const user = LOGIN_RE.test(login) ? await getAdminUserByLogin(login) : null;
+  if (!user) return;
+  await writeClient().patch(user._id).set({ consultant: s(fd, "consultant", 5) === "yes" }).commit();
+  revalidatePath("/admin/team");
+  revalidatePath("/ru/consultation");
+  revalidatePath("/kk/consultation");
+}

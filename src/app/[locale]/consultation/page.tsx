@@ -5,6 +5,7 @@ import { pageMetadata } from "@/lib/seo";
 import { SectionHeading } from "@/components/Sections";
 import { ConsultationForm } from "@/components/ConsultationForm";
 import { CONSULTATION_PRICE, bookableDays } from "@/lib/consultation";
+import { getConsultants } from "@/lib/consultants";
 
 // Free days change every day — render on request.
 export const dynamic = "force-dynamic";
@@ -58,7 +59,7 @@ export default async function ConsultationPage({ params }: { params: Promise<{ l
             ))}
           </ul>
         </div>
-        <ConsultationForm days={bookableDays()} locale={loc} />
+        <ConsultationForm days={bookableDays()} locale={loc} consultants={(await getConsultants().catch(() => [])).map((c) => ({ key: c.key, name: c.name }))} />
       </div>
     </section>
   );

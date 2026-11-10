@@ -1,6 +1,6 @@
 import { getAdminUsers } from "@/lib/admin/data";
 import { requireAdminUser } from "@/lib/admin/session";
-import { addManagerAction, removeManagerAction, setPasswordAction, setRoleAction } from "../../actions";
+import { addManagerAction, removeManagerAction, setConsultantAction, setPasswordAction, setRoleAction } from "../../actions";
 import { Badge, PageTitle, fmtDate } from "@/components/admin/bits";
 import { ActionForm, AutoSelect, ConfirmForm, SubmitButton } from "@/components/admin/ui";
 
@@ -70,6 +70,20 @@ export default async function TeamPage() {
                     <Badge tone={u.role === "owner" ? "blue" : "gray"}>{u.role === "owner" ? "Владелец" : "Менеджер"}</Badge>
                   </p>
                   <p className="text-[13px] text-muted">добавлен {fmtDate(u.createdAt, false)}</p>
+                  <div className="mt-1.5 flex items-center gap-2 text-[13px]">
+                    <span className="text-muted">Консультации:</span>
+                    <AutoSelect
+                      action={setConsultantAction}
+                      hidden={{ login: u.login }}
+                      name="consultant"
+                      label="Ведёт консультации"
+                      value={u.consultant ? "yes" : "no"}
+                      options={[
+                        { value: "no", title: "не ведёт" },
+                        { value: "yes", title: "✅ ведёт (видно на сайте)" },
+                      ]}
+                    />
+                  </div>
                 </div>
                 {u.login !== me.login && (
                   <div className="flex flex-wrap items-center gap-3">

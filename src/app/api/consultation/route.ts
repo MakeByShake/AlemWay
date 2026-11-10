@@ -4,15 +4,8 @@ import { getWriteClient } from "@/sanity/client";
 import { isSameOrigin, readJsonObject } from "@/lib/http";
 import { siteUrl } from "@/lib/i18n-content";
 import { escapeHtml, sendTelegram } from "@/lib/telegram";
-import {
-  ACTIVE_STATUSES,
-  CONSULTATION_PRICE,
-  CONSULTATION_TOPICS,
-  SLOT_CAPACITY,
-  formatDayRu,
-  normalizePhone,
-  slotValid,
-} from "@/lib/consultation";
+import { CONSULTATION_PRICE, CONSULTATION_TOPICS, formatDayRu, normalizePhone, slotValid } from "@/lib/consultation";
+import { bookedHours, getConsultants } from "@/lib/consultants";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,16 +22,14 @@ function rateLimited(ip: string) {
 
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 
-/** Booked hours of a day (no personal data) — the form hides them. */
+/** Booked hours of a day (no personal data) — the form hides them. `c` = consultant key or empty for «любой». */
 export async function GET(req: NextRequest) {
   const date = req.nextUrl.searchParams.get("date") ?? "";
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return NextResponse.json({ booked: [] });
-  const client = getWriteClient();
-  if (!client) return NextResponse.json({ booked: [] });
-  const times = await client.fetch<string[]>(`*[_type == "consultation" && date == $date && status in $active].time`, { date, active: ACTIVE_STATUSES });
-  const count = new Map<string, number>();
-  for (const t of times) count.set(t, (count.get(t) ?? 0) + 1);
-  const booked = [...count.entries()].filter(([, n]) => n >= SLOT_CAPACITY).map(([t]) => t);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !getWriteClient()) return NextResponse.json({ booked: [] });
+  const all = await getConsultants();
+  const key = req.nextUrl.searchParams.get("c") ?? "";
+  const consultant = all.find((x) => x.key === key) ?? null;
+  const booked = await bookedHours(date, consultant, all);
   return NextResponse.json({ booked }, { headers: { "Cache-Control": "no-store" } });
 }
 
@@ -65,12 +56,11 @@ export async function POST(req: NextRequest) {
 
   const client = getWriteClient();
   if (!client) return NextResponse.json({ ok: false, error: "unavailable" }, { status: 503 });
-  const taken = await client.fetch<number>(`count(*[_type == "consultation" && date == $date && time == $time && status in $active])`, {
-    date,
-    time,
-    active: ACTIVE_STATUSES,
-  });
-  if (taken >= SLOT_CAPACITY) return NextResponse.json({ ok: false, error: "slot_taken" }, { status: 409 });
+  const consultants = await getConsultants();
+  const consultant = consultants.find((x) => x.key === str(body.consultant, 20)) ?? null;
+  if ((await bookedHours(date, consultant, consultants)).includes(time)) {
+    return NextResponse.json({ ok: false, error: "slot_taken" }, { status: 409 });
+  }
 
   // Dot in the id keeps the document out of the public API.
   const id = `consultations.${randomUUID()}`;
@@ -88,6 +78,7 @@ export async function POST(req: NextRequest) {
     locale,
     price: CONSULTATION_PRICE,
     paid: false,
+    ...(consultant ? { manager: consultant.login, managerName: consultant.name, chosenByClient: true } : {}),
     createdAt: new Date().toISOString(),
   });
 
@@ -98,10 +89,11 @@ export async function POST(req: NextRequest) {
     `<b>Имя:</b> ${escapeHtml(name)}`,
     `<b>Телефон:</b> ${escapeHtml(phone)}`,
     `<b>Тема:</b> ${escapeHtml(topic.ru)}`,
+    `<b>К кому:</b> ${consultant ? escapeHtml(consultant.name) : "любой свободный — назначьте"}`,
     comment && `<b>Вопрос:</b> ${escapeHtml(comment)}`,
     `<b>Стоимость:</b> ${CONSULTATION_PRICE.toLocaleString("ru-RU")} ₸`,
     "",
-    "Назначьте, кто принимает, и подтвердите запись клиенту в WhatsApp.",
+    consultant ? "Подтвердите запись клиенту в WhatsApp." : "Назначьте, кто принимает, и подтвердите запись клиенту в WhatsApp.",
     `📋 <a href="${siteUrl()}/admin/consultations">Открыть консультации</a>`,
     `💬 <a href="https://wa.me/${phone.replace(/\D/g, "")}">Написать клиенту в WhatsApp</a>`,
   ]);

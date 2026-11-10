@@ -7,6 +7,8 @@ import { CONSULTATION_SLOTS, CONSULTATION_TOPICS, formatDayRu } from "@/lib/cons
 
 const TEXT = {
   ru: {
+    who: "К кому записаться",
+    anyone: "Любой свободный",
     day: "Выберите день",
     time: "Выберите время",
     loading: "Проверяем свободное время…",
@@ -27,6 +29,8 @@ const TEXT = {
     again: "Записаться ещё раз",
   },
   kk: {
+    who: "Кімге жазылу",
+    anyone: "Кез келген бос маман",
     day: "Күнді таңдаңыз",
     time: "Уақытты таңдаңыз",
     loading: "Бос уақытты тексеріп жатырмыз…",
@@ -48,8 +52,9 @@ const TEXT = {
   },
 };
 
-export function ConsultationForm({ days, locale }: { days: string[]; locale: "ru" | "kk" }) {
+export function ConsultationForm({ days, locale, consultants = [] }: { days: string[]; locale: "ru" | "kk"; consultants?: { key: string; name: string }[] }) {
   const t = TEXT[locale];
+  const [who, setWho] = useState("");
   const [date, setDate] = useState(days[0] ?? "");
   const [time, setTime] = useState("");
   const [booked, setBooked] = useState<string[] | null>(null);
@@ -61,14 +66,14 @@ export function ConsultationForm({ days, locale }: { days: string[]; locale: "ru
   useEffect(() => {
     if (!date) return;
     let alive = true;
-    fetch(`/api/consultation?date=${date}`)
+    fetch(`/api/consultation?date=${date}&c=${who}`)
       .then((r) => r.json())
       .then((j: { booked?: string[] }) => alive && setBooked(j.booked ?? []))
       .catch(() => alive && setBooked([]));
     return () => {
       alive = false;
     };
-  }, [date]);
+  }, [date, who]);
 
   // Past hours of today are not offered.
   const now = new Date();
@@ -103,7 +108,7 @@ export function ConsultationForm({ days, locale }: { days: string[]; locale: "ru
           const res = await fetch("/api/consultation", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...form, date, time, locale }),
+            body: JSON.stringify({ ...form, date, time, locale, consultant: who }),
           });
           const j = (await res.json().catch(() => ({}))) as { error?: string };
           if (res.ok) setDone({ date, time });
@@ -120,6 +125,31 @@ export function ConsultationForm({ days, locale }: { days: string[]; locale: "ru
         }
       }}
     >
+      {consultants.length > 0 && (
+        <fieldset>
+          <legend className="mb-3 text-[16px] font-bold">{t.who}</legend>
+          <div className="flex flex-wrap gap-2">
+            {[{ key: "", name: t.anyone }, ...consultants].map((c) => (
+              <button
+                key={c.key || "any"}
+                type="button"
+                onClick={() => {
+                  setWho(c.key);
+                  setTime("");
+                  setBooked(null);
+                }}
+                className={clsx(
+                  "rounded-xl border px-3.5 py-2.5 text-[14px] font-semibold",
+                  c.key === who ? "border-brand bg-brand text-white" : "border-line bg-white hover:border-brand"
+                )}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+      )}
+
       <fieldset>
         <legend className="mb-3 text-[16px] font-bold">{t.day}</legend>
         <div className="flex gap-2 overflow-x-auto pb-1">

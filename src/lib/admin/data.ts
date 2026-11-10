@@ -142,8 +142,8 @@ export function getManagerOptions() {
 }
 
 export function getAdminUsers() {
-  return writeClient().fetch<{ _id: string; login: string; name: string; role: string; createdAt?: string }[]>(
-    `*[_type == "adminUser"] | order(createdAt asc){_id, login, name, role, createdAt}`
+  return writeClient().fetch<{ _id: string; login: string; name: string; role: string; consultant?: boolean; createdAt?: string }[]>(
+    `*[_type == "adminUser"] | order(createdAt asc){_id, login, name, role, consultant, createdAt}`
   );
 }
 
