@@ -91,7 +91,7 @@ export async function logoutAction() {
 // ---------- Leads ----------
 
 export async function updateLeadAction(fd: FormData) {
-  await requireAdminUser();
+  await requireAdminUser({ owner: true });
   const id = s(fd, "id", 100);
   if (!/^leads\.[\w-]+$|^[\w-]+$/.test(id)) return;
   const set: Record<string, unknown> = {};
@@ -103,7 +103,7 @@ export async function updateLeadAction(fd: FormData) {
 }
 
 export async function deleteLeadAction(fd: FormData) {
-  await requireAdminUser();
+  await requireAdminUser({ owner: true });
   const id = s(fd, "id", 100);
   if (!/^leads\.[\w-]+$|^[\w-]+$/.test(id)) return;
   const type = await writeClient().fetch<string | null>(`*[_id == $id][0]._type`, { id });
@@ -124,7 +124,7 @@ async function managerFor(me: { login: string; name: string; role: string }, pic
 }
 
 export async function createCabinetAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  const me = await requireAdminUser();
+  const me = await requireAdminUser({ owner: true });
   try {
     const leadId = s(fd, "leadId", 100);
     const service = s(fd, "service", 20);
@@ -144,7 +144,7 @@ export async function createCabinetAction(_prev: ActionState, fd: FormData): Pro
 }
 
 export async function updateCabinetAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  const me = await requireAdminUser();
+  const me = await requireAdminUser({ owner: true });
   const id = s(fd, "id", 100);
   if (!id.startsWith("cabinets.")) return { error: "Некорректный кабинет" };
   const cab = await getCabinet(id);
@@ -181,10 +181,11 @@ export async function updateCabinetAction(_prev: ActionState, fd: FormData): Pro
 }
 
 export async function newLinkAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  await requireAdminUser();
+  const me = await requireAdminUser();
   const id = s(fd, "id", 100);
-  if (!id.startsWith("cabinets.") || !(await getCabinet(id))) return { error: "Кабинет не найден" };
-  const cab = await getCabinet(id);
+  const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
+  if (!cab) return { error: "Кабинет не найден" };
+  if (me.role !== "owner" && cab.manager !== me.login) return { error: "Этот клиент закреплён за другим менеджером" };
   const { hash, link } = newLoginToken();
   await patchCabinet(id, { tokenHash: hash, linkCreatedAt: new Date().toISOString() });
   revalidatePath(`/admin/clients/${id}`);
@@ -193,7 +194,7 @@ export async function newLinkAction(_prev: ActionState, fd: FormData): Promise<A
 }
 
 export async function declarationAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  await requireAdminUser();
+  await requireAdminUser({ owner: true });
   const id = s(fd, "id", 100);
   const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
   if (!cab) return { error: "Кабинет не найден" };
@@ -212,7 +213,7 @@ export async function declarationAction(_prev: ActionState, fd: FormData): Promi
 }
 
 export async function deleteCabinetAction(fd: FormData) {
-  await requireAdminUser();
+  await requireAdminUser({ owner: true });
   await deleteCabinetCompletely(s(fd, "id", 100));
   revalidatePath("/admin", "layout");
   redirect("/admin/clients");
@@ -221,7 +222,7 @@ export async function deleteCabinetAction(fd: FormData) {
 // ---------- Feedback ----------
 
 export async function updateFeedbackAction(fd: FormData) {
-  await requireAdminUser();
+  await requireAdminUser({ owner: true });
   const id = s(fd, "id", 100);
   if (!id.startsWith("feedback.")) return;
   const set: Record<string, unknown> = {};
@@ -233,7 +234,7 @@ export async function updateFeedbackAction(fd: FormData) {
 }
 
 export async function deleteFeedbackAction(fd: FormData) {
-  await requireAdminUser();
+  await requireAdminUser({ owner: true });
   const id = s(fd, "id", 100);
   if (!id.startsWith("feedback.")) return;
   await deleteDoc(id);
@@ -298,7 +299,7 @@ export async function setPasswordAction(_prev: ActionState, fd: FormData): Promi
 // ---------- Payments ----------
 
 export async function setPriceAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  await requireAdminUser();
+  await requireAdminUser({ owner: true });
   const id = s(fd, "id", 100);
   if (!id.startsWith("cabinets.") || !(await getCabinet(id))) return { error: "Клиент не найден" };
   const raw = s(fd, "price", 30);
@@ -310,7 +311,7 @@ export async function setPriceAction(_prev: ActionState, fd: FormData): Promise<
 }
 
 export async function paymentStatusAction(fd: FormData) {
-  await requireAdminUser();
+  await requireAdminUser({ owner: true });
   const id = s(fd, "id", 100);
   const key = s(fd, "key", 40);
   const status = s(fd, "status", 20);
@@ -321,7 +322,7 @@ export async function paymentStatusAction(fd: FormData) {
 }
 
 export async function deletePaymentAction(fd: FormData) {
-  await requireAdminUser();
+  await requireAdminUser({ owner: true });
   const id = s(fd, "id", 100);
   const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
   if (!cab) return;
@@ -332,7 +333,7 @@ export async function deletePaymentAction(fd: FormData) {
 
 /** Manager edits the client's questionnaire (any field). Empty = cleared. */
 export async function updateAnketaAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  await requireAdminUser();
+  await requireAdminUser({ owner: true });
   const id = s(fd, "id", 100);
   const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
   if (!cab) return { error: "Кабинет не найден" };
@@ -368,7 +369,7 @@ export async function setRoleAction(fd: FormData) {
 
 /** Manager deletes one file of a client (from storage too). */
 export async function deleteClientFileAction(fd: FormData) {
-  await requireAdminUser();
+  await requireAdminUser({ owner: true });
   const id = s(fd, "id", 100);
   const kind = s(fd, "kind", 20) as FileKind;
   const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
@@ -396,19 +397,24 @@ export async function updateConsultationAction(fd: FormData) {
   const me = await requireAdminUser();
   const id = s(fd, "id", 100);
   if (!id.startsWith("consultations.")) return;
+  // Managers see every consultation but change only the ones the owner gave them.
+  if (me.role !== "owner") {
+    const assigned = await writeClient().fetch<string | null>(`*[_id == $id][0].manager`, { id });
+    if (assigned !== me.login) return;
+  }
   const set: Record<string, unknown> = {};
   const unset: string[] = [];
   const status = s(fd, "status", 20);
   if (CONSULTATION_STATUSES.some((x) => x.value === status)) set.status = status;
   if (fd.has("paid")) set.paid = s(fd, "paid", 5) === "yes";
   if (fd.has("managerNote")) set.managerNote = s(fd, "managerNote", 2000);
-  // Who takes the consultation: the owner assigns anyone; a manager can take a free one for himself.
+  // Who takes the consultation: only the owner assigns.
   if (fd.has("manager")) {
     const login = s(fd, "manager", 40);
-    if (me.role === "owner" || login === me.login) {
+    if (me.role === "owner") {
       const u = login ? await getAdminUserByLogin(login) : null;
       if (u) Object.assign(set, { manager: u.login, managerName: u.name });
-      else if (me.role === "owner") unset.push("manager", "managerName");
+      else unset.push("manager", "managerName");
     }
   }
   if (Object.keys(set).length || unset.length) await patchDoc(id, set, unset);

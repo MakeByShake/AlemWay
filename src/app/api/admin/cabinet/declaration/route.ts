@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { adminError, requireAdmin } from "@/lib/admin-auth";
+import { adminError, requireOwner } from "@/lib/admin-auth";
 import { readJsonObject } from "@/lib/http";
 import { getCabinet } from "@/lib/cabinet/server";
 import { serviceOf } from "@/lib/cabinet/fields";
@@ -11,7 +11,7 @@ export const maxDuration = 300;
 
 /** Manager re-runs the AI check (and rebuilds the declaration if the documents are fine). */
 export async function POST(req: NextRequest) {
-  const denied = await requireAdmin(req);
+  const denied = await requireOwner(req);
   if (denied) return denied;
   const body = await readJsonObject(req, 1024);
   const id = typeof body?.id === "string" ? body.id.replace(/^drafts\./, "") : "";

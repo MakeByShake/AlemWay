@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { adminError, requireAdmin } from "@/lib/admin-auth";
+import { adminAccess, adminError, canSeeCabinet } from "@/lib/admin-auth";
 import { verifySession, ADMIN_COOKIE } from "@/lib/admin/session";
 import { getCabinet } from "@/lib/cabinet/server";
 import { readUploadForm } from "@/lib/cabinet/uploads";
@@ -11,8 +11,8 @@ export const dynamic = "force-dynamic";
 
 /** Manager adds a payment (cash, transfer, Kaspi), optionally with a receipt. Counts as confirmed. */
 export async function POST(req: NextRequest) {
-  const denied = await requireAdmin(req);
-  if (denied) return denied;
+  const access = await adminAccess(req);
+  if (!access) return adminError("Нет доступа. Войдите в админку заново.", 401);
   const me = await verifySession(req.cookies.get(ADMIN_COOKIE)?.value).catch(() => null);
 
   const { form, upload } = await readUploadForm(req);
@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
   const id = String(form.get("id") ?? "");
   const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
   if (!cab) return adminError("Клиент не найден", 404);
+  if (!canSeeCabinet(access, cab)) return adminError("Этот клиент закреплён за другим менеджером", 403);
   const amount = parseAmount(form.get("amount"));
   if (!amount) return adminError("Укажите сумму");
   const methodRaw = String(form.get("method") ?? "");
@@ -36,7 +37,8 @@ export async function POST(req: NextRequest) {
     paidAt,
     ...(note ? { note } : {}),
     ...(receipt ? { receipt } : {}),
-    status: "confirmed",
+    // A manager's payment waits for the owner's confirmation.
+    status: access.owner ? "confirmed" : "pending",
     by: me?.login ?? "manager",
     byName: me?.name ?? "Менеджер",
   });

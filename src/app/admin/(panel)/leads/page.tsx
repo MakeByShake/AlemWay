@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getLeads, getManagerOptions, LEAD_STATUSES } from "@/lib/admin/data";
 import { requireAdminUser } from "@/lib/admin/session";
 import { createCabinetAction, deleteLeadAction, updateLeadAction } from "../../actions";
-import { Empty, FilterTabs, PageTitle, fmtDate, waLink } from "@/components/admin/bits";
+import { Badge, Empty, FilterTabs, PageTitle, fmtDate, waLink } from "@/components/admin/bits";
 import { ActionForm, AutoSelect, ConfirmForm, NoteForm, SubmitButton } from "@/components/admin/ui";
 
 export const metadata = { title: "Заявки" };
@@ -11,6 +11,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
   const { status } = await searchParams;
   const valid = LEAD_STATUSES.some((s) => s.value === status) ? status : undefined;
   const [leads, me, managers] = await Promise.all([getLeads(valid), requireAdminUser(), getManagerOptions()]);
+  const owner = me.role === "owner";
 
   return (
     <>
@@ -32,7 +33,13 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                       {l.locale === "kk" ? " · қазақша" : ""}
                     </p>
                   </div>
-                  <AutoSelect action={updateLeadAction} hidden={{ id: l._id }} name="status" value={l.status ?? "new"} options={LEAD_STATUSES} />
+                  {owner ? (
+                    <AutoSelect action={updateLeadAction} hidden={{ id: l._id }} name="status" value={l.status ?? "new"} options={LEAD_STATUSES} />
+                  ) : (
+                    <Badge tone={(LEAD_STATUSES.find((x) => x.value === (l.status ?? "new")) ?? LEAD_STATUSES[0]).tone}>
+                      {(LEAD_STATUSES.find((x) => x.value === (l.status ?? "new")) ?? LEAD_STATUSES[0]).title}
+                    </Badge>
+                  )}
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   {l.phone && (
@@ -47,6 +54,8 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                   )}
                 </div>
                 {l.comment && <p className="mt-3 rounded-lg bg-surface px-3 py-2 text-[14px] whitespace-pre-line">{l.comment}</p>}
+                {owner && (
+                  <>
                 <div className="mt-3">
                   <NoteForm action={updateLeadAction} id={l._id} value={l.managerNote} />
                 </div>
@@ -79,6 +88,9 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                     Удалить
                   </ConfirmForm>
                 </div>
+                  </>
+                )}
+                {!owner && l.managerNote && <p className="mt-3 text-[14px] text-muted">Заметка: {l.managerNote}</p>}
               </li>
             );
           })}

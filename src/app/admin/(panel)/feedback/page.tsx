@@ -1,4 +1,5 @@
 import { FEEDBACK_STATUS_LIST, FEEDBACK_TOPIC_TITLES, getFeedback } from "@/lib/admin/data";
+import { requireAdminUser } from "@/lib/admin/session";
 import { deleteFeedbackAction, updateFeedbackAction } from "../../actions";
 import { Empty, FilterTabs, PageTitle, fmtDate } from "@/components/admin/bits";
 import { AutoSelect, ConfirmForm, NoteForm } from "@/components/admin/ui";
@@ -8,7 +9,8 @@ export const metadata = { title: "Отзывы" };
 export default async function FeedbackPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
   const { status } = await searchParams;
   const valid = FEEDBACK_STATUS_LIST.some((s) => s.value === status) ? status : undefined;
-  const items = await getFeedback(valid);
+  const [items, me] = await Promise.all([getFeedback(valid), requireAdminUser()]);
+  const owner = me.role === "owner";
   const rated = items.filter((i) => i.rating);
   const avg = rated.length ? (rated.reduce((a, i) => a + (i.rating ?? 0), 0) / rated.length).toFixed(1) : null;
 
@@ -34,7 +36,7 @@ export default async function FeedbackPage({ searchParams }: { searchParams: Pro
                     {f.contact ? ` · ${f.contact}` : ""}
                   </p>
                 </div>
-                <AutoSelect action={updateFeedbackAction} hidden={{ id: f._id }} name="status" value={f.status ?? "new"} options={FEEDBACK_STATUS_LIST} />
+                {owner && <AutoSelect action={updateFeedbackAction} hidden={{ id: f._id }} name="status" value={f.status ?? "new"} options={FEEDBACK_STATUS_LIST} />}
               </div>
               {f.liked && (
                 <p className="mt-3 text-[15px]">
@@ -46,6 +48,8 @@ export default async function FeedbackPage({ searchParams }: { searchParams: Pro
                   <b>🛠 Улучшить:</b> {f.improve}
                 </p>
               )}
+              {owner && (
+                <>
               <div className="mt-3">
                 <NoteForm action={updateFeedbackAction} id={f._id} value={f.managerNote} placeholder="Что решили сделать…" />
               </div>
@@ -54,6 +58,8 @@ export default async function FeedbackPage({ searchParams }: { searchParams: Pro
                   Удалить
                 </ConfirmForm>
               </div>
+                </>
+              )}
             </li>
           ))}
         </ul>

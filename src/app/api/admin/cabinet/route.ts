@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { adminError, requireAdmin } from "@/lib/admin-auth";
+import { adminError, requireOwner } from "@/lib/admin-auth";
 import { readJsonObject } from "@/lib/http";
 import { AdminOpError, createCabinet } from "@/lib/cabinet/admin-ops";
 
@@ -10,7 +10,7 @@ const str = (v: unknown) => (typeof v === "string" ? v : "");
 
 /** Manager creates a cabinet (optionally from a lead) and gets the client's login link once. */
 export async function POST(req: NextRequest) {
-  const denied = await requireAdmin(req);
+  const denied = await requireOwner(req);
   if (denied) return denied;
 
   const body = await readJsonObject(req, 4 * 1024);

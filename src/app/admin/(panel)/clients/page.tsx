@@ -22,7 +22,8 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
   const [me, managers] = await Promise.all([requireAdminUser(), getManagerOptions()]);
   const owner = me.role === "owner";
   // Managers open «Мои клиенты» by default; "all" shows everyone.
-  const managerParam = sp.manager ?? (owner ? "" : me.login);
+  // A manager sees only the clients assigned to him.
+  const managerParam = owner ? (sp.manager ?? "") : me.login;
   const manager = managerParam === "-" || managers.some((m) => m.login === managerParam) ? managerParam : "";
   const group = sp.group === "old" || sp.group === "new" ? sp.group : "";
   const rows = await getCabinets({ service, status, q, manager, group });
@@ -36,7 +37,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
 
   return (
     <>
-      <PageTitle title="Клиенты (личные кабинеты)" />
+      <PageTitle title={owner ? "Клиенты (личные кабинеты)" : "Мои клиенты"} />
 
       <nav className="mb-5 flex gap-1 overflow-x-auto border-b border-line" aria-label="Группы клиентов">
         {[
@@ -54,6 +55,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
         ))}
       </nav>
 
+      {owner && (
       <details className="card mb-6 p-4 sm:p-5">
         <summary className="cursor-pointer text-[16px] font-bold text-brand">+ Новый клиент (без заявки с сайта)</summary>
         <p className="mt-2 text-[14px] text-muted">Создайте кабинет, когда клиент оплатил. Клиент войдёт по ссылке без пароля.</p>
@@ -92,6 +94,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
           </div>
         </ActionForm>
       </details>
+      )}
 
       <form className="mb-5 flex flex-wrap gap-2" action="/admin/clients">
         {group && <input type="hidden" name="group" value={group} />}
@@ -103,6 +106,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
             </option>
           ))}
         </select>
+        {owner && (
         <select name="manager" defaultValue={sp.manager === undefined && !owner ? me.login : manager || "all"} className="field w-full sm:w-auto sm:max-w-[240px]">
           <option value="all">Все менеджеры</option>
           <option value={me.login}>Мои клиенты</option>
@@ -115,6 +119,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
             ))}
           <option value="-">Без менеджера</option>
         </select>
+        )}
         <select name="status" defaultValue={status} className="field w-full sm:w-auto sm:max-w-[240px]">
           <option value="">Все этапы</option>
           {CABINET_STATUSES.map((s) => (

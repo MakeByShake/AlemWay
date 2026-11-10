@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { adminError, requireAdmin } from "@/lib/admin-auth";
+import { adminAccess, adminError, canSeeCabinet } from "@/lib/admin-auth";
 import { MANAGER_UPLOAD_KINDS, SERVICE_FILES, serviceOf, type CabinetStatus, type ManagerUploadKind } from "@/lib/cabinet/fields";
 import { cabinetAdminUrl, managerLine, displayName, getCabinet, patchCabinet } from "@/lib/cabinet/server";
 import { readUpload, storeCabinetFile } from "@/lib/cabinet/uploads";
@@ -25,14 +25,17 @@ const ERRORS: Record<string, string> = {
  * ZAV (moves the cabinet to «ZAV получен — контракт есть»), or a replacement for any client file.
  */
 export async function POST(req: NextRequest) {
-  const denied = await requireAdmin(req);
-  if (denied) return denied;
+  const access = await adminAccess(req);
+  if (!access) return adminError("Нет доступа. Войдите в админку заново.", 401);
 
   const id = (req.nextUrl.searchParams.get("id") ?? "").replace(/^drafts\./, "");
   const kind = req.nextUrl.searchParams.get("kind") as ManagerUploadKind;
   if (!id.startsWith("cabinets.") || !MANAGER_UPLOAD_KINDS.includes(kind)) return adminError("Некорректный запрос");
   const cab = await getCabinet(id);
   if (!cab) return adminError("Кабинет не найден", 404);
+  if (!canSeeCabinet(access, cab)) return adminError("Этот клиент закреплён за другим менеджером", 403);
+  // Managers may upload only the contract (receipts go with payments).
+  if (!access.owner && kind !== "contract") return adminError("Менеджер может загружать только договор и чеки", 403);
   if (!SERVICE_FILES[serviceOf(cab.service)].all.includes(kind)) return adminError("Этот файл не относится к услуге кабинета");
 
   const up = await readUpload(req);

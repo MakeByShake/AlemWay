@@ -89,7 +89,9 @@ export default async function ConsultationsPage({ searchParams }: { searchParams
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                           <Badge tone={st.tone}>{st.title}</Badge>
-                          <AutoSelect action={updateConsultationAction} hidden={{ id: c._id }} name="status" value={c.status ?? "new"} options={CONSULTATION_STATUSES} />
+                          {(owner || c.manager === me.login) && (
+                            <AutoSelect action={updateConsultationAction} hidden={{ id: c._id }} name="status" value={c.status ?? "new"} options={CONSULTATION_STATUSES} />
+                          )}
                         </div>
                       </div>
                       {c.comment && <p className="mt-3 rounded-lg bg-surface px-3 py-2 text-[14px] whitespace-pre-line">{c.comment}</p>}
@@ -104,13 +106,11 @@ export default async function ConsultationsPage({ searchParams }: { searchParams
                             value={c.manager ?? ""}
                             options={[{ value: "", title: "— не назначен —" }, ...managers.map((m) => ({ value: m.login, title: m.name }))]}
                           />
-                        ) : c.manager ? (
-                          <b>{c.managerName}</b>
                         ) : (
-                          <QuickButton action={updateConsultationAction} hidden={{ id: c._id, manager: me.login }} className="btn-ghost min-h-8 px-3 text-[13px]">
-                            Взять себе
-                          </QuickButton>
+                          <b>{c.managerName || "не назначен"}</b>
                         )}
+                        {(owner || c.manager === me.login) && (
+                          <>
                         <span className="text-muted">Оплата:</span>
                         <AutoSelect
                           action={updateConsultationAction}
@@ -123,15 +123,19 @@ export default async function ConsultationsPage({ searchParams }: { searchParams
                             { value: "yes", title: "✅ Оплачено" },
                           ]}
                         />
+                          </>
+                        )}
                         {wa && (
                           <a href={wa} target="_blank" rel="noopener noreferrer" className="btn-whatsapp min-h-8 px-3 text-[13px]">
                             WhatsApp
                           </a>
                         )}
                       </div>
-                      <div className="mt-3">
-                        <NoteForm action={updateConsultationAction} id={c._id} value={c.managerNote} placeholder="Заметка: о чём говорили, что дальше…" />
-                      </div>
+                      {(owner || c.manager === me.login) && (
+                        <div className="mt-3">
+                          <NoteForm action={updateConsultationAction} id={c._id} value={c.managerNote} placeholder="Заметка: о чём говорили, что дальше…" />
+                        </div>
+                      )}
                       {owner && (
                         <div className="mt-2 flex justify-end">
                           <QuickButton

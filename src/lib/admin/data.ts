@@ -107,7 +107,7 @@ export function getCabinetFull(id: string) {
   );
 }
 
-export function getDashboard(login: string) {
+export function getDashboard(login: string, onlyMine = false) {
   return writeClient().fetch<{
     newLeads: number;
     leadsWeek: number;
@@ -121,18 +121,18 @@ export function getDashboard(login: string) {
     `{
       "newLeads": count(*[_type == "lead" && ${notDraft} && coalesce(status, "new") == "new"]),
       "leadsWeek": count(*[_type == "lead" && ${notDraft} && dateTime(_createdAt) > dateTime(now()) - 60*60*24*7]),
-      "activeClients": count(*[_type == "cabinet" && ${notDraft} && !(status in ["done", "keta_rejected"])]),
-      "waitingAction": count(*[_type == "cabinet" && ${notDraft} && status in ["signed_uploaded", "keta_applying"]]),
+      "activeClients": count(*[_type == "cabinet" && ${notDraft} && !(status in ["done", "keta_rejected"]) && (!$onlyMine || manager == $login)]),
+      "waitingAction": count(*[_type == "cabinet" && ${notDraft} && status in ["signed_uploaded", "keta_applying"] && (!$onlyMine || manager == $login)]),
       "myClients": count(*[_type == "cabinet" && ${notDraft} && manager == $login && !(status in ["done", "keta_rejected"])]),
       "newFeedback": count(*[_type == "feedback" && ${notDraft} && coalesce(status, "new") == "new"]),
       "latestLeads": *[_type == "lead" && ${notDraft}] | order(coalesce(createdAt, _createdAt) desc)[0...5]{
         _id, status, name, phone, serviceTitle, "createdAt": coalesce(createdAt, _createdAt)
       },
-      "actionClients": *[_type == "cabinet" && ${notDraft} && status in ["signed_uploaded", "keta_applying"]] | order(_updatedAt desc)[0...8]{
+      "actionClients": *[_type == "cabinet" && ${notDraft} && status in ["signed_uploaded", "keta_applying"] && (!$onlyMine || manager == $login)] | order(_updatedAt desc)[0...8]{
         _id, number, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName
       }
     }`,
-    { login }
+    { login, onlyMine }
   );
 }
 

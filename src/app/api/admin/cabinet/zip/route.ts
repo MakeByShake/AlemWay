@@ -1,6 +1,6 @@
 import { type NextRequest } from "next/server";
 import { zipSync, strToU8 } from "fflate";
-import { adminError, requireAdmin } from "@/lib/admin-auth";
+import { adminAccess, adminError, canSeeCabinet } from "@/lib/admin-auth";
 import { getCabinet, displayName } from "@/lib/cabinet/server";
 import { readFile } from "@/lib/cabinet/storage";
 import { FERIENJOB_FULL_SECTIONS, FILE_KINDS, KETA_SECTIONS, serviceOf } from "@/lib/cabinet/fields";
@@ -31,11 +31,12 @@ const safe = (s: string) => s.replace(/[^\w.\-а-яА-ЯёЁ ]/g, "_").trim() ||
 
 /** Manager downloads everything of a client in one ZIP: all files + a text file with the questionnaire. */
 export async function GET(req: NextRequest) {
-  const denied = await requireAdmin(req);
-  if (denied) return denied;
+  const access = await adminAccess(req);
+  if (!access) return adminError("Нет доступа. Войдите в админку заново.", 401);
   const id = req.nextUrl.searchParams.get("id") ?? "";
   const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
   if (!cab) return adminError("Клиент не найден", 404);
+  if (!canSeeCabinet(access, cab)) return adminError("Этот клиент закреплён за другим менеджером", 403);
 
   const files: Record<string, Uint8Array> = {};
   for (const kind of FILE_KINDS) {

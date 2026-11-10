@@ -10,7 +10,7 @@ export const metadata = { title: "Главная" };
 
 export default async function AdminHome() {
   const me = await requireAdminUser();
-  const [d, ai, consToday] = await Promise.all([getDashboard(me.login), me.role === "owner" ? getAiStats() : null, countConsultationsToday(almatyNow().date)]);
+  const [d, ai, consToday] = await Promise.all([getDashboard(me.login, me.role !== "owner"), me.role === "owner" ? getAiStats() : null, countConsultationsToday(almatyNow().date)]);
   const cards = [
     { label: "Мои клиенты", value: d.myClients, href: `/admin/clients?manager=${me.login}` },
     { label: "Консультации сегодня", value: consToday, href: "/admin/consultations", hot: consToday > 0 },

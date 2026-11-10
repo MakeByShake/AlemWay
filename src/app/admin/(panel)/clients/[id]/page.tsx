@@ -171,6 +171,9 @@ export default async function ClientPage({
     getManagerOptions(),
   ]);
   if (!cab) notFound();
+  const owner = me.role === "owner";
+  // A manager opens only the clients the owner assigned to him.
+  if (!owner && cab.manager !== me.login) notFound();
 
   const service = serviceOf(cab.service);
   const keta = service === "keta";
@@ -264,81 +267,90 @@ export default async function ClientPage({
           <div className="grid gap-5 xl:grid-cols-2">
             <Section title="Этап и контакты">
               <ActionForm action={updateCabinetAction} className="grid gap-3">
-                <input type="hidden" name="id" value={id} />
-                <label className="grid gap-1 text-[14px] font-medium">
-                  Этап
-                  <select
-                    name="status"
-                    defaultValue={cab.status ?? "waiting_data"}
-                    className={input}
-                  >
-                    {statusOptions.map((s) => (
-                      <option key={s.value} value={s.value}>
-                        {s.title}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="grid gap-1 text-[14px] font-medium">
-                  Группа
-                  <select name="group" defaultValue={cab.group ?? "new"} className={input}>
-                    <option value="new">Новый — заполняет анкету сам</option>
-                    <option value="old">Старый — данные заполняем мы</option>
-                  </select>
-                </label>
-                {me.role === "owner" ? (
+                <fieldset disabled={!owner} className="contents">
+                  <input type="hidden" name="id" value={id} />
                   <label className="grid gap-1 text-[14px] font-medium">
-                    Менеджер клиента
+                    Этап
                     <select
-                      name="manager"
-                      defaultValue={cab.manager ?? ""}
+                      name="status"
+                      defaultValue={cab.status ?? "waiting_data"}
                       className={input}
                     >
-                      <option value="">— не назначен —</option>
-                      {managers.map((m) => (
-                        <option key={m.login} value={m.login}>
-                          {m.name}
+                      {statusOptions.map((s) => (
+                        <option key={s.value} value={s.value}>
+                          {s.title}
                         </option>
                       ))}
                     </select>
                   </label>
-                ) : (
-                  <p className="text-[14px]">
-                    Менеджер клиента: <b>{cab.managerName || "не назначен"}</b>
-                  </p>
-                )}
-                <div className="grid gap-3 sm:grid-cols-2">
                   <label className="grid gap-1 text-[14px] font-medium">
-                    Имя (для нас)
-                    <input
-                      name="clientName"
-                      defaultValue={cab.clientName}
+                    Группа
+                    <select
+                      name="group"
+                      defaultValue={cab.group ?? "new"}
+                      className={input}
+                    >
+                      <option value="new">Новый — заполняет анкету сам</option>
+                      <option value="old">Старый — данные заполняем мы</option>
+                    </select>
+                  </label>
+                  {me.role === "owner" ? (
+                    <label className="grid gap-1 text-[14px] font-medium">
+                      Менеджер клиента
+                      <select
+                        name="manager"
+                        defaultValue={cab.manager ?? ""}
+                        className={input}
+                      >
+                        <option value="">— не назначен —</option>
+                        {managers.map((m) => (
+                          <option key={m.login} value={m.login}>
+                            {m.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : (
+                    <p className="text-[14px]">
+                      Менеджер клиента:{" "}
+                      <b>{cab.managerName || "не назначен"}</b>
+                    </p>
+                  )}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="grid gap-1 text-[14px] font-medium">
+                      Имя (для нас)
+                      <input
+                        name="clientName"
+                        defaultValue={cab.clientName}
+                        className={input}
+                      />
+                    </label>
+                    <label className="grid gap-1 text-[14px] font-medium">
+                      Телефон
+                      <input
+                        name="clientPhone"
+                        defaultValue={cab.clientPhone}
+                        className={input}
+                      />
+                    </label>
+                  </div>
+                  <label className="grid gap-1 text-[14px] font-medium">
+                    Заметка менеджера (клиент не видит)
+                    <textarea
+                      name="managerNote"
+                      defaultValue={cab.managerNote}
+                      rows={3}
                       className={input}
                     />
                   </label>
-                  <label className="grid gap-1 text-[14px] font-medium">
-                    Телефон
-                    <input
-                      name="clientPhone"
-                      defaultValue={cab.clientPhone}
-                      className={input}
-                    />
-                  </label>
-                </div>
-                <label className="grid gap-1 text-[14px] font-medium">
-                  Заметка менеджера (клиент не видит)
-                  <textarea
-                    name="managerNote"
-                    defaultValue={cab.managerNote}
-                    rows={3}
-                    className={input}
-                  />
-                </label>
-                <div>
-                  <SubmitButton pendingText="Сохраняем…">
-                    Сохранить
-                  </SubmitButton>
-                </div>
+                  {owner && (
+                    <div>
+                      <SubmitButton pendingText="Сохраняем…">
+                        Сохранить
+                      </SubmitButton>
+                    </div>
+                  )}
+                </fieldset>
               </ActionForm>
             </Section>
 
@@ -373,94 +385,100 @@ export default async function ClientPage({
               }
             >
               <ActionForm action={updateCabinetAction} className="grid gap-3">
-                <input type="hidden" name="id" value={id} />
-                {keta ? (
-                  <label className="grid gap-1 text-[14px] font-medium">
-                    K-ETA действует до
-                    <input
-                      type="date"
-                      name="ketaValidUntil"
-                      defaultValue={cab.ketaValidUntil}
-                      className={input}
-                    />
-                  </label>
-                ) : (
-                  <>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <label className="grid gap-1 text-[14px] font-medium">
-                        Работодатель
-                        <input
-                          name="employerName"
-                          defaultValue={cab.employerName}
-                          className={input}
-                        />
-                      </label>
-                      <label className="grid gap-1 text-[14px] font-medium">
-                        Город
-                        <input
-                          name="workCity"
-                          defaultValue={cab.workCity}
-                          className={input}
-                        />
-                      </label>
-                    </div>
+                <fieldset disabled={!owner} className="contents">
+                  <input type="hidden" name="id" value={id} />
+                  {keta ? (
                     <label className="grid gap-1 text-[14px] font-medium">
-                      Работа / должность
+                      K-ETA действует до
                       <input
-                        name="workPosition"
-                        defaultValue={cab.workPosition}
+                        type="date"
+                        name="ketaValidUntil"
+                        defaultValue={cab.ketaValidUntil}
                         className={input}
                       />
                     </label>
-                    <div className="grid gap-3 sm:grid-cols-2">
+                  ) : (
+                    <>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="grid gap-1 text-[14px] font-medium">
+                          Работодатель
+                          <input
+                            name="employerName"
+                            defaultValue={cab.employerName}
+                            className={input}
+                          />
+                        </label>
+                        <label className="grid gap-1 text-[14px] font-medium">
+                          Город
+                          <input
+                            name="workCity"
+                            defaultValue={cab.workCity}
+                            className={input}
+                          />
+                        </label>
+                      </div>
                       <label className="grid gap-1 text-[14px] font-medium">
-                        С
+                        Работа / должность
                         <input
-                          type="date"
-                          name="workFrom"
-                          defaultValue={cab.workFrom}
+                          name="workPosition"
+                          defaultValue={cab.workPosition}
                           className={input}
                         />
                       </label>
-                      <label className="grid gap-1 text-[14px] font-medium">
-                        По
-                        <input
-                          type="date"
-                          name="workTo"
-                          defaultValue={cab.workTo}
-                          className={input}
-                        />
-                      </label>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="grid gap-1 text-[14px] font-medium">
+                          С
+                          <input
+                            type="date"
+                            name="workFrom"
+                            defaultValue={cab.workFrom}
+                            className={input}
+                          />
+                        </label>
+                        <label className="grid gap-1 text-[14px] font-medium">
+                          По
+                          <input
+                            type="date"
+                            name="workTo"
+                            defaultValue={cab.workTo}
+                            className={input}
+                          />
+                        </label>
+                      </div>
+                    </>
+                  )}
+                  <label className="grid gap-1 text-[14px] font-medium">
+                    Сообщение клиенту
+                    <textarea
+                      name="clientMessage"
+                      defaultValue={cab.clientMessage}
+                      rows={3}
+                      className={input}
+                    />
+                  </label>
+                  {owner && (
+                    <div>
+                      <SubmitButton pendingText="Сохраняем…">
+                        Сохранить
+                      </SubmitButton>
                     </div>
-                  </>
-                )}
-                <label className="grid gap-1 text-[14px] font-medium">
-                  Сообщение клиенту
-                  <textarea
-                    name="clientMessage"
-                    defaultValue={cab.clientMessage}
-                    rows={3}
-                    className={input}
-                  />
-                </label>
-                <div>
-                  <SubmitButton pendingText="Сохраняем…">
-                    Сохранить
-                  </SubmitButton>
-                </div>
+                  )}
+                </fieldset>
               </ActionForm>
             </Section>
           </div>
-          <div className="mt-8 flex justify-end">
-            <ConfirmForm
-              action={deleteCabinetAction}
-              hidden={{ id }}
-              confirmText={`Удалить клиента «${name}» полностью? Удалятся кабинет и все файлы (паспорт, декларация…). Это нельзя отменить.`}
-              className="rounded-lg border border-red-200 px-4 py-2 text-[14px] font-semibold text-red-600 hover:bg-red-50"
-            >
-              Удалить клиента полностью
-            </ConfirmForm>
-          </div>
+          {owner && (
+            <div className="mt-8 flex justify-end">
+              <ConfirmForm
+                action={deleteCabinetAction}
+                hidden={{ id }}
+                confirmText={`Удалить клиента «${name}» полностью? Удалятся кабинет и все файлы (паспорт, декларация…). Это нельзя отменить.`}
+                className="rounded-lg border border-red-200 px-4 py-2 text-[14px] font-semibold text-red-600 hover:bg-red-50"
+              >
+                Удалить клиента полностью
+              </ConfirmForm>
+            </div>
+          )}
         </>
       )}
 
@@ -474,48 +492,68 @@ export default async function ClientPage({
                 : "Клиент ещё не отправил анкету"}
             </p>
             <p className="mt-1 text-[13px] text-muted">
-              Можно исправить любое поле и нажать «Сохранить анкету». Клиент
-              увидит исправленные данные у себя.
+              {owner
+                ? "Можно исправить любое поле и нажать «Сохранить анкету». Клиент увидит исправленные данные у себя."
+                : "Только просмотр. Исправить анкету может владелец."}
             </p>
             <ActionForm action={updateAnketaAction} className="mt-4">
               <input type="hidden" name="id" value={id} />
-              <div className="grid gap-6 lg:grid-cols-2">
-                {(keta ? KETA_SECTIONS : FERIENJOB_FULL_SECTIONS).map((sec) => {
-                  const inputs = (
-                    <div className="grid gap-2.5">
-                      {sec.fields.map((f) => (
-                        <label key={f.key} className="grid gap-1 text-[13px] font-medium text-muted">
-                          {f.label.ru}
-                          <AnketaInput f={f} value={cab.data?.[f.key] ?? ""} />
-                        </label>
-                      ))}
-                    </div>
-                  );
-                  // University address, phone, email, site: needed only for the declaration form (fields 1–8);
-                  // the AI fills them from the certificate and its list of universities.
-                  if (sec.id === "university")
-                    return (
-                      <details key={sec.id} className="rounded-xl border border-line p-3">
-                        <summary className="cursor-pointer text-[15px] font-bold text-brand">
-                          Данные вуза для декларации
-                          <span className="ml-1 font-normal text-muted">— заполняются автоматически</span>
-                        </summary>
-                        <div className="mt-3">{inputs}</div>
-                      </details>
-                    );
-                  return (
-                    <fieldset key={sec.id}>
-                      <legend className="mb-2 text-[15px] font-bold text-brand">{sec.title.ru}</legend>
-                      {inputs}
-                    </fieldset>
-                  );
-                })}
-              </div>
-              <div className="mt-5">
-                <SubmitButton pendingText="Сохраняем…">
-                  Сохранить анкету
-                </SubmitButton>
-              </div>
+              <fieldset disabled={!owner} className="contents">
+                <div className="grid gap-6 lg:grid-cols-2">
+                  {(keta ? KETA_SECTIONS : FERIENJOB_FULL_SECTIONS).map(
+                    (sec) => {
+                      const inputs = (
+                        <div className="grid gap-2.5">
+                          {sec.fields.map((f) => (
+                            <label
+                              key={f.key}
+                              className="grid gap-1 text-[13px] font-medium text-muted"
+                            >
+                              {f.label.ru}
+                              <AnketaInput
+                                f={f}
+                                value={cab.data?.[f.key] ?? ""}
+                              />
+                            </label>
+                          ))}
+                        </div>
+                      );
+                      // University address, phone, email, site: needed only for the declaration form (fields 1–8);
+                      // the AI fills them from the certificate and its list of universities.
+                      if (sec.id === "university")
+                        return (
+                          <details
+                            key={sec.id}
+                            className="rounded-xl border border-line p-3"
+                          >
+                            <summary className="cursor-pointer text-[15px] font-bold text-brand">
+                              Данные вуза для декларации
+                              <span className="ml-1 font-normal text-muted">
+                                — заполняются автоматически
+                              </span>
+                            </summary>
+                            <div className="mt-3">{inputs}</div>
+                          </details>
+                        );
+                      return (
+                        <fieldset key={sec.id}>
+                          <legend className="mb-2 text-[15px] font-bold text-brand">
+                            {sec.title.ru}
+                          </legend>
+                          {inputs}
+                        </fieldset>
+                      );
+                    },
+                  )}
+                </div>
+                {owner && (
+                  <div className="mt-5">
+                    <SubmitButton pendingText="Сохраняем…">
+                      Сохранить анкету
+                    </SubmitButton>
+                  </div>
+                )}
+              </fieldset>
             </ActionForm>
           </section>
         </>
@@ -565,12 +603,14 @@ export default async function ClientPage({
                             </a>
                           </>
                         )}
-                        <FileUpload
-                          id={id}
-                          kind={kind}
-                          label={f ? "Заменить" : "Загрузить"}
-                        />
-                        {f && (
+                        {(owner || kind === "contract") && (
+                          <FileUpload
+                            id={id}
+                            kind={kind}
+                            label={f ? "Заменить" : "Загрузить"}
+                          />
+                        )}
+                        {f && owner && (
                           <QuickButton
                             action={deleteClientFileAction}
                             hidden={{ id, kind }}
@@ -585,7 +625,7 @@ export default async function ClientPage({
                   );
                 })}
               </ul>
-              {!keta && (
+              {!keta && owner && (
                 <div className="mt-3 border-t border-line pt-3">
                   <ActionForm action={declarationAction}>
                     <input type="hidden" name="id" value={id} />
@@ -709,28 +749,30 @@ export default async function ClientPage({
               </div>
             </div>
 
-            <ActionForm
-              action={setPriceAction}
-              className="mt-4 flex flex-wrap items-end gap-2"
-            >
-              <input type="hidden" name="id" value={id} />
-              <label className="grid gap-1 text-[14px] font-medium">
-                Сумма к оплате за услугу, ₸
-                <input
-                  name="price"
-                  inputMode="numeric"
-                  defaultValue={cab.price ?? ""}
-                  placeholder="например 250000"
-                  className={`${input} w-56`}
-                />
-              </label>
-              <SubmitButton
-                className="btn-ghost min-h-10 px-4 text-[14px]"
-                pendingText="Сохраняем…"
+            {owner && (
+              <ActionForm
+                action={setPriceAction}
+                className="mt-4 flex flex-wrap items-end gap-2"
               >
-                Сохранить сумму
-              </SubmitButton>
-            </ActionForm>
+                <input type="hidden" name="id" value={id} />
+                <label className="grid gap-1 text-[14px] font-medium">
+                  Сумма к оплате за услугу, ₸
+                  <input
+                    name="price"
+                    inputMode="numeric"
+                    defaultValue={cab.price ?? ""}
+                    placeholder="например 250000"
+                    className={`${input} w-56`}
+                  />
+                </label>
+                <SubmitButton
+                  className="btn-ghost min-h-10 px-4 text-[14px]"
+                  pendingText="Сохраняем…"
+                >
+                  Сохранить сумму
+                </SubmitButton>
+              </ActionForm>
+            )}
 
             <div className="mt-5 grid gap-6 lg:grid-cols-2">
               <div>
@@ -778,7 +820,7 @@ export default async function ClientPage({
                               Открыть чек
                             </a>
                           )}
-                          {p.status !== "confirmed" && (
+                          {owner && p.status !== "confirmed" && (
                             <QuickButton
                               action={paymentStatusAction}
                               hidden={{ id, key: p._key, status: "confirmed" }}
@@ -787,7 +829,7 @@ export default async function ClientPage({
                               Подтвердить
                             </QuickButton>
                           )}
-                          {p.status === "pending" && (
+                          {owner && p.status === "pending" && (
                             <QuickButton
                               action={paymentStatusAction}
                               hidden={{ id, key: p._key, status: "rejected" }}
@@ -795,14 +837,16 @@ export default async function ClientPage({
                               Отклонить
                             </QuickButton>
                           )}
-                          <QuickButton
-                            action={deletePaymentAction}
-                            hidden={{ id, key: p._key }}
-                            confirmText={`Удалить платёж ${formatTenge(p.amount)}?`}
-                            className="min-h-8 px-2 text-[13px] text-red-600 hover:underline"
-                          >
-                            Удалить
-                          </QuickButton>
+                          {owner && (
+                            <QuickButton
+                              action={deletePaymentAction}
+                              hidden={{ id, key: p._key }}
+                              confirmText={`Удалить платёж ${formatTenge(p.amount)}?`}
+                              className="min-h-8 px-2 text-[13px] text-red-600 hover:underline"
+                            >
+                              Удалить
+                            </QuickButton>
+                          )}
                         </div>
                       </li>
                     ))}
