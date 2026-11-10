@@ -14,6 +14,6 @@ export async function GET(req: NextRequest) {
   const key = req.nextUrl.searchParams.get("key") ?? "";
   const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
   if (!cab) return adminError("Клиент не найден", 404);
-  if (!canSeeCabinet(access, cab)) return adminError("Этот клиент закреплён за другим менеджером", 403);
+  if (!canSeeCabinet(access, cab)) return adminError("Этот клиент закреплён за другим сотрудником", 403);
   return fileResponse(cab.payments?.find((p) => p._key === key)?.receipt, { inline: req.nextUrl.searchParams.get("view") === "1" });
 }

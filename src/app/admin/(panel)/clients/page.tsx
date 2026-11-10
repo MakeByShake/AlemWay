@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getCabinets, cabinetName, getManagerOptions } from "@/lib/admin/data";
-import { requireAdminUser } from "@/lib/admin/session";
+import { isFullRole, requireAdminUser } from "@/lib/admin/session";
 import { CABINET_STATUSES } from "@/lib/cabinet/fields";
 import { createCabinetAction } from "../../actions";
 import { Badge, Empty, PageTitle, Progress, SERVICE_SHORT, fmtDate, waLink } from "@/components/admin/bits";
@@ -20,7 +20,8 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
   const status = CABINET_STATUSES.some((s) => s.value === sp.status) ? sp.status! : "";
   const q = (sp.q ?? "").slice(0, 60);
   const [me, managers] = await Promise.all([requireAdminUser(), getManagerOptions()]);
-  const owner = me.role === "owner";
+  // «owner» here = full rights (owner or manager); «Отдел продаж» is read-only.
+  const owner = isFullRole(me.role);
   // Managers open «Мои клиенты» by default; "all" shows everyone.
   // A manager sees only the clients assigned to him.
   const managerParam = owner ? (sp.manager ?? "") : me.login;

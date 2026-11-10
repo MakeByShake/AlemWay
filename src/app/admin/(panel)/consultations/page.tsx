@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getConsultations, getManagerOptions } from "@/lib/admin/data";
-import { requireAdminUser } from "@/lib/admin/session";
+import { isFullRole, requireAdminUser } from "@/lib/admin/session";
 import { CONSULTATION_PRICE, CONSULTATION_STATUSES, almatyNow, formatDayRu } from "@/lib/consultation";
 import { deleteConsultationAction, updateConsultationAction } from "../../actions";
 import { Badge, Empty, FilterTabs, PageTitle, waLink } from "@/components/admin/bits";
@@ -11,7 +11,8 @@ export const metadata = { title: "Консультации" };
 export default async function ConsultationsPage({ searchParams }: { searchParams: Promise<{ status?: string; when?: string; mine?: string }> }) {
   const sp = await searchParams;
   const me = await requireAdminUser();
-  const owner = me.role === "owner";
+  // «owner» here = full rights (owner or manager); «Отдел продаж» is read-only.
+  const owner = isFullRole(me.role);
   const when = sp.when === "past" ? "past" : "upcoming";
   const status = CONSULTATION_STATUSES.some((s) => s.value === sp.status) ? sp.status : undefined;
   const mine = sp.mine === "1";

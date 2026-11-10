@@ -16,6 +16,6 @@ export async function GET(req: NextRequest) {
   if (!id.startsWith("cabinets.") || !FILE_KINDS.includes(kind)) return adminError("Некорректный запрос");
   const cab = await getCabinet(id);
   if (!cab) return adminError("Кабинет не найден", 404);
-  if (!canSeeCabinet(access, cab)) return adminError("Этот клиент закреплён за другим менеджером", 403);
+  if (!canSeeCabinet(access, cab)) return adminError("Этот клиент закреплён за другим сотрудником", 403);
   return fileResponse(cab.files?.[kind], { inline: req.nextUrl.searchParams.get("view") === "1" });
 }

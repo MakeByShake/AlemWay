@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getLeads, getManagerOptions, LEAD_STATUSES } from "@/lib/admin/data";
-import { requireAdminUser } from "@/lib/admin/session";
+import { isFullRole, requireAdminUser } from "@/lib/admin/session";
 import { createCabinetAction, deleteLeadAction, updateLeadAction } from "../../actions";
 import { Badge, Empty, FilterTabs, PageTitle, fmtDate, waLink } from "@/components/admin/bits";
 import { ActionForm, AutoSelect, ConfirmForm, NoteForm, SubmitButton } from "@/components/admin/ui";
@@ -11,7 +11,8 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
   const { status } = await searchParams;
   const valid = LEAD_STATUSES.some((s) => s.value === status) ? status : undefined;
   const [leads, me, managers] = await Promise.all([getLeads(valid), requireAdminUser(), getManagerOptions()]);
-  const owner = me.role === "owner";
+  // «owner» here = full rights (owner or manager); «Отдел продаж» is read-only.
+  const owner = isFullRole(me.role);
 
   return (
     <>
@@ -69,7 +70,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                       <input type="hidden" name="leadId" value={l._id} />
                       <input type="hidden" name="clientName" value={l.name ?? ""} />
                       <input type="hidden" name="clientPhone" value={l.phone ?? ""} />
-                      {me.role === "owner" && (
+                      {owner && (
                         <select name="manager" defaultValue={me.login} aria-label="Менеджер" className="rounded-lg border border-line bg-white px-2.5 py-1.5 text-[13px]">
                           <option value="">Менеджер: не назначен</option>
                           {managers.map((m) => (

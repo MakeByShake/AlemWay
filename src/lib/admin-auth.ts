@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { projectId } from "@/sanity/env";
 import { isSameOrigin } from "@/lib/http";
-import { ADMIN_COOKIE, verifySession } from "@/lib/admin/session";
+import { ADMIN_COOKIE, isFullRole, verifySession } from "@/lib/admin/session";
 
 /**
  * Checks that the request comes from a logged-in member of our Sanity project.
@@ -41,7 +41,7 @@ export async function isProjectMember(req: NextRequest): Promise<boolean> {
   return ok;
 }
 
-export type AdminAccess = { owner: boolean; login: string | null };
+export type AdminAccess = { full: boolean; login: string | null };
 
 /**
  * Who is calling an admin API: an /admin user (by cookie; writes must come from our pages — CSRF)
@@ -51,31 +51,31 @@ export async function adminAccess(req: NextRequest): Promise<AdminAccess | null>
   if (req.method === "GET" || isSameOrigin(req)) {
     try {
       const user = await verifySession(req.cookies.get(ADMIN_COOKIE)?.value);
-      if (user) return { owner: user.role === "owner", login: user.login };
+      if (user) return { full: isFullRole(user.role), login: user.login };
     } catch (err) {
       console.error("[admin-auth] session check failed", err);
     }
   }
-  if (await isProjectMember(req)) return { owner: true, login: null };
+  if (await isProjectMember(req)) return { full: true, login: null };
   return null;
 }
 
-/** Owners see every client; a manager only the clients the owner assigned to him. */
-export const canSeeCabinet = (a: AdminAccess, cab: { manager?: string | null }) => a.owner || (!!a.login && cab.manager === a.login);
+/** Owner and managers see every client; «Отдел продаж» only the clients assigned to them. */
+export const canSeeCabinet = (a: AdminAccess, cab: { manager?: string | null }) => a.full || (!!a.login && cab.manager === a.login);
 
 const NO_LOGIN = () => NextResponse.json({ ok: false, message: "Нет доступа. Войдите в админку заново." }, { status: 401 });
-const NO_RIGHTS = () => NextResponse.json({ ok: false, message: "Это может делать только владелец." }, { status: 403 });
+const NO_RIGHTS = () => NextResponse.json({ ok: false, message: "Нет прав: отдел продаж может только смотреть." }, { status: 403 });
 
 /** Any logged-in admin. */
 export async function requireAdmin(req: NextRequest): Promise<NextResponse | null> {
   return (await adminAccess(req)) ? null : NO_LOGIN();
 }
 
-/** Owners (and Studio members) only. */
-export async function requireOwner(req: NextRequest): Promise<NextResponse | null> {
+/** Owner, managers and Studio members (not «Отдел продаж»). */
+export async function requireFull(req: NextRequest): Promise<NextResponse | null> {
   const a = await adminAccess(req);
   if (!a) return NO_LOGIN();
-  return a.owner ? null : NO_RIGHTS();
+  return a.full ? null : NO_RIGHTS();
 }
 
 export const adminError = (message: string, status = 400) => NextResponse.json({ ok: false, message }, { status });

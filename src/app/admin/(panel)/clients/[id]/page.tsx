@@ -5,7 +5,7 @@ import {
   cabinetName,
   getManagerOptions,
 } from "@/lib/admin/data";
-import { requireAdminUser } from "@/lib/admin/session";
+import { isFullRole, requireAdminUser } from "@/lib/admin/session";
 import {
   CABINET_STATUSES,
   PIPELINES,
@@ -171,7 +171,8 @@ export default async function ClientPage({
     getManagerOptions(),
   ]);
   if (!cab) notFound();
-  const owner = me.role === "owner";
+  // «owner» here = full rights (owner or manager); «Отдел продаж» is read-only.
+  const owner = isFullRole(me.role);
   // A manager opens only the clients the owner assigned to him.
   if (!owner && cab.manager !== me.login) notFound();
 
@@ -294,7 +295,7 @@ export default async function ClientPage({
                       <option value="old">Старый — данные заполняем мы</option>
                     </select>
                   </label>
-                  {me.role === "owner" ? (
+                  {owner ? (
                     <label className="grid gap-1 text-[14px] font-medium">
                       Менеджер клиента
                       <select
@@ -494,7 +495,7 @@ export default async function ClientPage({
             <p className="mt-1 text-[13px] text-muted">
               {owner
                 ? "Можно исправить любое поле и нажать «Сохранить анкету». Клиент увидит исправленные данные у себя."
-                : "Только просмотр. Исправить анкету может владелец."}
+                : "Только просмотр: отдел продаж не меняет анкету."}
             </p>
             <ActionForm action={updateAnketaAction} className="mt-4">
               <input type="hidden" name="id" value={id} />

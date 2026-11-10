@@ -17,7 +17,11 @@ const scrypt = promisify(scryptCb) as (pw: string, salt: Buffer, len: number) =>
 export const ADMIN_COOKIE = "aw_admin";
 const SESSION_DAYS = 30;
 
-export type AdminRole = "owner" | "manager";
+export type AdminRole = "owner" | "manager" | "sales";
+
+/** Owner and manager do all the work; «Отдел продаж» (sales) sees only its assigned clients, read-only. */
+export const isFullRole = (role: string | undefined) => role === "owner" || role === "manager";
+export const ROLE_TITLES: Record<string, string> = { owner: "Владелец", manager: "Менеджер", sales: "Отдел продаж" };
 export type AdminUser = {
   _id: string;
   login: string;
@@ -97,10 +101,11 @@ export const currentAdmin = cache(async (): Promise<SessionUser | null> => {
 });
 
 /** For admin pages and server actions: the user, or redirect to the login page. */
-export async function requireAdminUser(opts: { owner?: boolean } = {}): Promise<SessionUser> {
+export async function requireAdminUser(opts: { owner?: boolean; full?: boolean } = {}): Promise<SessionUser> {
   const user = await currentAdmin();
   if (!user) redirect("/admin/login");
   if (opts.owner && user.role !== "owner") redirect("/admin");
+  if (opts.full && !isFullRole(user.role)) redirect("/admin");
   return user;
 }
 

@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   const id = String(form.get("id") ?? "");
   const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
   if (!cab) return adminError("Клиент не найден", 404);
-  if (!canSeeCabinet(access, cab)) return adminError("Этот клиент закреплён за другим менеджером", 403);
+  if (!canSeeCabinet(access, cab)) return adminError("Этот клиент закреплён за другим сотрудником", 403);
   const amount = parseAmount(form.get("amount"));
   if (!amount) return adminError("Укажите сумму");
   const methodRaw = String(form.get("method") ?? "");
@@ -37,8 +37,8 @@ export async function POST(req: NextRequest) {
     paidAt,
     ...(note ? { note } : {}),
     ...(receipt ? { receipt } : {}),
-    // A manager's payment waits for the owner's confirmation.
-    status: access.owner ? "confirmed" : "pending",
+    // «Отдел продаж» payments wait for confirmation.
+    status: access.full ? "confirmed" : "pending",
     by: me?.login ?? "manager",
     byName: me?.name ?? "Менеджер",
   });

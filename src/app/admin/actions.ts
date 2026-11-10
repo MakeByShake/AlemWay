@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import {
   ADMIN_COOKIE,
   LOGIN_RE,
+  isFullRole,
   adminUserId,
   checkPassword,
   getAdminUserByLogin,
@@ -91,7 +92,7 @@ export async function logoutAction() {
 // ---------- Leads ----------
 
 export async function updateLeadAction(fd: FormData) {
-  await requireAdminUser({ owner: true });
+  await requireAdminUser({ full: true });
   const id = s(fd, "id", 100);
   if (!/^leads\.[\w-]+$|^[\w-]+$/.test(id)) return;
   const set: Record<string, unknown> = {};
@@ -103,7 +104,7 @@ export async function updateLeadAction(fd: FormData) {
 }
 
 export async function deleteLeadAction(fd: FormData) {
-  await requireAdminUser({ owner: true });
+  await requireAdminUser({ full: true });
   const id = s(fd, "id", 100);
   if (!/^leads\.[\w-]+$|^[\w-]+$/.test(id)) return;
   const type = await writeClient().fetch<string | null>(`*[_id == $id][0]._type`, { id });
@@ -116,7 +117,7 @@ export async function deleteLeadAction(fd: FormData) {
 
 /** Owner picks the manager; a manager's own new clients are assigned to them. "" = nobody. */
 async function managerFor(me: { login: string; name: string; role: string }, picked: string | null) {
-  if (me.role !== "owner") return { login: me.login, name: me.name };
+  if (!isFullRole(me.role)) return { login: me.login, name: me.name };
   if (picked === null) return { login: me.login, name: me.name };
   if (!picked) return null;
   const u = await getAdminUserByLogin(picked);
@@ -124,7 +125,7 @@ async function managerFor(me: { login: string; name: string; role: string }, pic
 }
 
 export async function createCabinetAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  const me = await requireAdminUser({ owner: true });
+  const me = await requireAdminUser({ full: true });
   try {
     const leadId = s(fd, "leadId", 100);
     const service = s(fd, "service", 20);
@@ -144,7 +145,7 @@ export async function createCabinetAction(_prev: ActionState, fd: FormData): Pro
 }
 
 export async function updateCabinetAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  const me = await requireAdminUser({ owner: true });
+  const me = await requireAdminUser({ full: true });
   const id = s(fd, "id", 100);
   if (!id.startsWith("cabinets.")) return { error: "Некорректный кабинет" };
   const cab = await getCabinet(id);
@@ -160,7 +161,7 @@ export async function updateCabinetAction(_prev: ActionState, fd: FormData): Pro
     if (fd.has(key)) set[key] = s(fd, key, key === "clientMessage" || key === "managerNote" ? 3000 : 200);
   }
   // Only the owner assigns managers.
-  if (fd.has("manager") && me.role === "owner") {
+  if (fd.has("manager") && isFullRole(me.role)) {
     const m = await managerFor(me, s(fd, "manager", 40));
     if (m) Object.assign(set, { manager: m.login, managerName: m.name });
     else unset.push("manager", "managerName");
@@ -185,7 +186,7 @@ export async function newLinkAction(_prev: ActionState, fd: FormData): Promise<A
   const id = s(fd, "id", 100);
   const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
   if (!cab) return { error: "Кабинет не найден" };
-  if (me.role !== "owner" && cab.manager !== me.login) return { error: "Этот клиент закреплён за другим менеджером" };
+  if (!isFullRole(me.role) && cab.manager !== me.login) return { error: "Этот клиент закреплён за другим сотрудником" };
   const { hash, link } = newLoginToken();
   await patchCabinet(id, { tokenHash: hash, linkCreatedAt: new Date().toISOString() });
   revalidatePath(`/admin/clients/${id}`);
@@ -194,7 +195,7 @@ export async function newLinkAction(_prev: ActionState, fd: FormData): Promise<A
 }
 
 export async function declarationAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  await requireAdminUser({ owner: true });
+  await requireAdminUser({ full: true });
   const id = s(fd, "id", 100);
   const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
   if (!cab) return { error: "Кабинет не найден" };
@@ -213,7 +214,7 @@ export async function declarationAction(_prev: ActionState, fd: FormData): Promi
 }
 
 export async function deleteCabinetAction(fd: FormData) {
-  await requireAdminUser({ owner: true });
+  await requireAdminUser({ full: true });
   await deleteCabinetCompletely(s(fd, "id", 100));
   revalidatePath("/admin", "layout");
   redirect("/admin/clients");
@@ -222,7 +223,7 @@ export async function deleteCabinetAction(fd: FormData) {
 // ---------- Feedback ----------
 
 export async function updateFeedbackAction(fd: FormData) {
-  await requireAdminUser({ owner: true });
+  await requireAdminUser({ full: true });
   const id = s(fd, "id", 100);
   if (!id.startsWith("feedback.")) return;
   const set: Record<string, unknown> = {};
@@ -234,7 +235,7 @@ export async function updateFeedbackAction(fd: FormData) {
 }
 
 export async function deleteFeedbackAction(fd: FormData) {
-  await requireAdminUser({ owner: true });
+  await requireAdminUser({ full: true });
   const id = s(fd, "id", 100);
   if (!id.startsWith("feedback.")) return;
   await deleteDoc(id);
@@ -248,7 +249,8 @@ export async function addManagerAction(_prev: ActionState, fd: FormData): Promis
   const login = s(fd, "login", 40).toLowerCase();
   const name = s(fd, "name", 60);
   const password = s(fd, "password", 200);
-  const role = s(fd, "role", 10) === "owner" ? "owner" : "manager";
+  const roleRaw = s(fd, "role", 10);
+  const role = roleRaw === "owner" ? "owner" : roleRaw === "sales" ? "sales" : "manager";
   if (!LOGIN_RE.test(login)) return { error: "Логин: 3–30 символов, латиница, цифры, точка, дефис" };
   if (name.length < 2) return { error: "Укажите имя" };
   if (password.length < 8) return { error: "Пароль — минимум 8 символов" };
@@ -299,7 +301,7 @@ export async function setPasswordAction(_prev: ActionState, fd: FormData): Promi
 // ---------- Payments ----------
 
 export async function setPriceAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  await requireAdminUser({ owner: true });
+  await requireAdminUser({ full: true });
   const id = s(fd, "id", 100);
   if (!id.startsWith("cabinets.") || !(await getCabinet(id))) return { error: "Клиент не найден" };
   const raw = s(fd, "price", 30);
@@ -311,7 +313,7 @@ export async function setPriceAction(_prev: ActionState, fd: FormData): Promise<
 }
 
 export async function paymentStatusAction(fd: FormData) {
-  await requireAdminUser({ owner: true });
+  await requireAdminUser({ full: true });
   const id = s(fd, "id", 100);
   const key = s(fd, "key", 40);
   const status = s(fd, "status", 20);
@@ -322,7 +324,7 @@ export async function paymentStatusAction(fd: FormData) {
 }
 
 export async function deletePaymentAction(fd: FormData) {
-  await requireAdminUser({ owner: true });
+  await requireAdminUser({ full: true });
   const id = s(fd, "id", 100);
   const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
   if (!cab) return;
@@ -333,7 +335,7 @@ export async function deletePaymentAction(fd: FormData) {
 
 /** Manager edits the client's questionnaire (any field). Empty = cleared. */
 export async function updateAnketaAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  await requireAdminUser({ owner: true });
+  await requireAdminUser({ full: true });
   const id = s(fd, "id", 100);
   const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
   if (!cab) return { error: "Кабинет не найден" };
@@ -359,7 +361,8 @@ export async function updateAnketaAction(_prev: ActionState, fd: FormData): Prom
 export async function setRoleAction(fd: FormData) {
   const me = await requireAdminUser({ owner: true });
   const login = s(fd, "login", 40);
-  const role = s(fd, "role", 10) === "owner" ? "owner" : "manager";
+  const roleRaw = s(fd, "role", 10);
+  const role = roleRaw === "owner" ? "owner" : roleRaw === "sales" ? "sales" : "manager";
   if (!LOGIN_RE.test(login) || login === me.login) return;
   const user = await getAdminUserByLogin(login);
   if (!user) return;
@@ -369,7 +372,7 @@ export async function setRoleAction(fd: FormData) {
 
 /** Manager deletes one file of a client (from storage too). */
 export async function deleteClientFileAction(fd: FormData) {
-  await requireAdminUser({ owner: true });
+  await requireAdminUser({ full: true });
   const id = s(fd, "id", 100);
   const kind = s(fd, "kind", 20) as FileKind;
   const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
@@ -398,7 +401,7 @@ export async function updateConsultationAction(fd: FormData) {
   const id = s(fd, "id", 100);
   if (!id.startsWith("consultations.")) return;
   // Managers see every consultation but change only the ones the owner gave them.
-  if (me.role !== "owner") {
+  if (!isFullRole(me.role)) {
     const assigned = await writeClient().fetch<string | null>(`*[_id == $id][0].manager`, { id });
     if (assigned !== me.login) return;
   }
@@ -411,7 +414,7 @@ export async function updateConsultationAction(fd: FormData) {
   // Who takes the consultation: only the owner assigns.
   if (fd.has("manager")) {
     const login = s(fd, "manager", 40);
-    if (me.role === "owner") {
+    if (isFullRole(me.role)) {
       const u = login ? await getAdminUserByLogin(login) : null;
       if (u) Object.assign(set, { manager: u.login, managerName: u.name });
       else unset.push("manager", "managerName");
@@ -423,7 +426,7 @@ export async function updateConsultationAction(fd: FormData) {
 }
 
 export async function deleteConsultationAction(fd: FormData) {
-  await requireAdminUser({ owner: true });
+  await requireAdminUser({ full: true });
   const id = s(fd, "id", 100);
   if (!id.startsWith("consultations.")) return;
   await deleteDoc(id);

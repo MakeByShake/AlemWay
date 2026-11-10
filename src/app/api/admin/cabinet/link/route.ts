@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   if (!id.startsWith("cabinets.")) return adminError("Некорректный кабинет");
   const cab = await getCabinet(id);
   if (!cab) return adminError("Кабинет не найден", 404);
-  if (!canSeeCabinet(access, cab)) return adminError("Этот клиент закреплён за другим менеджером", 403);
+  if (!canSeeCabinet(access, cab)) return adminError("Этот клиент закреплён за другим сотрудником", 403);
 
   const { hash, link } = newLoginToken();
   await patchCabinet(id, { tokenHash: hash, linkCreatedAt: new Date().toISOString() });

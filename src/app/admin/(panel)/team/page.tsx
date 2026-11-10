@@ -1,5 +1,5 @@
 import { getAdminUsers } from "@/lib/admin/data";
-import { requireAdminUser } from "@/lib/admin/session";
+import { ROLE_TITLES, requireAdminUser } from "@/lib/admin/session";
 import { addManagerAction, removeManagerAction, setConsultantAction, setPasswordAction, setRoleAction } from "../../actions";
 import { Badge, PageTitle, fmtDate } from "@/components/admin/bits";
 import { ActionForm, AutoSelect, ConfirmForm, SubmitButton } from "@/components/admin/ui";
@@ -29,7 +29,7 @@ export default async function TeamPage() {
         {owner && (
           <section className="card p-4 sm:p-6">
             <h2 className="text-[18px] font-bold">Добавить менеджера</h2>
-            <p className="mt-1 text-[14px] text-muted">Менеджер видит заявки, клиентов и отзывы. Владелец ещё может управлять командой.</p>
+            <p className="mt-1 text-[14px] text-muted">Отдел продаж — только свои клиенты (просмотр, договор и чеки). Менеджер — вся работа с клиентами. Владелец — ещё команда и финансы.</p>
             <ActionForm action={addManagerAction} className="mt-4 grid gap-3 sm:grid-cols-2" resetOnSuccess>
               <label className="grid gap-1 text-[14px] font-medium">
                 Имя
@@ -46,6 +46,7 @@ export default async function TeamPage() {
               <label className="grid gap-1 text-[14px] font-medium">
                 Роль
                 <select name="role" className="field py-2">
+                  <option value="sales">Отдел продаж</option>
                   <option value="manager">Менеджер</option>
                   <option value="owner">Владелец</option>
                 </select>
@@ -67,7 +68,7 @@ export default async function TeamPage() {
                 <div>
                   <p className="font-semibold">
                     {u.name} <span className="font-normal text-muted">· {u.login}</span>{" "}
-                    <Badge tone={u.role === "owner" ? "blue" : "gray"}>{u.role === "owner" ? "Владелец" : "Менеджер"}</Badge>
+                    <Badge tone={u.role === "owner" ? "blue" : u.role === "sales" ? "amber" : "gray"}>{ROLE_TITLES[u.role] ?? "Менеджер"}</Badge>
                   </p>
                   <p className="text-[13px] text-muted">добавлен {fmtDate(u.createdAt, false)}</p>
                   <div className="mt-1.5 flex items-center gap-2 text-[13px]">
@@ -92,8 +93,9 @@ export default async function TeamPage() {
                       hidden={{ login: u.login }}
                       name="role"
                       label="Роль"
-                      value={u.role === "owner" ? "owner" : "manager"}
+                      value={u.role === "owner" || u.role === "sales" ? u.role : "manager"}
                       options={[
+                        { value: "sales", title: "Отдел продаж" },
                         { value: "manager", title: "Менеджер" },
                         { value: "owner", title: "Владелец" },
                       ]}

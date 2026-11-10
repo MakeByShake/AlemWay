@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { adminError, requireOwner } from "@/lib/admin-auth";
+import { adminError, requireFull } from "@/lib/admin-auth";
 import { readJsonObject } from "@/lib/http";
 import { AdminOpError, deleteCabinetCompletely } from "@/lib/cabinet/admin-ops";
 
@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 /** Manager deletes a client completely (files + cabinet document), see deleteCabinetCompletely. */
 export async function POST(req: NextRequest) {
-  const denied = await requireOwner(req);
+  const denied = await requireFull(req);
   if (denied) return denied;
   const body = await readJsonObject(req, 1024);
   try {

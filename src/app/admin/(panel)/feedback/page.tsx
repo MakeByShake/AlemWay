@@ -1,5 +1,5 @@
 import { FEEDBACK_STATUS_LIST, FEEDBACK_TOPIC_TITLES, getFeedback } from "@/lib/admin/data";
-import { requireAdminUser } from "@/lib/admin/session";
+import { isFullRole, requireAdminUser } from "@/lib/admin/session";
 import { deleteFeedbackAction, updateFeedbackAction } from "../../actions";
 import { Empty, FilterTabs, PageTitle, fmtDate } from "@/components/admin/bits";
 import { AutoSelect, ConfirmForm, NoteForm } from "@/components/admin/ui";
@@ -10,7 +10,8 @@ export default async function FeedbackPage({ searchParams }: { searchParams: Pro
   const { status } = await searchParams;
   const valid = FEEDBACK_STATUS_LIST.some((s) => s.value === status) ? status : undefined;
   const [items, me] = await Promise.all([getFeedback(valid), requireAdminUser()]);
-  const owner = me.role === "owner";
+  // «owner» here = full rights (owner or manager); «Отдел продаж» is read-only.
+  const owner = isFullRole(me.role);
   const rated = items.filter((i) => i.rating);
   const avg = rated.length ? (rated.reduce((a, i) => a + (i.rating ?? 0), 0) / rated.length).toFixed(1) : null;
 

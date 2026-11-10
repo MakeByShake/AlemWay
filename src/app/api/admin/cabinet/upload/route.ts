@@ -33,9 +33,9 @@ export async function POST(req: NextRequest) {
   if (!id.startsWith("cabinets.") || !MANAGER_UPLOAD_KINDS.includes(kind)) return adminError("Некорректный запрос");
   const cab = await getCabinet(id);
   if (!cab) return adminError("Кабинет не найден", 404);
-  if (!canSeeCabinet(access, cab)) return adminError("Этот клиент закреплён за другим менеджером", 403);
-  // Managers may upload only the contract (receipts go with payments).
-  if (!access.owner && kind !== "contract") return adminError("Менеджер может загружать только договор и чеки", 403);
+  if (!canSeeCabinet(access, cab)) return adminError("Этот клиент закреплён за другим сотрудником", 403);
+  // «Отдел продаж» may upload only the contract (receipts go with payments).
+  if (!access.full && kind !== "contract") return adminError("Отдел продаж может загружать только договор и чеки", 403);
   if (!SERVICE_FILES[serviceOf(cab.service)].all.includes(kind)) return adminError("Этот файл не относится к услуге кабинета");
 
   const up = await readUpload(req);
