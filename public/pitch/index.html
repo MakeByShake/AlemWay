@@ -1,0 +1,216 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>AlemWay — Pizza Pitch</title>
+<meta name="description" content="AlemWay: визовый бизнес в одной платформе с ИИ. Pitch deck.">
+<meta property="og:title" content="AlemWay — Pizza Pitch"><meta property="og:description" content="Визовый бизнес в одной платформе: студент собирает документы за вечер, декларацию делает ИИ.">
+<meta property="og:image" content="https://alemway.kz/pitch/img/combo-01.png">
+<link rel="icon" href="/icon.svg"><style>
+@font-face{font-family:Inter;src:url(fonts/inter-cyrillic-wght-normal.woff2) format('woff2');font-weight:100 900;unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:Inter;src:url(fonts/inter-latin-wght-normal.woff2) format('woff2');font-weight:100 900}
+:root{--brand:#2340ff;--accent:#10b864;--ink:#0b0f24;--muted:#545a73;--surface:#f5f6fa;--line:#e6e8f0}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#0b0f24;font-family:Inter,-apple-system,sans-serif;color:var(--ink);overflow:hidden}
+.deck{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+.slide{position:absolute;width:1920px;height:1080px;padding:90px 120px;background:#fff;overflow:hidden;display:flex;flex-direction:column;justify-content:center;opacity:0;transition:opacity .6s ease}
+.slide.on{opacity:1;z-index:2}.slide:not(.on){pointer-events:none}
+.tag{position:absolute;top:44px;right:120px;font-size:20px;font-weight:700;color:#9aa0b8;letter-spacing:.06em;text-transform:uppercase}
+.dark .tag{color:#6f78a8}
+.accent{background:linear-gradient(135deg,#eef0ff 0%,#fff 55%,#e7f8ef 100%)}
+.dark{background:radial-gradient(1200px 700px at 85% 10%,#2340ff55,transparent),#0b0f24;color:#fff}
+.dark p,.dark li{color:#c9cde0}
+.hero{background:radial-gradient(900px 600px at 90% 20%,#2340ff22,transparent),radial-gradient(700px 500px at 0% 100%,#10b86418,transparent),#fff}
+.eyebrow{font-size:24px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--brand);margin-bottom:20px}.dark .eyebrow{color:#8b97ff}
+h1{font-size:80px;line-height:1.04;font-weight:800;letter-spacing:-.03em}
+h2{font-size:60px;line-height:1.08;font-weight:800;letter-spacing:-.025em;margin-bottom:44px;max-width:1400px}
+h3{font-size:30px;font-weight:700;margin:10px 0}
+p{font-size:26px;line-height:1.45;color:var(--muted)}
+.hl{background:linear-gradient(90deg,var(--brand),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{font-size:30px;margin-top:28px;max-width:860px}
+.chips{display:flex;flex-wrap:wrap;gap:14px;margin-top:36px}.chips span{font-size:23px;font-weight:600;padding:12px 22px;border-radius:999px;background:var(--surface);border:1px solid var(--line)}
+.link{margin-top:34px;font-size:30px;font-weight:800;color:var(--brand)}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;height:100%}
+.txt{max-width:880px}
+.grid2,.grid3,.grid4{display:grid;gap:30px}.grid2{grid-template-columns:repeat(2,1fr)}.grid3{grid-template-columns:repeat(3,1fr)}.grid4{grid-template-columns:repeat(4,1fr)}
+.card{background:#fff;border:1px solid var(--line);border-radius:28px;padding:38px;box-shadow:0 20px 50px -30px rgba(20,30,90,.25)}
+.big{font-size:52px}.num{display:block;font-size:50px;font-weight:800;color:var(--brand);letter-spacing:-.02em}
+.who,.result{margin-top:40px;font-size:28px}.who b,.result b{color:var(--ink)}
+.steps{list-style:none;display:grid;gap:20px}.steps li{display:flex;gap:22px;align-items:flex-start}
+.steps li>b{flex:none;width:56px;height:56px;border-radius:18px;background:var(--brand);color:#fff;font-size:27px;display:flex;align-items:center;justify-content:center}
+.steps h3{margin:4px 0}.steps p{font-size:23px}
+.ticks{list-style:none;display:grid;gap:20px}.ticks li{font-size:27px;line-height:1.4;padding-left:48px;position:relative;color:var(--muted)}
+.ticks li:before{content:"✓";position:absolute;left:0;top:2px;width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;font-size:19px;display:flex;align-items:center;justify-content:center;font-weight:800}
+.ticks b{color:var(--ink)}.dark .ticks b{color:#fff}
+.plain{list-style:none;display:grid;gap:10px;margin:14px 0 18px}.plain li{font-size:26px;color:var(--muted)}.plain b{color:var(--ink)}
+.stats{display:flex;gap:24px;margin-top:40px}.stats div{background:#ffffff12;border:1px solid #ffffff22;border-radius:22px;padding:20px 26px}
+.stats b{display:block;font-size:40px;color:#fff;white-space:nowrap}.stats span{font-size:19px;color:#aab0cc}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.kpis div{background:#fff;border:1px solid var(--line);border-radius:24px;padding:24px 26px}
+.kpis b{display:block;font-size:44px;font-weight:800;color:var(--brand);letter-spacing:-.02em;white-space:nowrap}.kpis b span{font-size:inherit;color:inherit}.kpis div>span{font-size:20px;color:var(--muted)}
+.note{font-size:21px;margin-top:22px}
+.cmp{width:100%;border-collapse:separate;border-spacing:0;font-size:25px;border:1px solid var(--line);border-radius:24px;overflow:hidden}
+.cmp th,.cmp td{padding:16px 26px;text-align:left;border-bottom:1px solid var(--line)}.cmp th{background:var(--surface);font-size:23px;vertical-align:top}
+.cmp th small{font-size:17px;font-weight:500;color:var(--muted)}.cmp td:first-child{font-weight:600}.cmp .us{background:#eef0ff;color:var(--brand);font-weight:700}
+.moat{margin-top:30px;font-size:25px;background:#eef0ff;border-radius:20px;padding:22px 28px}.moat b{color:var(--ink)}
+.flags{display:grid;grid-template-columns:repeat(7,1fr);gap:16px;margin-bottom:46px}
+.flags div{border:1px solid var(--line);border-radius:22px;padding:22px 10px;text-align:center;background:#fff}
+.flags b{font-size:58px;display:block}.flags span{display:block;font-size:22px;font-weight:700;margin-top:8px}.flags i{display:block;font-style:normal;font-size:17px;color:var(--muted);margin-top:4px}
+.flags .now{border-color:var(--accent);background:#e7f8ef}.flags .now i{color:#0a7a42;font-weight:700}
+.road{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}.road div{border-top:6px solid var(--brand);padding-top:22px}.road div:first-child{border-color:var(--accent)}
+.road b{font-size:30px;display:block;margin-bottom:10px}.road p{font-size:23px}
+.team{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}.team .card{padding:30px}.team h3{font-size:28px}
+.role{font-size:20px!important;font-weight:700;color:var(--brand)!important;margin-bottom:10px}.team p{font-size:21px}
+.why{margin-top:34px;font-size:28px}.why b{color:var(--ink)}
+.todo{color:#c27600;font-size:21px;font-weight:600;margin-top:12px}
+.devs{position:relative;height:880px;display:flex;align-items:center;justify-content:center}
+.dev{filter:drop-shadow(0 40px 60px rgba(20,30,90,.25))}
+.devs.one .wide{width:118%;max-width:none}.devs.one .mac{width:105%;max-width:none}
+.devs.three .dev{height:660px;position:absolute}.devs.three .p0{left:0;top:110px;transform:rotate(-6deg)}.devs.three .p1{left:50%;margin-left:-150px;top:20px;z-index:2}.devs.three .p2{right:0;top:110px;transform:rotate(6deg)}
+.bar{position:fixed;left:0;bottom:0;height:5px;background:linear-gradient(90deg,var(--brand),var(--accent));z-index:9;transition:width .5s}
+.ui{position:fixed;right:18px;bottom:14px;z-index:9;display:flex;gap:10px;align-items:center;font:600 14px Inter,sans-serif;color:#ffffffb0}
+.ui a{color:#fff;background:#ffffff22;border:1px solid #ffffff33;padding:7px 14px;border-radius:999px;text-decoration:none}
+.ui button{all:unset;cursor:pointer;color:#fff;background:#ffffff22;border:1px solid #ffffff33;width:34px;height:34px;border-radius:50%;text-align:center;line-height:34px}
+/* animations */
+.slide .a{opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .8s cubic-bezier(.2,.8,.2,1)}
+.slide.on .a{opacity:1;transform:none}
+.slide.on .a:nth-child(1){transition-delay:0.08s}.slide.on .a:nth-child(2){transition-delay:0.16999999999999998s}.slide.on .a:nth-child(3){transition-delay:0.26s}.slide.on .a:nth-child(4){transition-delay:0.35000000000000003s}.slide.on .a:nth-child(5){transition-delay:0.44s}.slide.on .a:nth-child(6){transition-delay:0.5299999999999999s}.slide.on .a:nth-child(7){transition-delay:0.62s}.slide.on .a:nth-child(8){transition-delay:0.71s}.slide.on .a:nth-child(9){transition-delay:0.7999999999999999s}.slide.on .a:nth-child(10){transition-delay:0.8899999999999999s}.slide.on .a:nth-child(11){transition-delay:0.9799999999999999s}.slide.on .a:nth-child(12){transition-delay:1.07s}
+.slide.on .grid3>.a:nth-child(2),.slide.on .grid4>.a:nth-child(2),.slide.on .kpis>.a:nth-child(2),.slide.on .road>.a:nth-child(2),.slide.on .team>.a:nth-child(2),.slide.on .grid2>.a:nth-child(2){transition-delay:.35s}
+.slide.on .grid3>.a:nth-child(3),.slide.on .grid4>.a:nth-child(3),.slide.on .kpis>.a:nth-child(3),.slide.on .road>.a:nth-child(3),.slide.on .team>.a:nth-child(3){transition-delay:.5s}
+.slide.on .grid4>.a:nth-child(4),.slide.on .kpis>.a:nth-child(4),.slide.on .road>.a:nth-child(4),.slide.on .team>.a:nth-child(4){transition-delay:.65s}
+.slide.on .kpis>.a:nth-child(5){transition-delay:.8s}.slide.on .kpis>.a:nth-child(6){transition-delay:.95s}
+.slide.on .flags>.a:nth-child(1){transition-delay:0.2s}.slide.on .flags>.a:nth-child(2){transition-delay:0.30000000000000004s}.slide.on .flags>.a:nth-child(3){transition-delay:0.4s}.slide.on .flags>.a:nth-child(4){transition-delay:0.5s}.slide.on .flags>.a:nth-child(5){transition-delay:0.6000000000000001s}.slide.on .flags>.a:nth-child(6){transition-delay:0.7s}.slide.on .flags>.a:nth-child(7){transition-delay:0.8s}
+.slide .devs{opacity:0;transform:translateX(80px) scale(.95);transition:opacity .9s ease .25s,transform 1.1s cubic-bezier(.2,.8,.2,1) .25s}
+.slide.on .devs{opacity:1;transform:none}
+.slide.on .dev{animation:float 6s ease-in-out infinite}.slide.on .p1{animation-delay:-2s}.slide.on .p2{animation-delay:-4s}
+@keyframes float{0%,100%{translate:0 0}50%{translate:0 -14px}}
+.cmp tbody tr{opacity:0;transform:translateX(-24px);transition:all .5s ease}.slide.on .cmp tbody tr{opacity:1;transform:none}
+.slide.on .cmp tbody tr:nth-child(1){transition-delay:0.3s}.slide.on .cmp tbody tr:nth-child(2){transition-delay:0.42s}.slide.on .cmp tbody tr:nth-child(3){transition-delay:0.54s}.slide.on .cmp tbody tr:nth-child(4){transition-delay:0.6599999999999999s}.slide.on .cmp tbody tr:nth-child(5){transition-delay:0.78s}.slide.on .cmp tbody tr:nth-child(6){transition-delay:0.8999999999999999s}
+@media (prefers-reduced-motion:reduce){.slide *,.slide{transition:none!important;animation:none!important}}
+/* PDF: every slide on its own page, no animation */
+@media print{html,body{background:#fff;overflow:visible;height:auto}.deck{position:static;display:block}
+.slide{position:relative;opacity:1!important;transform:none!important;page-break-after:always;break-after:page}.slide .a,.slide .devs,.cmp tbody tr{opacity:1!important;transform:none!important;transition:none!important}
+.dev{animation:none!important}.bar,.ui{display:none}}
+@page{size:1920px 1080px;margin:0}
+</style></head><body>
+<div class="deck"><section class="slide hero"><div class="split"><div class="txt">
+      <p class="eyebrow a">AlemWay · визы и работа за рубежом · с 2019 года</p>
+      <h1 class="a">Студент собирает документы за вечер.<br><span class="hl">Декларацию делает ИИ.</span></h1>
+      <p class="lead a">Мы перенесли визовый бизнес из WhatsApp, Google Drive и таблиц в одну платформу: сайт, кабинет студента, CRM для команды и ИИ, который проверяет документы.</p>
+      <div class="chips a"><span>1000+ клиентов</span><span>10,4 млн ₸ выручки через платформу</span><span>🤖 ИИ в каждом шаге</span></div>
+      <p class="link a">alemway.kz</p>
+    </div><div class="devs one"><img class="dev wide" src="img/combo-01.png" alt=""></div></div></section>
+<section class="slide "><span class="tag">1 · Problem</span><p class="eyebrow a">Проблема</p><h2 class="a">Визовые агентства до сих пор живут в WhatsApp и Excel</h2>
+    <div class="grid3">
+      <div class="card a"><b class="big">📲</b><h3>Всё вручную</h3><p>Паспорта, справки и чеки приходят в WhatsApp. Менеджер переписывает их в декларацию, таблицу и Google Drive. На одного студента уходят часы.</p></div>
+      <div class="card a"><b class="big">🗂</b><h3>Всё разбросано</h3><p>У нас самих было 24 папки и 61 файл с разными названиями — и отдельная таблица на 230 строк.</p></div>
+      <div class="card a"><b class="big">⚠️</b><h3>Люди и документы теряются</h3><p>Одна ошибка в имени или дате — и немецкое агентство труда не примет декларацию. Студент не знает, на каком он этапе.</p></div>
+    </div>
+    <p class="who a">Для кого: <b>студенты</b>, которые едут работать летом за рубеж, и <b>визовые агентства</b>, которые их оформляют.</p></section>
+<section class="slide accent"><span class="tag">2 · Solution</span><p class="eyebrow a">Решение</p><h2 class="a">Все процессы в одной платформе — ИИ следит, чтобы никто не потерялся</h2>
+    <div class="grid4">
+      <div class="card a"><b class="big">🔗</b><h3>Личная ссылка</h3><p>Студент получает её в WhatsApp в один клик.</p></div>
+      <div class="card a"><b class="big">📄</b><h3>Загрузил документы</h3><p>Справка и паспорт — с телефона, большие сканы сжимаются сами.</p></div>
+      <div class="card a"><b class="big">🤖</b><h3>ИИ сделал декларацию</h3><p>Официальный бланк за ~30 секунд, с проверкой ошибок.</p></div>
+      <div class="card a"><b class="big">✅</b><h3>Видит каждый шаг</h3><p>8 этапов до вылета: что сделано и что дальше.</p></div>
+    </div>
+    <p class="result a">Результат: студент оформляет документы <b>за один вечер</b>, команда ведёт <b>в разы больше клиентов</b> и ничего не теряет.</p></section>
+<section class="slide "><span class="tag">3 · Product</span><div class="split"><div class="txt">
+      <p class="eyebrow a">Продукт · для студента</p><h2 class="a">Работает уже сейчас на alemway.kz</h2>
+      <ol class="steps">
+        <li class="a"><b>1</b><div><h3>Сайт и запись на консультацию</h3><p>Студент выбирает менеджера и свободное время.</p></div></li>
+        <li class="a"><b>2</b><div><h3>Кабинет по личной ссылке</h3><p>Загружает документы, заполняет 3–5 полей.</p></div></li>
+        <li class="a"><b>3</b><div><h3>Декларация от ИИ</h3><p>Скачивает, несёт в деканат, загружает с печатью.</p></div></li>
+        <li class="a"><b>4</b><div><h3>«Ура, вы сдали декларацию»</h3><p>Видит следующий этап: работа, ZAV, виза, вылет.</p></div></li>
+      </ol></div>
+      <div class="devs three"><img class="dev p0" src="img/iphone-07-cabinet-docs.png" alt=""><img class="dev p1" src="img/iphone-09-declaration-ready.png" alt=""><img class="dev p2" src="img/iphone-08-cabinet-ready-steps.png" alt=""></div></div></section>
+<section class="slide "><span class="tag">3 · Product</span><div class="split"><div class="txt">
+      <p class="eyebrow a">Продукт · для команды</p><h2 class="a">CRM, где каждый клиент на своём этапе</h2>
+      <ul class="ticks">
+        <li class="a"><b>8 этапов</b> процесса — виден текущий и следующий шаг</li>
+        <li class="a">Все файлы клиента в одном месте, скачать всё одним ZIP</li>
+        <li class="a">Роли: <b>владелец, менеджер, отдел продаж</b></li>
+        <li class="a">Оплаты, чеки, финансы и Telegram-уведомления</li>
+        <li class="a">Онлайн-запись на консультации с выбором менеджера</li>
+      </ul></div><div class="devs one"><img class="dev wide" src="img/combo-02.png" alt=""></div></div></section>
+<section class="slide dark"><span class="tag">4 · AI</span><div class="split"><div class="txt">
+      <p class="eyebrow a">AI в продукте</p><h2 class="a">ИИ — наш «декларационный отдел»</h2>
+      <ul class="ticks">
+        <li class="a">Читает справку, паспорт и календарь вуза и <b>заполняет все 21 поле</b> официального бланка Bundesagentur für Arbeit</li>
+        <li class="a">Находит ошибки: <b>«Medina» → «Madina»</b>, просроченный паспорт, справка без печати</li>
+        <li class="a">Не выдаёт неполную декларацию — объясняет студенту, что исправить</li>
+        <li class="a">Сам заполняет анкету клиента и отвечает на вопросы 24/7</li>
+      </ul>
+      <div class="stats a"><div><b>~30 сек</b><span>вместо часов ручной работы</span></div><div><b>≈40 ₸</b><span>стоимость одной проверки</span></div><div><b>21/21</b><span>поле — как у эксперта</span></div></div>
+    </div><div class="devs one"><img class="dev wide" src="img/combo-07.png" alt=""></div></div></section>
+<section class="slide accent"><span class="tag">5 · Traction</span><div class="split"><div class="txt">
+      <p class="eyebrow a">Traction</p><h2 class="a">Не идея — работающий бизнес</h2>
+      <div class="kpis">
+        <div class="a"><b><span data-n="10.4" data-d="1">10,4</span> млн ₸</b><span>выручка через платформу</span></div>
+        <div class="a"><b><span data-n="11.8" data-d="1">11,8</span> млн ₸</b><span>сумма договоров</span></div>
+        <div class="a"><b data-n="28">28</b><span>клиентов в платформе</span></div>
+        <div class="a"><b data-n="16">16</b><span>договоров Work&Travel</span></div>
+        <div class="a"><b data-n="7">7</b><span>деклараций, 6 — с печатью</span></div>
+        <div class="a"><b>1000+</b><span>клиентов AlemWay с 2019</span></div>
+      </div>
+      <p class="note a">Платформа запущена в ноябре 2026 — первые деньги пришли в первые недели. Все цифры — из нашей админки, реальные платежи.</p>
+    </div><div class="devs one"><img class="dev mac" src="img/macbook-08-finance.png" alt=""></div></div></section>
+<section class="slide "><span class="tag">6 · Market</span><p class="eyebrow a">Рынок</p><h2 class="a">Студенты Казахстана и Центральной Азии едут работать за рубеж</h2>
+    <div class="grid3">
+      <div class="card a"><b class="num">678 тыс.</b><h3>студентов в вузах Казахстана</h3><p>2025/26 учебный год (Бюро национальной статистики). Плюс Узбекистан — наши клиенты уже оттуда.</p></div>
+      <div class="card a"><b class="num">710–750 тыс. ₸</b><h3>средний чек Work&Travel</h3><p>Германия (Ferienjob) — до 90 дней работы в год для студентов 18–35 лет.</p></div>
+      <div class="card a"><b class="num">Сотни агентств</b><h3>в регионе работают вручную</h3><p>Каждому нужна такая же система — это второй рынок для нашей платформы.</p></div>
+    </div></section>
+<section class="slide "><span class="tag">7 · Business Model</span><p class="eyebrow a">Бизнес-модель</p><h2 class="a">Два источника дохода</h2>
+    <div class="grid2">
+      <div class="card a"><h3>1. Услуги AlemWay (B2C)</h3>
+        <ul class="plain"><li><b>Work&Travel Германия</b> — 710–750 тыс. ₸</li><li><b>K-ETA в Корею</b> — 12 000 ₸</li><li><b>Консультации</b> — 2 000 ₸</li></ul>
+        <p>Платформа снижает затраты: декларация от ИИ стоит ~40 ₸ вместо часа работы менеджера.</p></div>
+      <div class="card a"><h3>2. Платформа для агентств (B2B)</h3>
+        <p>Делаем другим визовым агентствам такой же сайт, кабинет клиента, CRM и ИИ — <b>под их процессы</b>: внедрение + ежемесячная поддержка.</p>
+        <p>Цена — индивидуально, под размер и процессы агентства.</p></div>
+    </div></section>
+<section class="slide "><span class="tag">8 · Competition</span><p class="eyebrow a">Конкуренты и преимущество</p><h2 class="a">Почему мы, а не они</h2>
+    <table class="cmp a"><thead><tr><th></th><th>Агентства<br><small>IEC, KCET, Freedom Travel…</small></th><th>Общие CRM<br><small>amoCRM, Bitrix24</small></th><th class="us">AlemWay</th></tr></thead><tbody>
+      <tr><td>Сбор документов</td><td>WhatsApp</td><td>вручную</td><td class="us">✅ кабинет студента</td></tr>
+      <tr><td>Декларация ZAV</td><td>вручную</td><td>—</td><td class="us">✅ ИИ, ~30 сек</td></tr>
+      <tr><td>Проверка ошибок</td><td>глазами</td><td>—</td><td class="us">✅ ИИ</td></tr>
+      <tr><td>Клиент видит этапы</td><td>—</td><td>—</td><td class="us">✅ 8 этапов</td></tr>
+      <tr><td>Заточено под визы</td><td>—</td><td>—</td><td class="us">✅</td></tr>
+    </tbody></table>
+    <p class="moat a"><b>Почему преимущество сохранится, когда ИИ станет доступнее всем:</b> ценность не в модели, а в том, что вокруг — знание процессов (бланки, правила, справочник вузов), реальные данные 1000+ клиентов и готовый рабочий процесс от заявки до вылета.</p></section>
+<section class="slide "><span class="tag">9 · Growth & Global</span><p class="eyebrow a">Рост и выход на мир</p><h2 class="a">Одна платформа — любая страна</h2>
+    <div class="flags">
+      <div class="a now"><b>🇩🇪</b><span>Германия</span><i>сейчас</i></div>
+      <div class="a now"><b>🇰🇷</b><span>Корея (K-ETA)</span><i>сейчас</i></div>
+      <div class="a"><b>🇺🇸</b><span>США</span><i>Work&Travel</i></div>
+      <div class="a"><b>🇯🇵</b><span>Япония</span></div>
+      <div class="a"><b>🇦🇺</b><span>Австралия</span></div>
+      <div class="a"><b>🇵🇱</b><span>Польша</span></div>
+      <div class="a"><b>🇸🇰</b><span>Словакия</span></div>
+    </div>
+    <div class="road">
+      <div class="a"><b>Сейчас</b><p>Германия и Корея, Казахстан и Узбекистан</p></div>
+      <div class="a"><b>Далее</b><p>Новые страны: ИИ учится на новых бланках — платформа та же</p></div>
+      <div class="a"><b>Масштаб</b><p>Документы из WhatsApp сразу в кабинет, ИИ-финансист</p></div>
+      <div class="a"><b>Мир</b><p>Платформа для агентств Центральной Азии и дальше</p></div>
+    </div></section>
+<section class="slide hero"><span class="tag">10 · Team</span><p class="eyebrow a">Команда</p><h2 class="a">Бизнес, который сам сделал свою платформу</h2>
+    <div class="team">
+      <div class="card a"><b class="big">🏢</b><h3>Нурберген</h3><p class="role">Основатель и CEO AlemWay</p><p>Основал AlemWay в 2019 году: 1000+ клиентов, программы в Германии и Корее.</p></div>
+      <div class="card a"><b class="big">🧠</b><h3>Мухаммад Шералхан</h3><p class="role">Сооснователь платформы · Product & AI</p><p>Спроектировал платформу и ИИ-декларацию, запустил её на реальных клиентах.</p></div>
+      <div class="card a"><b class="big">⚙️</b><h3>Ерасыл</h3><p class="role">Сооснователь платформы · Tech Lead</p><p>Кабинеты студентов, генерация официальных документов, безопасность данных.</p></div>
+      <div class="card a"><b class="big">🧭</b><h3>Алиби</h3><p class="role">Head of Client Success</p><p>Ведёт студентов от заявки до вылета — знает каждый шаг процесса, по которому мы строили продукт.</p></div>
+    </div>
+    <p class="why a">Почему мы: мы <b>и есть клиент</b> своей платформы — она уже ведёт наш бизнес и приносит деньги.</p>
+    <p class="link a">alemway.kz · alemway.kz/pitch</p></section></div>
+<div class="bar"></div>
+<div class="ui"><span class="cnt"></span><button class="prev" aria-label="Назад">‹</button><button class="next" aria-label="Вперёд">›</button><a href="AlemWay-Pitch.pdf" download>PDF</a></div>
+<script>
+const S=[...document.querySelectorAll('.slide')];let i=Math.max(0,Math.min(S.length-1,(+location.hash.slice(1)||1)-1));
+const bar=document.querySelector('.bar'),cnt=document.querySelector('.cnt');
+function fit(){const k=Math.min(innerWidth/1920,innerHeight/1080);S.forEach(s=>s.style.transform='scale('+k+')')}
+function count(s){s.querySelectorAll('[data-n]').forEach(el=>{const n=+el.dataset.n,d=+(el.dataset.d||0),t0=performance.now();
+ const step=t=>{const p=Math.min(1,(t-t0)/1400),e=1-Math.pow(1-p,3);el.textContent=(n*e).toFixed(d).replace('.',',');if(p<1)requestAnimationFrame(step)};requestAnimationFrame(step)})}
+function show(n){i=Math.max(0,Math.min(S.length-1,n));S.forEach((s,k)=>s.classList.toggle('on',k===i));fit();count(S[i]);bar.style.width=((i+1)/S.length*100)+'%';cnt.textContent=(i+1)+' / '+S.length;history.replaceState(null,'','#'+(i+1))}
+addEventListener('keydown',e=>{if(['ArrowRight','PageDown',' ','Enter'].includes(e.key))show(i+1);if(['ArrowLeft','PageUp','Backspace'].includes(e.key))show(i-1);if(e.key==='f'||e.key==='F')document.documentElement.requestFullscreen?.();if(e.key==='Home')show(0);if(e.key==='End')show(S.length-1)});
+document.querySelector('.deck').addEventListener('click',e=>show(e.clientX>innerWidth/3?i+1:i-1));
+document.querySelector('.prev').onclick=()=>show(i-1);document.querySelector('.next').onclick=()=>show(i+1);
+let tx=0;addEventListener('touchstart',e=>tx=e.touches[0].clientX);addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>40)show(d<0?i+1:i-1)});
+addEventListener('resize',fit);show(i);</script></body></html>

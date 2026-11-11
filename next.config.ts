@@ -41,6 +41,7 @@ const nextConfig: NextConfig = {
       // so it only gets the anti-framing rule plus the common headers above.
       { source: "/((?!studio|api/admin/cabinet/file|api/admin/cabinet/receipt).*)", headers: [{ key: "Content-Security-Policy", value: siteCsp }] },
       { source: "/admin/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }, { key: "Cache-Control", value: "no-store" }] },
+      { source: "/pitch/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
       {
         source: "/studio/:path*",
         headers: [
@@ -59,7 +60,12 @@ const nextConfig: NextConfig = {
       destination: "https://alemway.kz/:path*",
       permanent: true,
     }));
-    return [...toMain, { source: "/:locale(ru|kk)/studio/:path*", destination: "/studio/:path*", permanent: false }];
+    return [
+      ...toMain,
+      { source: "/:locale(ru|kk)/studio/:path*", destination: "/studio/:path*", permanent: false },
+      // Pizza Pitch deck (static files in public/pitch).
+      { source: "/pitch", destination: "/pitch/index.html", permanent: false },
+    ];
   },
   // Classic ISR model: pages are static and refreshed by the Sanity webhook.
   cacheComponents: false,
