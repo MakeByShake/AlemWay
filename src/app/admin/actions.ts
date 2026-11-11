@@ -286,7 +286,7 @@ export async function addCompanionAction(_prev: ActionState, fd: FormData): Prom
   try {
     for (const x of ids) await patchCabinet(x, { party });
     const label = (c: { number?: number; clientName?: string; data?: Record<string, string | undefined> }) =>
-      [c.number ? `№${c.number}` : "", [c.data?.firstName, c.data?.lastName].filter(Boolean).join(" ") || c.clientName].filter(Boolean).join(" ");
+      [c.number ? `№${c.number}` : "", c.clientName?.trim() || [c.data?.firstName, c.data?.lastName].filter(Boolean).join(" ")].filter(Boolean).join(" ");
     await logActivity(me, "companions", `отметил(а), что едет вместе с ${label(other)}`, cab);
     revalidatePath("/admin", "layout");
     return { ok: true, message: `Добавлено: ${label(other)}` };

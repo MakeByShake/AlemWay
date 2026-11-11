@@ -72,7 +72,7 @@ export async function logActivity(
       if (recent) return;
     }
     const client = cab
-      ? [cab.number ? `№${cab.number}` : "", [cab.data?.firstName, cab.data?.lastName].filter(Boolean).join(" ") || cab.clientName || ""]
+      ? [cab.number ? `№${cab.number}` : "", cab.clientName?.trim() || [cab.data?.firstName, cab.data?.lastName].filter(Boolean).join(" ") || ""]
           .filter(Boolean)
           .join(" ")
       : undefined;

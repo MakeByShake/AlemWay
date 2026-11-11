@@ -197,8 +197,9 @@ export async function deleteDoc(id: string) {
   await writeClient().transaction().delete(id).delete(`drafts.${id}`).commit({ visibility: "sync" });
 }
 
+/** «Имя (для нас)» comes first — the team can rename a client; the questionnaire name is the fallback. */
 export const cabinetName = (c: { firstName?: string; lastName?: string; clientName?: string; data?: Record<string, string | undefined> }) =>
-  [c.firstName ?? c.data?.firstName, c.lastName ?? c.data?.lastName].filter(Boolean).join(" ") || c.clientName || "Без имени";
+  c.clientName?.trim() || [c.firstName ?? c.data?.firstName, c.lastName ?? c.data?.lastName].filter(Boolean).join(" ") || "Без имени";
 
 export type FinanceRow = CabinetRow & { price?: number; payments?: Payment[]; manager?: string };
 
