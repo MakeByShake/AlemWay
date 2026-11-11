@@ -428,7 +428,7 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
                           : ` (${t.required})`
                         : ` (${kind === "passport" && !keta ? t.passportSuffix : t.optional})`)
                     }
-                    hint={kind === "photo" ? t.ketaPhotoHint : kind === "calendar" ? t.calendarHint : kind === "passport" && !keta ? t.passportLater : undefined}
+                    hint={kind === "photo" ? t.ketaPhotoHint : kind === "calendar" ? t.calendarHint : kind === "license" ? t.licenseHint : kind === "passport" && !keta ? t.passportLater : undefined}
                     meta={files[kind]}
                     busy={busy === kind}
                     t={t}

@@ -19,6 +19,7 @@ const ZIP_NAMES: Record<string, string> = {
   passport: "passport",
   enrollment: "spravka",
   calendar: "kalendar-vuza",
+  license: "prava",
   declaration: "deklaraciya",
   signed: "deklaraciya-podpisannaya",
   zav: "ZAV",
