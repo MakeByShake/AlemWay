@@ -13,13 +13,17 @@
 html,body{height:100%;font-family:Inter,-apple-system,sans-serif;color:var(--text);overflow:hidden}
 body{background:#03050a}
 .deck{position:fixed;inset:0;overflow:hidden}
-.world{position:absolute;top:0;left:0;height:100%;will-change:transform;pointer-events:none;background:radial-gradient(900px 700px at 8% 30%,rgba(91,124,255,.18),transparent 70%),radial-gradient(800px 600px at 30% 90%,rgba(46,242,184,.10),transparent 70%),radial-gradient(900px 700px at 55% 15%,rgba(160,107,255,.16),transparent 70%),radial-gradient(900px 700px at 80% 80%,rgba(56,217,245,.12),transparent 70%),linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px) 0 0/80px 80px,linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px) 0 0/80px 80px}
-.track{position:absolute;top:0;left:0;display:flex;transform-origin:0 0;will-change:transform}
-.slide{position:relative;flex:none;width:1920px;height:1080px;padding:90px 120px;overflow:hidden;display:flex;flex-direction:column;justify-content:center;color:var(--text)}
-.slide:after{content:"";position:absolute;top:120px;bottom:120px;right:-1px;width:1px;background:linear-gradient(transparent,rgba(46,242,184,.35),transparent)}
+.stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;margin:-540px 0 0 -960px;transform-origin:50% 50%}
+.fx{position:absolute;inset:0;z-index:6;pointer-events:none;overflow:hidden}
+.fx i{position:absolute;display:block}
+
+
+.slide{position:absolute;inset:0;width:1920px;height:1080px;padding:90px 120px;overflow:hidden;display:flex;flex-direction:column;justify-content:center;color:var(--text);visibility:hidden;background:radial-gradient(900px 600px at 88% 8%,rgba(91,124,255,.20),transparent 70%),radial-gradient(800px 600px at 0% 100%,rgba(46,242,184,.10),transparent 70%),linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/64px 64px,linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/64px 64px,var(--bg)}
+.slide.on,.slide.prev{visibility:visible}.slide.on{z-index:2}.slide.prev{z-index:1}
+.slide:after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(1400px 900px at 50% 50%,transparent 55%,rgba(0,0,0,.5))}
 .slide>*{position:relative;z-index:1}
 .slide:not(.on){pointer-events:none}
-.slide.dark:before{content:"";position:absolute;inset:0;background:radial-gradient(640px 420px at 68% 40%,rgba(160,107,255,.13),transparent 100%);pointer-events:none}
+.slide.dark{background:radial-gradient(1000px 700px at 85% 10%,rgba(160,107,255,.22),transparent 70%),radial-gradient(800px 600px at 5% 95%,rgba(56,217,245,.12),transparent 70%),linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/64px 64px,linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/64px 64px,var(--bg)}
 .tag{position:absolute;top:44px;right:120px;font:600 19px Mono,monospace;color:#5d6788;letter-spacing:.04em;text-transform:uppercase}
 .tag:before{content:"[ ";color:var(--mint)}.tag:after{content:" ]";color:var(--mint)}
 .eyebrow{font:600 22px Mono,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--mint);margin-bottom:22px}
@@ -120,13 +124,13 @@ p{font-size:26px;line-height:1.45;color:var(--muted)}
 .slide.on .cmp tbody tr:nth-child(1){transition-delay:0.3s}.slide.on .cmp tbody tr:nth-child(2){transition-delay:0.42s}.slide.on .cmp tbody tr:nth-child(3){transition-delay:0.54s}.slide.on .cmp tbody tr:nth-child(4){transition-delay:0.6599999999999999s}.slide.on .cmp tbody tr:nth-child(5){transition-delay:0.78s}.slide.on .cmp tbody tr:nth-child(6){transition-delay:0.8999999999999999s}
 @media (prefers-reduced-motion:reduce){.slide *{transition:none!important;animation:none!important}}
 /* PDF: every slide on its own page, no animation */
-@media print{html,body{background:#05070d;overflow:visible;height:auto}.deck{position:static;display:block;overflow:visible}.world{display:none}.track{display:block;transform:none!important}
+@media print{html,body{background:#05070d;overflow:visible;height:auto}.deck{position:static;display:block;overflow:visible}.stage{position:static;margin:0;width:auto;height:auto;transform:none!important}.fx{display:none}
 .slide{background:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/64px 64px,linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/64px 64px,radial-gradient(900px 600px at 88% 8%,rgba(91,124,255,.2),transparent 70%),#05070d!important}.slide:after{display:none}
-.slide{position:relative;opacity:1!important;transform:none!important;page-break-after:always;break-after:page}.slide .a,.slide .devs,.cmp tbody tr{opacity:1!important;transform:none!important;transition:none!important}
+.slide{position:relative;visibility:visible!important;opacity:1!important;transform:none!important;clip-path:none!important;page-break-after:always;break-after:page}.slide .a,.slide .devs,.cmp tbody tr{opacity:1!important;transform:none!important;transition:none!important}
 .dev{animation:none!important}.bar,.ui,.scan,.dots{display:none}.slide{border-radius:0!important;box-shadow:none!important;filter:none!important;outline:none!important}.cover h1 .hl:after{display:none}.hl,.slide *{text-shadow:none!important}}
 @page{size:1920px 1080px;margin:0}
 </style></head><body>
-<div class="deck"><div class="world"></div><div class="track"><section class="slide cover"><div class="split"><div class="txt">
+<div class="deck"><div class="stage"><section class="slide cover" data-fx="boot"><div class="split"><div class="txt">
       <img class="logo a" src="img/alemway_wordmark.svg" alt="AlemWay">
       <h1 class="a">Визовый бизнес<br>в одной платформе.<br><span class="hl">Документы проверяет ИИ.</span></h1>
       <p class="lead a">Сайт, кабинет студента, CRM и ИИ-декларация — работает и приносит деньги.</p>
@@ -134,14 +138,14 @@ p{font-size:26px;line-height:1.45;color:var(--muted)}
       <div class="speakers a"><p class="lbl">Выступают</p><p><b>Алиби</b> · <b>Мухаммад Шералхан</b> · <b>Ерасыл</b></p></div>
       <p class="link a">alemway.kz</p>
     </div><div class="devs one"><img class="dev wide" src="img/combo-01.png" alt=""></div></div></section>
-<section class="slide "><span class="tag">1 · Problem</span><p class="eyebrow a">Проблема</p><h2 class="a">Визовые агентства до сих пор живут в WhatsApp и Excel</h2>
+<section class="slide " data-fx="pixels"><span class="tag">1 · Problem</span><p class="eyebrow a">Проблема</p><h2 class="a">Визовые агентства до сих пор живут в WhatsApp и Excel</h2>
     <div class="grid3">
       <div class="card a"><b class="big">📲</b><h3>Всё вручную</h3><p>Паспорта, справки и чеки приходят в WhatsApp. Менеджер переписывает их в декларацию, таблицу и Google Drive. На одного студента уходят часы.</p></div>
       <div class="card a"><b class="big">🗂</b><h3>Всё разбросано</h3><p>У нас самих было 24 папки и 61 файл с разными названиями — и отдельная таблица на 230 строк.</p></div>
       <div class="card a"><b class="big">⚠️</b><h3>Люди и документы теряются</h3><p>Одна ошибка в имени или дате — и немецкое агентство труда не примет декларацию. Студент не знает, на каком он этапе.</p></div>
     </div>
     <p class="who a">Для кого: <b>студенты</b>, которые едут работать летом за рубеж, и <b>визовые агентства</b>, которые их оформляют.</p></section>
-<section class="slide accent"><span class="tag">2 · Solution</span><p class="eyebrow a">Решение</p><h2 class="a">Все процессы в одной платформе — ИИ следит, чтобы никто не потерялся</h2>
+<section class="slide accent" data-fx="columns"><span class="tag">2 · Solution</span><p class="eyebrow a">Решение</p><h2 class="a">Все процессы в одной платформе — ИИ следит, чтобы никто не потерялся</h2>
     <div class="grid4">
       <div class="card a"><b class="big">🔗</b><h3>Личная ссылка</h3><p>Студент получает её в WhatsApp в один клик.</p></div>
       <div class="card a"><b class="big">📄</b><h3>Загрузил документы</h3><p>Справка и паспорт — с телефона, большие сканы сжимаются сами.</p></div>
@@ -149,7 +153,7 @@ p{font-size:26px;line-height:1.45;color:var(--muted)}
       <div class="card a"><b class="big">✅</b><h3>Видит каждый шаг</h3><p>8 этапов до вылета: что сделано и что дальше.</p></div>
     </div>
     <p class="result a">Результат: студент оформляет документы <b>за один вечер</b>, команда ведёт <b>в разы больше клиентов</b> и ничего не теряет.</p></section>
-<section class="slide "><span class="tag">3 · Product</span><div class="split"><div class="txt">
+<section class="slide " data-fx="screen"><span class="tag">3 · Product</span><div class="split"><div class="txt">
       <p class="eyebrow a">Продукт · уже работает на alemway.kz</p><h2 class="a">Студент — на телефоне, команда — в CRM</h2>
       <ul class="ticks">
         <li class="a"><b>Студент:</b> запись на консультацию → личный кабинет → загрузил справку и паспорт → скачал декларацию → отправил с печатью декана</li>
@@ -158,7 +162,7 @@ p{font-size:26px;line-height:1.45;color:var(--muted)}
         <li class="a">Роли <b>владелец, менеджер, отдел продаж</b> · оплаты и чеки · Telegram</li>
         <li class="a">Шаблон в WhatsApp с личной ссылкой — в один клик</li>
       </ul></div><div class="devs one"><img class="dev wide" src="img/combo-02.png" alt=""></div></div></section>
-<section class="slide dark"><span class="tag">4 · AI</span><div class="split"><div class="txt">
+<section class="slide dark" data-fx="scan"><span class="tag">4 · AI</span><div class="split"><div class="txt">
       <p class="eyebrow a">AI в продукте</p><h2 class="a">ИИ — наш «декларационный отдел»</h2>
       <ul class="ticks">
         <li class="a">Читает справку, паспорт и календарь вуза и <b>заполняет все 21 поле</b> официального бланка Bundesagentur für Arbeit</li>
@@ -168,7 +172,7 @@ p{font-size:26px;line-height:1.45;color:var(--muted)}
       </ul>
       <div class="stats a"><div><b>~30 сек</b><span>вместо часов ручной работы</span></div><div><b>≈40 ₸</b><span>стоимость одной проверки</span></div><div><b>21/21</b><span>поле — как у эксперта</span></div></div>
     </div><div class="devs one"><img class="dev wide" src="img/combo-07.png" alt=""></div></div></section>
-<section class="slide accent"><span class="tag">5 · Traction</span><div class="split"><div class="txt">
+<section class="slide accent" data-fx="rise"><span class="tag">5 · Traction</span><div class="split"><div class="txt">
       <p class="eyebrow a">Traction</p><h2 class="a">Не идея — работающий бизнес</h2>
       <div class="kpis">
         <div class="a"><b><span data-n="10.4" data-d="1">10,4</span> млн ₸</b><span>выручка через платформу</span></div>
@@ -180,7 +184,7 @@ p{font-size:26px;line-height:1.45;color:var(--muted)}
       </div>
       <p class="note a">Платформа запущена в ноябре 2026 — первые деньги пришли в первые недели. Все цифры — из нашей админки, реальные платежи.</p>
     </div><div class="devs one"><img class="dev mac" src="img/macbook-08-finance.png" alt=""></div></div></section>
-<section class="slide dark"><span class="tag">6 · Market</span><p class="eyebrow a">Рынок</p><h2 class="a">Студенты + трудоустройство за рубеж</h2>
+<section class="slide dark" data-fx="zoomout"><span class="tag">6 · Market</span><p class="eyebrow a">Рынок</p><h2 class="a">Студенты + трудоустройство за рубеж</h2>
     <div class="tam">
       <div class="m a t1"><b class="ic">🇰🇿</b><span class="k">Казахстан</span>
         <b class="v">≈ $1 млрд</b><span class="u">678 тыс. студентов × чек 730 тыс. ₸</span>
@@ -194,7 +198,7 @@ p{font-size:26px;line-height:1.45;color:var(--muted)}
     </div>
     <p class="src a">Студенты × средний чек 730 тыс. ₸ ≈ рынок программ (курс ≈ 500 ₸/$). Переводы мигрантов — объём денег, которые люди зарабатывают за рубежом: это экономика, которую обслуживает трудоустройство.<br>
     Источники: stat.gov.kz · stat.uz · Нацстатком КР · ЦБ Узбекистана (переводы 2025) · Нацбанк КР (переводы 2025) · Всемирный банк, Migration and Development Brief (2024) · МОТ, Global Estimates on International Migrant Workers (2022) · Минобр КНР · AISHE India.</p></section>
-<section class="slide "><span class="tag">7 · Business Model</span><p class="eyebrow a">Бизнес-модель</p><h2 class="a">Два источника дохода</h2>
+<section class="slide " data-fx="split"><span class="tag">7 · Business Model</span><p class="eyebrow a">Бизнес-модель</p><h2 class="a">Два источника дохода</h2>
     <div class="grid2">
       <div class="card a"><h3>1. Услуги AlemWay (B2C)</h3>
         <ul class="plain"><li><b>Work&Travel Германия</b> — 710–750 тыс. ₸</li><li><b>K-ETA в Корею</b> — 12 000 ₸</li><li><b>Консультации</b> — 2 000 ₸</li></ul>
@@ -203,7 +207,7 @@ p{font-size:26px;line-height:1.45;color:var(--muted)}
         <p>Делаем другим визовым агентствам такой же сайт, кабинет клиента, CRM и ИИ — <b>под их процессы</b>: внедрение + ежемесячная поддержка.</p>
         <p>Цена — индивидуально, под размер и процессы агентства.</p></div>
     </div></section>
-<section class="slide "><span class="tag">8 · Competition</span><p class="eyebrow a">Конкуренты и преимущество</p><h2 class="a">Почему мы, а не они</h2>
+<section class="slide " data-fx="diagonal"><span class="tag">8 · Competition</span><p class="eyebrow a">Конкуренты и преимущество</p><h2 class="a">Почему мы, а не они</h2>
     <table class="cmp a"><thead><tr><th></th><th>Агентства<br><small>IEC, KCET, Freedom Travel…</small></th><th>Общие CRM<br><small>amoCRM, Bitrix24</small></th><th class="us">AlemWay</th></tr></thead><tbody>
       <tr><td>Сбор документов</td><td>WhatsApp</td><td>вручную</td><td class="us">✅ кабинет студента</td></tr>
       <tr><td>Декларация ZAV</td><td>вручную</td><td>—</td><td class="us">✅ ИИ, ~30 сек</td></tr>
@@ -212,7 +216,7 @@ p{font-size:26px;line-height:1.45;color:var(--muted)}
       <tr><td>Заточено под визы</td><td>—</td><td>—</td><td class="us">✅</td></tr>
     </tbody></table>
     <p class="moat a"><b>Почему преимущество сохранится, когда ИИ станет доступнее всем:</b> ценность не в модели, а в том, что вокруг — знание процессов (бланки, правила, справочник вузов), реальные данные 1000+ клиентов и готовый рабочий процесс от заявки до вылета.</p></section>
-<section class="slide "><span class="tag">9 · Growth & Global</span><p class="eyebrow a">Рост и выход на мир</p><h2 class="a">Одна платформа — любая страна</h2>
+<section class="slide " data-fx="flight"><span class="tag">9 · Growth & Global</span><p class="eyebrow a">Рост и выход на мир</p><h2 class="a">Одна платформа — любая страна</h2>
     <div class="flags">
       <div class="a now"><b>🇩🇪</b><span>Германия</span><i>сейчас</i></div>
       <div class="a now"><b>🇰🇷</b><span>Корея (K-ETA)</span><i>сейчас</i></div>
@@ -228,7 +232,7 @@ p{font-size:26px;line-height:1.45;color:var(--muted)}
       <div class="a"><b>Масштаб</b><p>Документы из WhatsApp сразу в кабинет, ИИ-финансист</p></div>
       <div class="a"><b>Мир</b><p>Платформа для агентств Центральной Азии и дальше</p></div>
     </div></section>
-<section class="slide hero"><span class="tag">10 · Team</span><p class="eyebrow a">Команда</p><h2 class="a">Бизнес, который сам сделал свою платформу</h2>
+<section class="slide hero" data-fx="flip"><span class="tag">10 · Team</span><p class="eyebrow a">Команда</p><h2 class="a">Бизнес, который сам сделал свою платформу</h2>
     <div class="team">
       <div class="card a"><b class="big">🏢</b><h3>Нурберген</h3><p class="role">Основатель и CEO AlemWay</p><p>Основал AlemWay в 2019 году: 1000+ клиентов, программы в Германии и Корее.</p></div>
       <div class="card a"><b class="big">🧠</b><h3>Мухаммад Шералхан</h3><p class="role">Сооснователь платформы · Product & AI</p><p>Спроектировал платформу и ИИ-декларацию, запустил её на реальных клиентах.</p></div>
@@ -237,39 +241,81 @@ p{font-size:26px;line-height:1.45;color:var(--muted)}
     </div>
     <p class="why a">Почему мы: мы <b>и есть клиент</b> своей платформы — она уже ведёт наш бизнес и приносит деньги.</p>
 </section>
-<section class="slide cover thanks"><div class="split"><div class="txt">
+<section class="slide cover thanks" data-fx="iris"><div class="split"><div class="txt">
       <img class="logo a" src="img/alemway_wordmark.svg" alt="AlemWay">
       <h1 class="a">Спасибо<br>за внимание!</h1>
       <p class="lead a">Попробуйте сами — запишитесь на консультацию или откройте сайт.</p>
       <div class="contacts a"><p>🌐 <b>alemway.kz</b></p><p>📅 alemway.kz/ru/consultation</p><p>📑 Эта презентация: <b>alemway.kz/pitch</b></p><p>💬 WhatsApp: +7 708 070 18 77</p></div>
-    </div><div class="devs one"><img class="dev wide" src="img/combo-07.png" alt=""></div></div></section></div></div>
+    </div><div class="devs one"><img class="dev wide" src="img/combo-07.png" alt=""></div></div></section><div class="fx"></div></div></div>
 <div class="bar"></div><div class="dots"></div>
 <div class="ui"><span class="cnt"></span><button class="prev" aria-label="Назад">‹</button><button class="next" aria-label="Вперёд">›</button><a href="AlemWay-Pitch.pdf" download>PDF</a></div>
 <script>
-const S=[...document.querySelectorAll('.slide')],N=S.length,track=document.querySelector('.track'),world=document.querySelector('.world');
-let i=Math.max(0,Math.min(N-1,(+location.hash.slice(1)||1)-1)),anim=null,cur={x:0,k:1};
+const S=[...document.querySelectorAll('.slide')],N=S.length,stage=document.querySelector('.stage'),FX=document.querySelector('.fx');
+let i=-1,busy=null;
 const bar=document.querySelector('.bar'),cnt=document.querySelector('.cnt');
 const dots=document.querySelector('.dots');dots.innerHTML=S.map(()=>'<i></i>').join('');const D=[...dots.children];
-world.style.width=(N*1920*0.35+3000)+'px';
-const scaleNow=()=>Math.min(innerWidth/1920,innerHeight/1080);
-// One camera over one wide scene: only transforms move (GPU), so it stays smooth.
-function place(n,animate){const k=scaleNow(),ox=(innerWidth-1920*k)/2,oy=(innerHeight-1080*k)/2;
- const to={x:ox-n*1920*k,y:oy,k,n},wx=-n*1920*0.35*k;
- const tf=p=>'translate3d('+p.x+'px,'+p.y+'px,0) scale('+p.k+')';
- if(animate&&cur.k){const dist=Math.abs(n-cur.n)||1,dip=dist>1?.78:.88;
-  const km=k*dip,mi=(cur.n+n)/2,mid={x:(innerWidth-1920*km)/2-mi*1920*km,y:(innerHeight-1080*km)/2,k:km};
-  anim&&anim.cancel();anim=track.animate([{transform:tf(cur)},{transform:tf(mid),offset:.5},{transform:tf(to)}],{duration:Math.min(1300,850+dist*120),easing:'cubic-bezier(.65,0,.35,1)',fill:'forwards'});
-  world.animate([{transform:'translate3d('+cur.w+'px,0,0)'},{transform:'translate3d('+wx+'px,0,0)'}],{duration:Math.min(1300,850+dist*120),easing:'cubic-bezier(.65,0,.35,1)',fill:'forwards'});
- }else{track.getAnimations().forEach(a=>a.cancel());world.getAnimations().forEach(a=>a.cancel());track.style.transform=tf(to);world.style.transform='translate3d('+wx+'px,0,0)'}
- cur={...to,w:wx}}
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function fit(){const k=Math.min(innerWidth/1920,innerHeight/1080);stage.style.transform='scale('+k+')'}
+const ease='cubic-bezier(.65,0,.35,1)',out='cubic-bezier(.16,1,.3,1)';
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const done=a=>a.finished.catch(()=>{});
+// overlay pieces (cheap: transform/opacity only)
+function pieces(n,make){FX.innerHTML='';const arr=[];for(let k=0;k<n;k++){const el=document.createElement('i');make(el,k);FX.appendChild(el);arr.push(el)}return arr}
+// Each slide has its own entrance. reveal(el) shows the new slide; it resolves when the effect ends.
+const E={
+ // 1 · cover: CRT power-on line
+ async boot(el,reveal){reveal();await done(el.animate([{clipPath:'inset(50% 0 50% 0)'},{clipPath:'inset(49.7% 0 49.7% 0)',offset:.3},{clipPath:'inset(0 0 0 0)'}],{duration:950,easing:'cubic-bezier(.7,0,.2,1)'}))},
+ // 2 · problem: pixel chaos (Codrops pixel transition idea)
+ async pixels(el,reveal){const C=16,R=9;const ps=pieces(C*R,(p,k)=>{p.style.cssText='left:'+(k%C)*120+'px;top:'+Math.floor(k/C)*120+'px;width:121px;height:121px;opacity:0;background:'+(Math.random()<.18?'#2ef2b8':'#0b1020')});
+  ps.forEach(p=>p.animate([{opacity:0},{opacity:1}],{duration:110,delay:Math.random()*380,fill:'forwards'}));await wait(520);reveal();
+  await Promise.all(ps.map(p=>done(p.animate([{opacity:1},{opacity:0}],{duration:110,delay:Math.random()*380,fill:'forwards'}))));FX.innerHTML=''},
+ // 3 · solution: ordered columns
+ async columns(el,reveal){const n=8;const ps=pieces(n,(p,k)=>{p.style.cssText='left:'+k*240+'px;top:0;width:241px;height:1080px;background:'+(k%2?'#0d1328':'#101a3a')+';transform:translateY(-101%)'});
+  await Promise.all(ps.map((p,k)=>done(p.animate([{transform:'translateY(-101%)'},{transform:'translateY(0)'}],{duration:420,delay:k*45,easing:ease,fill:'forwards'}))));reveal();
+  await Promise.all(ps.map((p,k)=>done(p.animate([{transform:'translateY(0)'},{transform:'translateY(101%)'}],{duration:420,delay:k*45,easing:ease,fill:'forwards'}))));FX.innerHTML=''},
+ // 4 · product: fly into the laptop screen
+ async screen(el,reveal){reveal();await done(el.animate([{transform:'translate(20%,-4%) scale(.34)',clipPath:'inset(0 round 46px)',opacity:.2},{transform:'translate(0,0) scale(1)',clipPath:'inset(0 round 0px)',opacity:1}],{duration:1000,easing:out}))},
+ // 5 · AI: neural scan ring
+ async scan(el,reveal){reveal();const [ring]=pieces(1,p=>{p.style.cssText='left:1340px;top:540px;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;border:3px solid #2ef2b8;box-shadow:0 0 30px #2ef2b8,inset 0 0 30px #2ef2b8'});
+  ring.animate([{transform:'scale(0)',opacity:1},{transform:'scale(70)',opacity:0}],{duration:1050,easing:out,fill:'forwards'});
+  await done(el.animate([{clipPath:'circle(0% at 70% 50%)'},{clipPath:'circle(130% at 70% 50%)'}],{duration:1000,easing:'cubic-bezier(.6,0,.2,1)'}));FX.innerHTML=''},
+ // 6 · traction: growing bars
+ async rise(el,reveal){const n=12;const ps=pieces(n,(p,k)=>{p.style.cssText='left:'+k*160+'px;bottom:0;width:161px;height:1080px;transform-origin:50% 100%;transform:scaleY(0);background:linear-gradient(#2ef2b8,#0e3b30)'});
+  await Promise.all(ps.map((p,k)=>done(p.animate([{transform:'scaleY(0)'},{transform:'scaleY(1)'}],{duration:380,delay:k*35,easing:ease,fill:'forwards'}))));reveal();
+  await Promise.all(ps.map((p,k)=>{p.style.transformOrigin='50% 0';return done(p.animate([{transform:'scaleY(1)'},{transform:'scaleY(0)'}],{duration:380,delay:(n-k)*35,easing:ease,fill:'forwards'}))}));FX.innerHTML=''},
+ // 7 · market: zoom out like a map
+ async zoomout(el,reveal){reveal();await done(el.animate([{transform:'scale(2.2)',opacity:0},{transform:'scale(1)',opacity:1}],{duration:1050,easing:out}))},
+ // 8 · business: two doors (B2C | B2B)
+ async split(el,reveal){const ps=pieces(2,(p,k)=>{p.style.cssText='top:0;height:1080px;width:961px;'+(k?'right:0;':'left:0;')+'background:'+(k?'#141b3d':'#0f1630')+';transform:translateX('+(k?'101%':'-101%')+')'});
+  await Promise.all(ps.map((p,k)=>done(p.animate([{transform:'translateX('+(k?'101%':'-101%')+')'},{transform:'translateX(0)'}],{duration:430,easing:ease,fill:'forwards'}))));reveal();
+  await Promise.all(ps.map((p,k)=>done(p.animate([{transform:'translateX(0)'},{transform:'translateX('+(k?'101%':'-101%')+')'}],{duration:520,delay:80,easing:ease,fill:'forwards'}))));FX.innerHTML=''},
+ // 9 · competition: diagonal strike
+ async diagonal(el,reveal){reveal();await done(el.animate([{clipPath:'polygon(0 0,0 0,0 0)'},{clipPath:'polygon(0 0,220% 0,0 220%)'}],{duration:850,easing:'cubic-bezier(.75,0,.25,1)'}))},
+ // 10 · growth: flight
+ async flight(el,reveal){reveal();const [pl]=pieces(1,p=>{p.textContent='✈';p.style.cssText='left:0;top:470px;font-size:120px;color:#2ef2b8;text-shadow:0 0 30px #2ef2b8'});
+  pl.animate([{transform:'translate(-200px,120px) rotate(-8deg)'},{transform:'translate(2100px,-160px) rotate(-8deg)'}],{duration:950,easing:'cubic-bezier(.5,0,.3,1)',fill:'forwards'});
+  await done(el.animate([{transform:'translateX(100%) skewX(-10deg)',opacity:.4},{transform:'translateX(-2%) skewX(2deg)',offset:.75,opacity:1},{transform:'none'}],{duration:1000,easing:out}));FX.innerHTML=''},
+ // 11 · team: flip up
+ async flip(el,reveal){reveal();await done(el.animate([{transform:'perspective(2400px) rotateX(-55deg) translateY(25%)',opacity:0},{transform:'perspective(2400px) rotateX(0) translateY(0)',opacity:1}],{duration:900,easing:out}))},
+ // 12 · thanks: iris + confetti
+ async iris(el,reveal){reveal();const cols=['#2ef2b8','#38d9f5','#a06bff','#ffc24b','#5b7cff'];const ps=pieces(46,(p,k)=>{const s=8+Math.random()*12;p.style.cssText='left:960px;top:1000px;width:'+s+'px;height:'+s+'px;border-radius:'+(k%3?'50%':'3px')+';background:'+cols[k%5]});
+  ps.forEach(p=>{const a=-Math.PI*(.15+Math.random()*.7),d=500+Math.random()*700;p.animate([{transform:'translate(0,0) rotate(0)',opacity:1},{transform:'translate('+Math.cos(a)*d+'px,'+Math.sin(a)*d+'px) rotate('+(Math.random()*720)+'deg)',opacity:0}],{duration:1400+Math.random()*500,easing:'cubic-bezier(.2,.7,.3,1)',fill:'forwards'})});
+  await done(el.animate([{clipPath:'circle(0% at 50% 100%)'},{clipPath:'circle(160% at 50% 100%)'}],{duration:1000,easing:'cubic-bezier(.6,0,.2,1)'}));setTimeout(()=>{if(FX.firstChild&&!busy)FX.innerHTML=''},1200)},
+ async fade(el,reveal){reveal();await done(el.animate([{opacity:0},{opacity:1}],{duration:400}))},
+};
 function count(s){s.querySelectorAll('[data-n]').forEach(el=>{const n=+el.dataset.n,d=+(el.dataset.d||0),t0=performance.now();
  const step=t=>{const p=Math.min(1,(t-t0)/1400),e=1-Math.pow(1-p,3);el.textContent=(n*e).toFixed(d).replace('.',',');if(p<1)requestAnimationFrame(step)};requestAnimationFrame(step)})}
-function show(n,first){n=Math.max(0,Math.min(N-1,n));const same=n===i&&!first;i=n;
- S.forEach((s,k)=>s.classList.toggle('on',k===i));place(i,!first&&!same);if(!same)count(S[i]);
- bar.style.width=((i+1)/N*100)+'%';cnt.textContent=(i+1)+' / '+N;D.forEach((x,k)=>{x.className=k<i?'done':k===i?'cur':''});history.replaceState(null,'','#'+(i+1))}
+function ui(){bar.style.width=((i+1)/N*100)+'%';cnt.textContent=(i+1)+' / '+N;D.forEach((x,k)=>{x.className=k<i?'done':k===i?'cur':''});history.replaceState(null,'','#'+(i+1))}
+async function show(n){n=Math.max(0,Math.min(N-1,n));if(n===i)return;
+ if(busy){S.forEach(s=>s.getAnimations({subtree:true}).forEach(a=>a.finish()));FX.getAnimations({subtree:true}).forEach(a=>a.finish());FX.innerHTML=''}
+ const old=S[i],el=S[n];i=n;ui();
+ if(old){old.classList.remove('on');old.classList.add('prev')}
+ const reveal=()=>{el.classList.add('on');count(el)};
+ const run=(old&&!RM)?(E[el.dataset.fx]||E.fade)(el,reveal):Promise.resolve(reveal());
+ const me=busy=run;await run;if(busy===me){busy=null;S.forEach(s=>{if(s!==el)s.classList.remove('prev','on')})}}
 addEventListener('keydown',e=>{if(['ArrowRight','PageDown',' ','Enter'].includes(e.key))show(i+1);if(['ArrowLeft','PageUp','Backspace'].includes(e.key))show(i-1);if(e.key==='f'||e.key==='F')document.documentElement.requestFullscreen?.();if(e.key==='Home')show(0);if(e.key==='End')show(N-1)});
 document.querySelector('.deck').addEventListener('click',e=>show(e.clientX>innerWidth/3?i+1:i-1));
 document.querySelector('.prev').onclick=()=>show(i-1);document.querySelector('.next').onclick=()=>show(i+1);
 D.forEach((x,k)=>{x.style.cursor='pointer';x.onclick=e=>{e.stopPropagation();show(k)}});
 let tx=0;addEventListener('touchstart',e=>tx=e.touches[0].clientX);addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>40)show(d<0?i+1:i-1)});
-addEventListener('resize',()=>place(i,false));show(i,true);</script></body></html>
+addEventListener('resize',fit);fit();show(Math.max(0,Math.min(N-1,(+location.hash.slice(1)||1)-1)));</script></body></html>
