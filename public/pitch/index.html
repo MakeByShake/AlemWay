@@ -10,9 +10,10 @@
 @font-face{font-family:Mono;src:url(fonts/jetbrains-mono-latin-wght-normal.woff2) format('woff2');font-weight:100 900}
 :root{--bg:#05070d;--panel:rgba(255,255,255,.035);--line:rgba(255,255,255,.09);--text:#eef1fa;--muted:#8d95b3;--mint:#2ef2b8;--cyan:#38d9f5;--blue:#5b7cff;--violet:#a06bff;--amber:#ffc24b}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;background:var(--bg);font-family:Inter,-apple-system,sans-serif;color:var(--text);overflow:hidden}
-.deck{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
-.slide{position:absolute;width:1920px;height:1080px;padding:90px 120px;overflow:hidden;display:flex;flex-direction:column;justify-content:center;opacity:0;transition:opacity .6s ease;color:var(--text);
+html,body{height:100%;font-family:Inter,-apple-system,sans-serif;color:var(--text);overflow:hidden}
+body{background:radial-gradient(1200px 800px at 50% 40%,rgba(91,124,255,.16),transparent 70%),linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px) 0 0/80px 80px,linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px) 0 0/80px 80px,#03050a;transition:background-position 1.15s cubic-bezier(.22,.9,.24,1)}
+.deck{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;perspective:2600px;perspective-origin:50% 45%;transform-style:preserve-3d}
+.slide{position:absolute;width:1920px;height:1080px;padding:90px 120px;overflow:hidden;display:flex;flex-direction:column;justify-content:center;opacity:0;transition:transform 1.15s cubic-bezier(.22,.9,.24,1),opacity .9s ease,filter .9s ease;color:var(--text);border-radius:28px;backface-visibility:hidden;will-change:transform;box-shadow:0 60px 140px -40px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.06);
   background:
    radial-gradient(900px 600px at 88% 8%,rgba(91,124,255,.20),transparent 70%),
    radial-gradient(800px 600px at 0% 100%,rgba(46,242,184,.10),transparent 70%),
@@ -21,7 +22,7 @@ html,body{height:100%;background:var(--bg);font-family:Inter,-apple-system,sans-
    var(--bg)}
 .slide:after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(1400px 900px at 50% 50%,transparent 55%,rgba(0,0,0,.55))}
 .slide>*{position:relative;z-index:1}
-.slide.on{opacity:1;z-index:2}.slide:not(.on){pointer-events:none}
+.slide.on{z-index:5;box-shadow:0 60px 160px -30px rgba(0,0,0,.95),0 0 0 1px rgba(46,242,184,.18),0 0 120px -40px rgba(46,242,184,.35)}.slide:not(.on){pointer-events:none;cursor:pointer}
 .slide.dark{background:radial-gradient(1000px 700px at 85% 10%,rgba(160,107,255,.22),transparent 70%),radial-gradient(800px 600px at 5% 95%,rgba(56,217,245,.12),transparent 70%),linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/64px 64px,linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/64px 64px,var(--bg)}
 .tag{position:absolute;top:44px;right:120px;font:600 19px Mono,monospace;color:#5d6788;letter-spacing:.04em;text-transform:uppercase}
 .tag:before{content:"[ ";color:var(--mint)}.tag:after{content:" ]";color:var(--mint)}
@@ -91,8 +92,8 @@ p{font-size:26px;line-height:1.45;color:var(--muted)}
 .tam .ic{font-size:50px;display:block}
 .tam .k{display:block;font:700 20px Mono,monospace;letter-spacing:.08em;text-transform:uppercase;margin-top:12px}
 .tam .t1 .k{color:var(--mint)}.tam .t2 .k{color:var(--cyan)}.tam .t3 .k{color:var(--violet)}
-.tam .v{display:block;font:800 60px Mono,monospace;letter-spacing:-.03em;margin-top:12px;white-space:nowrap;color:#fff}
-.tam .v2{display:block;font:800 38px Mono,monospace;margin-top:22px;white-space:nowrap;color:#fff}
+.tam .v{display:block;font:800 52px Mono,monospace;letter-spacing:-.03em;margin-top:12px;white-space:nowrap;color:#fff}
+.tam .v2{display:block;font:800 36px Mono,monospace;margin-top:26px;padding-top:22px;border-top:1px dashed rgba(255,255,255,.14);white-space:nowrap;color:#fff}
 .tam .u{display:block;font-size:19px;color:var(--muted);margin-top:4px}
 .src{margin-top:28px;font:400 15px/1.6 Mono,monospace;color:#646d8c}
 .devs{position:relative;height:880px;display:flex;align-items:center;justify-content:center}
@@ -103,6 +104,9 @@ p{font-size:26px;line-height:1.45;color:var(--muted)}
 .ui{position:fixed;right:18px;bottom:14px;z-index:9;display:flex;gap:10px;align-items:center;font:600 13px Mono,monospace;color:#8d95b3}
 .ui a{color:#c8fff0;background:rgba(46,242,184,.08);border:1px solid rgba(46,242,184,.3);padding:7px 14px;border-radius:8px;text-decoration:none}
 .ui button{all:unset;cursor:pointer;color:#fff;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);width:32px;height:32px;border-radius:8px;text-align:center;line-height:32px}
+.dots{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);display:flex;align-items:center;z-index:9}
+.dots i{width:9px;height:9px;border-radius:50%;background:#2a3150;transition:all .4s}.dots i+i{margin-left:26px;position:relative}.dots i+i:before{content:"";position:absolute;right:9px;top:4px;width:26px;height:1px;background:#2a3150}
+.dots i.done{background:var(--mint)}.dots i.done:before{background:var(--mint)}.dots i.cur{background:var(--mint);box-shadow:0 0 0 4px rgba(46,242,184,.2),0 0 14px var(--mint);transform:scale(1.3)}
 .scan{position:fixed;left:0;right:0;height:120px;top:-120px;z-index:3;pointer-events:none;background:linear-gradient(transparent,rgba(46,242,184,.05),transparent);animation:scan 7s linear infinite}
 @keyframes scan{to{top:100%}}
 /* animations */
@@ -124,7 +128,7 @@ p{font-size:26px;line-height:1.45;color:var(--muted)}
 /* PDF: every slide on its own page, no animation */
 @media print{html,body{background:#fff;overflow:visible;height:auto}.deck{position:static;display:block}
 .slide{position:relative;opacity:1!important;transform:none!important;page-break-after:always;break-after:page}.slide .a,.slide .devs,.cmp tbody tr{opacity:1!important;transform:none!important;transition:none!important}
-.dev{animation:none!important}.bar,.ui,.scan{display:none}.cover h1 .hl:after{display:none}}
+.dev{animation:none!important}.bar,.ui,.scan,.dots{display:none}.slide{border-radius:0!important;box-shadow:none!important;filter:none!important}.cover h1 .hl:after{display:none}}
 @page{size:1920px 1080px;margin:0}
 </style></head><body>
 <div class="deck"><section class="slide cover"><div class="split"><div class="txt">
@@ -181,14 +185,20 @@ p{font-size:26px;line-height:1.45;color:var(--muted)}
       </div>
       <p class="note a">Платформа запущена в ноябре 2026 — первые деньги пришли в первые недели. Все цифры — из нашей админки, реальные платежи.</p>
     </div><div class="devs one"><img class="dev mac" src="img/macbook-08-finance.png" alt=""></div></div></section>
-<section class="slide dark"><span class="tag">6 · Market</span><p class="eyebrow a">Рынок</p><h2 class="a">Рынок: Казахстан → Центральная Азия → Азия</h2>
+<section class="slide dark"><span class="tag">6 · Market</span><p class="eyebrow a">Рынок</p><h2 class="a">Студенты + трудоустройство за рубеж</h2>
     <div class="tam">
-      <div class="m a t1"><b class="ic">🇰🇿</b><span class="k">Казахстан</span><b class="v">678 тыс.</b><span class="u">студентов вузов</span><b class="v2">≈ 495 млрд ₸</b><span class="u">≈ $1 млрд</span></div>
-      <div class="m a t2"><b class="ic">🌏</b><span class="k">Центральная Азия</span><b class="v">2,44 млн</b><span class="u">студентов: Казахстан, Узбекистан, Кыргызстан</span><b class="v2">≈ 1,8 трлн ₸</b><span class="u">≈ $3,6 млрд</span></div>
-      <div class="m a t3"><b class="ic">🌐</b><span class="k">Азия</span><b class="v">91 млн</b><span class="u">студентов только в Китае и Индии</span><b class="v2">264 млн</b><span class="u">студентов в мире, 6,9 млн учатся за рубежом</span></div>
+      <div class="m a t1"><b class="ic">🇰🇿</b><span class="k">Казахстан</span>
+        <b class="v">≈ $1 млрд</b><span class="u">678 тыс. студентов × чек 730 тыс. ₸</span>
+        <b class="v2">Work&Travel</b><span class="u">Германия, Корея — уже работаем</span></div>
+      <div class="m a t2"><b class="ic">🌏</b><span class="k">Центральная Азия</span>
+        <b class="v">≈ $3,6 млрд</b><span class="u">2,44 млн студентов (КЗ, УЗ, КГ)</span>
+        <b class="v2">$22,4 млрд/год</b><span class="u">переводы трудовых мигрантов: УЗ $18,9 млрд + КГ $3,5 млрд</span></div>
+      <div class="m a t3"><b class="ic">🌐</b><span class="k">Азия</span>
+        <b class="v">$343 млрд/год</b><span class="u">переводы мигрантов: Южная + Восточная Азия</span>
+        <b class="v2">167,7 млн</b><span class="u">трудовых мигрантов в мире · 91 млн студентов в Китае и Индии</span></div>
     </div>
-    <p class="src a">Объём = студенты × средний чек нашей программы 730 тыс. ₸ (максимальный рынок, курс ≈ 500 ₸/$). Наша цель на 3 года — 500 студентов в год ≈ 365 млн ₸.<br>
-    Источники: stat.gov.kz (КЗ: 678,1 тыс., 2025/26) · stat.uz (УЗ: 1 535 тыс., 2025/26) · Нацстатком КР (КГ: 231,2 тыс., 2024/25) · Минобразования КНР (47,6 млн, 2023) · AISHE India (43,3 млн, 2021/22) · UNESCO (264 млн в мире, 6,9 млн за рубежом).</p></section>
+    <p class="src a">Студенты × средний чек 730 тыс. ₸ ≈ рынок программ (курс ≈ 500 ₸/$). Переводы мигрантов — объём денег, которые люди зарабатывают за рубежом: это экономика, которую обслуживает трудоустройство.<br>
+    Источники: stat.gov.kz · stat.uz · Нацстатком КР · ЦБ Узбекистана (переводы 2025) · Нацбанк КР (переводы 2025) · Всемирный банк, Migration and Development Brief (2024) · МОТ, Global Estimates on International Migrant Workers (2022) · Минобр КНР · AISHE India.</p></section>
 <section class="slide "><span class="tag">7 · Business Model</span><p class="eyebrow a">Бизнес-модель</p><h2 class="a">Два источника дохода</h2>
     <div class="grid2">
       <div class="card a"><h3>1. Услуги AlemWay (B2C)</h3>
@@ -238,12 +248,18 @@ p{font-size:26px;line-height:1.45;color:var(--muted)}
       <p class="lead a">Попробуйте сами — запишитесь на консультацию или откройте сайт.</p>
       <div class="contacts a"><p>🌐 <b>alemway.kz</b></p><p>📅 alemway.kz/ru/consultation</p><p>📑 Эта презентация: <b>alemway.kz/pitch</b></p><p>💬 WhatsApp: +7 708 070 18 77</p></div>
     </div><div class="devs one"><img class="dev wide" src="img/combo-07.png" alt=""></div></div></section></div>
-<div class="scan"></div><div class="bar"></div>
+<div class="scan"></div><div class="bar"></div><div class="dots"></div>
 <div class="ui"><span class="cnt"></span><button class="prev" aria-label="Назад">‹</button><button class="next" aria-label="Вперёд">›</button><a href="AlemWay-Pitch.pdf" download>PDF</a></div>
 <script>
 const S=[...document.querySelectorAll('.slide')];let i=Math.max(0,Math.min(S.length-1,(+location.hash.slice(1)||1)-1));
 const bar=document.querySelector('.bar'),cnt=document.querySelector('.cnt');
-function fit(){const k=Math.min(innerWidth/1920,innerHeight/1080);S.forEach(s=>s.style.transform='scale('+k+')')}
+const dots=document.querySelector('.dots');dots.innerHTML=S.map(()=>'<i></i>').join('');const D=[...dots.children];
+function fit(){const k=Math.min(innerWidth/1920,innerHeight/1080)*.8;S.forEach((s,n)=>{const d=n-i,a=Math.abs(d);
+ const tf='scale('+k+') translateX('+(d*1060)+'px) translateZ('+(-a*760)+'px) rotateY('+(-d*30)+'deg)';
+ s.style.transform=tf;s.style.opacity=a===0?1:a===1?.7:a===2?.25:0;s.style.filter=a?'brightness('+(a===1?.85:.6)+')':'none';s.style.outline=a===1?'1px solid rgba(91,124,255,.45)':'none';s.style.zIndex=10-a});
+ document.body.style.backgroundPosition='0 0,'+(-i*240)+'px 0,'+(-i*240)+'px 0';
+ D.forEach((x,n)=>{x.className=n<i?'done':n===i?'cur':''})}
+S.forEach((s,n)=>s.addEventListener('click',e=>{if(n!==i){e.stopPropagation();show(n)}}));
 function count(s){s.querySelectorAll('[data-n]').forEach(el=>{const n=+el.dataset.n,d=+(el.dataset.d||0),t0=performance.now();
  const step=t=>{const p=Math.min(1,(t-t0)/1400),e=1-Math.pow(1-p,3);el.textContent=(n*e).toFixed(d).replace('.',',');if(p<1)requestAnimationFrame(step)};requestAnimationFrame(step)})}
 function show(n){i=Math.max(0,Math.min(S.length-1,n));S.forEach((s,k)=>s.classList.toggle('on',k===i));fit();count(S[i]);bar.style.width=((i+1)/S.length*100)+'%';cnt.textContent=(i+1)+' / '+S.length;history.replaceState(null,'','#'+(i+1))}
