@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertCircle,
@@ -80,6 +80,7 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
 
   const set = (key: string, value: string) => {
     setData((d) => ({ ...d, [key]: value }));
+    if (editable) setSaveState("pending");
     if (errors[key]) setErrors((e) => Object.fromEntries(Object.entries(e).filter(([k]) => k !== key)));
   };
 
@@ -100,18 +101,59 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
     };
   }
 
-  async function onSave() {
-    setBusy("save");
-    setNotice(null);
+  // Autosave: every change is saved ~0.7 s after the client stops typing.
+  const [saveState, setSaveState] = useState<"idle" | "pending" | "saving" | "saved" | "err">("idle");
+  const [savedTick, setSavedTick] = useState(0);
+  const lastSaved = useRef(JSON.stringify(data));
+  const saveSeq = useRef(0);
+  const dataRef = useRef(data);
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
+
+  async function autosave() {
+    const body = JSON.stringify(dataRef.current);
+    if (body === lastSaved.current) return setSaveState((s) => (s === "pending" ? "saved" : s));
+    const seq = ++saveSeq.current;
+    setSaveState("saving");
     try {
-      const { res } = await post(false);
-      setNotice(res.ok ? { tone: "ok", text: t.saved } : { tone: "err", text: t.errorGeneric });
+      const res = await fetch("/api/cabinet/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: dataRef.current, submit: false }),
+      });
+      if (seq !== saveSeq.current) return; // a newer save is in flight
+      if (res.ok) {
+        lastSaved.current = body;
+        setSaveState("saved");
+        setSavedTick((n) => n + 1);
+      } else setSaveState("err");
     } catch {
-      setNotice({ tone: "err", text: t.errorGeneric });
-    } finally {
-      setBusy(null);
+      if (seq === saveSeq.current) setSaveState("err");
     }
   }
+
+  useEffect(() => {
+    if (!editable || JSON.stringify(data) === lastSaved.current) return;
+    const id = setTimeout(autosave, 700);
+    return () => clearTimeout(id);
+  }, [data, editable]);
+
+  // Closing the tab mid-typing: send what is left.
+  useEffect(() => {
+    const flush = () => {
+      const body = JSON.stringify(dataRef.current);
+      if (!editable || body === lastSaved.current) return;
+      fetch("/api/cabinet/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: dataRef.current, submit: false }),
+        keepalive: true,
+      }).catch(() => null);
+    };
+    window.addEventListener("pagehide", flush);
+    return () => window.removeEventListener("pagehide", flush);
+  }, [editable]);
 
   async function onSubmit() {
     setNotice(null);
@@ -419,24 +461,59 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
                   t.submit
                 )}
               </button>
-              <button type="button" className="btn-ghost" onClick={onSave} disabled={busy !== null}>
-                {busy === "save" ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> {t.saving}
-                  </>
-                ) : (
-                  t.saveDraft
-                )}
-              </button>
+              <SaveStatus state={saveState} tick={savedTick} t={t} onRetry={autosave} />
             </div>
           </form>
         )}
+        {editable && <SaveToast state={saveState} tick={savedTick} t={t} />}
       </div>
     </section>
   );
 }
 
 type T = (typeof CABINET_TEXT)[CabinetLocale];
+type SaveState = "idle" | "pending" | "saving" | "saved" | "err";
+
+/** Inline status next to the submit button: replaces the old «Сохранить» button. */
+function SaveStatus({ state, tick, t, onRetry }: { state: SaveState; tick: number; t: T; onRetry: () => void }) {
+  if (state === "err")
+    return (
+      <button type="button" onClick={onRetry} className="btn-ghost text-warn">
+        <AlertCircle className="h-4 w-4" /> {t.saveFailed}
+      </button>
+    );
+  return (
+    <p className="flex min-h-12 items-center justify-center gap-2 px-2 text-[14px] text-muted" aria-live="polite">
+      {state === "pending" || state === "saving" ? (
+        <>
+          <Loader2 className="h-4 w-4 animate-spin" /> {t.saving}
+        </>
+      ) : state === "saved" ? (
+        <span key={tick} className="saved-pop flex items-center gap-1.5 font-medium text-accent">
+          <CheckCircle2 className="h-4 w-4" /> {t.saved}
+        </span>
+      ) : (
+        <>
+          <CheckCircle2 className="h-4 w-4" /> {t.autosaveHint}
+        </>
+      )}
+    </p>
+  );
+}
+
+/** Small «✓ Сохранено» chip that pops up at the bottom of the screen after each save. */
+function SaveToast({ state, tick, t }: { state: SaveState; tick: number; t: T }) {
+  if (state !== "saved" || tick === 0) return null;
+  return (
+    <div
+      key={tick}
+      aria-hidden
+      className="saved-toast pointer-events-none fixed bottom-5 left-1/2 z-50 flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-[14px] font-semibold text-white shadow-lg"
+    >
+      <CheckCircle2 className="h-4 w-4" /> {t.saved}
+    </div>
+  );
+}
 
 function Banner({ title, text, tone = "ok" }: { title: string; text: string; tone?: "ok" | "wait" | "warn" }) {
   return (

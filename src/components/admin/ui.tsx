@@ -193,35 +193,92 @@ export function ActionForm({
   className,
   phone,
   resetOnSuccess,
+  autoSave,
 }: {
   action: (prev: ActionState, fd: FormData) => Promise<ActionState>;
   children: ReactNode;
   className?: string;
   phone?: string;
   resetOnSuccess?: boolean;
+  /** Save by itself shortly after any field changes (no «Сохранить» button needed). */
+  autoSave?: boolean;
 }) {
-  const [state, formAction, pending] = useActionState(action, null);
+  const [tick, setTick] = useState(0);
+  const [state, formAction, pending] = useActionState(async (prev: ActionState, fd: FormData) => {
+    const res = await action(prev, fd);
+    if (autoSave && res?.ok) setTick((n) => n + 1);
+    return res;
+  }, null);
   const [, startTransition] = useTransition();
   const ref = useRef<HTMLFormElement>(null);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [waiting, setWaiting] = useState(false);
   // Clear the inputs after a successful «add» form (only where asked); edit forms keep their values.
   useEffect(() => {
     if (resetOnSuccess && state?.ok) ref.current?.reset();
   }, [state, resetOnSuccess]);
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  const send = () => {
+    setWaiting(false);
+    if (!ref.current) return;
+    const fd = new FormData(ref.current);
+    startTransition(() => formAction(fd));
+  };
+  // Text: wait until typing pauses; selects, dates, checkboxes: save right away.
+  const schedule = (e: FormEvent<HTMLFormElement>) => {
+    if (!autoSave) return;
+    const el = e.target as HTMLInputElement;
+    const typing = (el.tagName === "TEXTAREA" || el.tagName === "INPUT") && !["date", "checkbox", "radio", "file"].includes(el.type);
+    if (el.type === "file") return;
+    if (e.type === "change" && typing) return; // already handled by «input»
+    clearTimeout(timer.current);
+    setWaiting(true);
+    timer.current = setTimeout(send, typing ? 900 : 150);
+  };
+
+  const saving = waiting || pending;
   return (
     <div>
       <form
         ref={ref}
         onSubmit={(e) => {
           e.preventDefault();
+          clearTimeout(timer.current);
+          setWaiting(false);
           const fd = new FormData(e.currentTarget, (e.nativeEvent as SubmitEvent).submitter ?? undefined);
           startTransition(() => formAction(fd));
         }}
+        onInput={schedule}
+        onChange={schedule}
         className={className}
       >
         <PendingCtx.Provider value={pending}>{children}</PendingCtx.Provider>
       </form>
+      {autoSave && (saving || tick > 0) && !state?.error && (
+        <p className="mt-3 flex items-center gap-1.5 text-[13px]" aria-live="polite">
+          {saving ? (
+            <span className="flex items-center gap-1.5 text-muted">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Сохраняем…
+            </span>
+          ) : (
+            <span key={tick} className="saved-pop flex items-center gap-1.5 font-semibold text-accent">
+              <Check className="h-4 w-4" /> Сохранено
+            </span>
+          )}
+        </p>
+      )}
+      {autoSave && tick > 0 && !saving && !state?.error && (
+        <div
+          key={`t${tick}`}
+          aria-hidden
+          className="saved-toast pointer-events-none fixed bottom-5 left-1/2 z-50 flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-[14px] font-semibold text-white shadow-lg"
+        >
+          <Check className="h-4 w-4" /> Сохранено
+        </div>
+      )}
       {state?.error && <p className="mt-3 rounded-lg bg-warn-soft px-3 py-2 text-[14px] text-warn">{state.error}</p>}
-      {state?.message && <p className="mt-3 rounded-lg bg-accent-soft px-3 py-2 text-[14px]">{state.message}</p>}
+      {state?.message && !autoSave && <p className="mt-3 rounded-lg bg-accent-soft px-3 py-2 text-[14px]">{state.message}</p>}
       {state?.link && (
         <div className="mt-3">
           <LinkBox link={state.link} phone={state.phone || phone} name={state.clientName} curator={state.curator} service={state.service} />

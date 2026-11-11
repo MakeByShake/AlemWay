@@ -267,7 +267,7 @@ export default async function ClientPage({
 
           <div className="grid gap-5 xl:grid-cols-2">
             <Section title="Этап и контакты">
-              <ActionForm action={updateCabinetAction} className="grid gap-3">
+              <ActionForm action={updateCabinetAction} className="grid gap-3" autoSave>
                 <fieldset disabled={!owner} className="contents">
                   <input type="hidden" name="id" value={id} />
                   <label className="grid gap-1 text-[14px] font-medium">
@@ -344,13 +344,6 @@ export default async function ClientPage({
                       className={input}
                     />
                   </label>
-                  {owner && (
-                    <div>
-                      <SubmitButton pendingText="Сохраняем…">
-                        Сохранить
-                      </SubmitButton>
-                    </div>
-                  )}
                 </fieldset>
               </ActionForm>
             </Section>
@@ -385,7 +378,7 @@ export default async function ClientPage({
                   : "Если заполните — клиент увидит это в кабинете после загрузки ZAV."
               }
             >
-              <ActionForm action={updateCabinetAction} className="grid gap-3">
+              <ActionForm action={updateCabinetAction} className="grid gap-3" autoSave>
                 <fieldset disabled={!owner} className="contents">
                   <input type="hidden" name="id" value={id} />
                   {keta ? (
@@ -457,13 +450,6 @@ export default async function ClientPage({
                       className={input}
                     />
                   </label>
-                  {owner && (
-                    <div>
-                      <SubmitButton pendingText="Сохраняем…">
-                        Сохранить
-                      </SubmitButton>
-                    </div>
-                  )}
                 </fieldset>
               </ActionForm>
             </Section>
@@ -494,10 +480,10 @@ export default async function ClientPage({
             </p>
             <p className="mt-1 text-[13px] text-muted">
               {owner
-                ? "Можно исправить любое поле и нажать «Сохранить анкету». Клиент увидит исправленные данные у себя."
+                ? "Можно исправить любое поле — сохраняется автоматически. Клиент увидит исправленные данные у себя."
                 : "Только просмотр: отдел продаж не меняет анкету."}
             </p>
-            <ActionForm action={updateAnketaAction} className="mt-4">
+            <ActionForm action={updateAnketaAction} className="mt-4" autoSave>
               <input type="hidden" name="id" value={id} />
               <fieldset disabled={!owner} className="contents">
                 <div className="grid gap-6 lg:grid-cols-2">
@@ -547,13 +533,6 @@ export default async function ClientPage({
                     },
                   )}
                 </div>
-                {owner && (
-                  <div className="mt-5">
-                    <SubmitButton pendingText="Сохраняем…">
-                      Сохранить анкету
-                    </SubmitButton>
-                  </div>
-                )}
               </fieldset>
             </ActionForm>
           </section>

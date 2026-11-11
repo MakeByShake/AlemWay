@@ -128,6 +128,54 @@ details > summary::-webkit-details-marker {
   }
 }
 
+/* Autosave: «✓ Сохранено» pops in, the bottom chip fades out by itself. */
+.saved-pop {
+  animation: saved-pop 0.35s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+@keyframes saved-pop {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+}
+.saved-toast {
+  animation: saved-toast 1.8s ease both;
+}
+@keyframes saved-toast {
+  0% {
+    transform: translate(-50%, 16px) scale(0.9);
+    opacity: 0;
+  }
+  15%,
+  75% {
+    transform: translate(-50%, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, 0) scale(1);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .saved-pop {
+    animation: none;
+  }
+  .saved-toast {
+    animation: saved-toast-fade 1.8s linear both;
+  }
+  @keyframes saved-toast-fade {
+    0%,
+    75% {
+      transform: translateX(-50%);
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(-50%);
+      opacity: 0;
+    }
+  }
+}
+
 /* Drop-downs: our own arrow with a comfortable gap from the edge (same on every browser). */
 @layer base {
   select:not([multiple]):not([size]) {
