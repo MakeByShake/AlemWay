@@ -46,10 +46,12 @@ export type Cabinet = {
   price?: number;
   payments?: Payment[];
   aiCheck?: AiCheck;
+  /** Questionnaire fields the team corrected in the admin: they win over the documents in the declaration. */
+  teamEdited?: string[];
 };
 
 const PROJECTION = `{_id, number, group, _rev, service, status, clientName, clientPhone, data, files, declarationDate, submittedAt, signedAt,
-  zavReceivedAt, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil, manager, managerName, seller, sellerName, party, price, payments, aiCheck}`;
+  zavReceivedAt, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil, manager, managerName, seller, sellerName, party, teamEdited, price, payments, aiCheck}`;
 
 export function writeClient(): SanityClient {
   const c = getWriteClient();

@@ -4,6 +4,7 @@ import { readFile } from "@/lib/cabinet/storage";
 import type { Cabinet, StoredFile } from "@/lib/cabinet/server";
 import { DECLARATION_PROMPT, UNIVERSITY_DIRECTORY } from "./prompts";
 import { recordUsage } from "./usage";
+import { FERIENJOB_FULL_SECTIONS } from "@/lib/cabinet/fields";
 
 /**
  * «Декларационный отдел»: Claude reads the certificate, passport and calendar plus the short questionnaire
@@ -84,7 +85,10 @@ const SITE_RULES = `## Правило сайта: учёба из анкеты (
 - Если в справке этого нет, а в анкете есть — бери из анкеты и выдавай декларацию. Не пиши это в «ЧЕГО НЕ ХВАТАЕТ» и не проси новую справку. В «ПРОВЕРИТЬ» добавь: «<поле> взято из анкеты — в справке нет, сверить с вузом».
 - Специальность в анкете на русском/казахском — переведи на английский.
 - В «ЧЕГО НЕ ХВАТАЕТ» пиши поле, только если его нет ни в справке, ни в анкете.
-Справка при этом всё равно обязательна: без неё, без печати вуза или если она не на студента — «НЕ ГОТОВО», как сказано выше.`;
+Справка при этом всё равно обязательна: без неё, без печати вуза или если она не на студента — «НЕ ГОТОВО», как сказано выше.
+
+## Исправления команды (важнее всего)
+Поле с пометкой [ИСПРАВЛЕНО КОМАНДОЙ] менеджер сверил и исправил вручную. Оно важнее справки, паспорта и календаря: бери значение как есть (только приведи формат), не считай расхождение ошибкой и не проси из-за него новые документы. В «ПРОВЕРИТЬ» коротко отметь: «<поле> — по исправлению команды».`;
 
 const SYSTEM = `${DECLARATION_PROMPT}\n\n${UNIVERSITY_DIRECTORY}\n\n${SITE_RULES}\n\n${OUTPUT_RULES}`;
 
@@ -143,10 +147,16 @@ export async function runDeclarationCheck(cab: Cabinet, todayIso: string): Promi
   const client = new Anthropic();
 
   const docs = (await Promise.all((["passport", "enrollment", "calendar"] as const).map((k) => fileBlocks(k, cab.files?.[k])))).flat();
-  const answers = Object.entries(QUESTION_LABELS)
-    .map(([k, label]) => {
+  const edited = new Set(cab.teamEdited ?? []);
+  const fieldLabel = Object.fromEntries(FERIENJOB_FULL_SECTIONS.flatMap((s) => s.fields).map((f) => [f.key, f.label.ru]));
+  // Everything the team corrected is passed too, even fields the client never sees.
+  const keys = [...Object.keys(QUESTION_LABELS), ...[...edited].filter((k) => !(k in QUESTION_LABELS))];
+  const answers = keys
+    .map((k) => {
       const v = cab.data?.[k];
-      return `- ${label}: ${v ? (k === "continueStudies" ? (v === "no" ? "Нет" : "Да") : v) : "—"}`;
+      const label = QUESTION_LABELS[k] ?? fieldLabel[k] ?? k;
+      const mark = edited.has(k) && v ? " [ИСПРАВЛЕНО КОМАНДОЙ]" : "";
+      return `- ${label}: ${v ? (k === "continueStudies" ? (v === "no" ? "Нет" : "Да") : v) : "—"}${mark}`;
     })
     .join("\n");
   const today = todayIso.split("-").reverse().join(".");

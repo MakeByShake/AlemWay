@@ -48,6 +48,25 @@ export function anketaFromDeclaration(fields: Partial<DeclarationFields>): Recor
   return out;
 }
 
+/**
+ * Questionnaire values the team corrected in the admin, as declaration fields (dates DD.MM.YYYY).
+ * They replace what the AI read from the documents: the manager has checked them by hand.
+ */
+export function teamOverrides(cab: Pick<Cabinet, "data" | "teamEdited">): Partial<DeclarationFields> {
+  const edited = new Set(cab.teamEdited ?? []);
+  const out: Partial<DeclarationFields> = {};
+  for (const f of FERIENJOB_FULL_SECTIONS.flatMap((s) => s.fields)) {
+    if (!f.pdf || !edited.has(f.key)) continue;
+    const v = (cab.data?.[f.key] ?? "").trim();
+    if (!v) continue;
+    const key = f.pdf as keyof DeclarationFields;
+    if (f.kind === "date") out[key] = /^\d{4}-\d{2}-\d{2}$/.test(v) ? toGermanDate(v) : v;
+    else if (f.kind === "yesno") out[key] = v === "no" ? "No" : "Yes";
+    else out[key] = v;
+  }
+  return out;
+}
+
 /** Stores the declaration made from the AI check and moves the cabinet to «Декларация готова». */
 export async function saveAiDeclaration(cab: Cabinet, ai: AiCheck): Promise<StoredFile> {
   const dateIso = todayAlmaty();
@@ -61,7 +80,13 @@ export async function saveAiDeclaration(cab: Cabinet, ai: AiCheck): Promise<Stor
   const previous = cab.files?.declaration?.path;
   // Rebuilding the declaration never moves a cabinet back from later stages (signed, ZAV, done).
   const nextStatus = !cab.status || cab.status === "waiting_data" ? "declaration_ready" : cab.status;
-  const anketa = Object.fromEntries(Object.entries(anketaFromDeclaration(fields)).map(([k, v]) => [`data.${k}`, v]));
+  // Fields the team corrected stay exactly as the team wrote them.
+  const edited = new Set(cab.teamEdited ?? []);
+  const anketa = Object.fromEntries(
+    Object.entries(anketaFromDeclaration(fields))
+      .filter(([k]) => !edited.has(k))
+      .map(([k, v]) => [`data.${k}`, v])
+  );
   await patchCabinet(cab._id, { ...anketa, "files.declaration": file, declarationDate: dateIso, status: nextStatus });
   if (previous && previous !== stored) await deleteFile(previous);
   return file;

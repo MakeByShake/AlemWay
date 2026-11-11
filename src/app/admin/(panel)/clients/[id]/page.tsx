@@ -563,7 +563,7 @@ export default async function ClientPage({
             </p>
             <p className="mt-1 text-[13px] text-muted">
               {owner
-                ? "Можно исправить любое поле — сохраняется автоматически. Клиент увидит исправленные данные у себя."
+                ? "Можно исправить любое поле — сохраняется автоматически. Исправленное командой ИИ возьмёт в декларацию как есть (важнее справки): после правки нажмите «Проверить ИИ заново» на вкладке «Файлы» — декларация обновится и у клиента."
                 : "Только просмотр: отдел продаж не меняет анкету."}
             </p>
             <ActionForm action={updateAnketaAction} className="mt-4" autoSave>
@@ -579,7 +579,14 @@ export default async function ClientPage({
                               key={f.key}
                               className="grid gap-1 text-[13px] font-medium text-muted"
                             >
-                              {f.label.ru}
+                              <span>
+                                {f.label.ru}
+                                {cab.teamEdited?.includes(f.key) && (
+                                  <span className="ml-1.5 rounded bg-brand-soft px-1.5 py-px text-[11px] font-semibold text-brand" title="ИИ возьмёт это значение в декларацию как есть">
+                                    ✎ исправлено командой
+                                  </span>
+                                )}
+                              </span>
                               <AnketaInput
                                 f={f}
                                 value={cab.data?.[f.key] ?? ""}

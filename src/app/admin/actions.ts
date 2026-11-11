@@ -441,12 +441,18 @@ export async function updateAnketaAction(_prev: ActionState, fd: FormData): Prom
   const fields = serviceOf(cab.service) === "keta" ? KETA_FIELDS : FERIENJOB_ALL_FIELDS;
   const set: Record<string, unknown> = {};
   const unset: string[] = [];
+  // Remember what the team changed: the AI then keeps these values in the declaration.
+  const edited = new Set(cab.teamEdited ?? []);
   for (const f of fields) {
     if (!fd.has(`d_${f.key}`)) continue;
     const v = s(fd, `d_${f.key}`, f.maxLength ?? 300);
+    const was = (cab.data?.[f.key] ?? "").trim();
     if (v) set[`data.${f.key}`] = v;
     else unset.push(`data.${f.key}`);
+    if (v && v !== was) edited.add(f.key);
+    if (!v) edited.delete(f.key);
   }
+  set.teamEdited = [...edited];
   try {
     await patchCabinet(id, set, unset);
     await logActivity(me, "anketa", "исправил(а) анкету", cab, 15);

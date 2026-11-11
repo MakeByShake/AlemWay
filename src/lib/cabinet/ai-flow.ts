@@ -1,7 +1,7 @@
 import "server-only";
 import { aiReady, runDeclarationCheck, type AiCheck } from "@/lib/ai/declaration";
 import { escapeHtml, sendTelegram } from "@/lib/telegram";
-import { saveAiDeclaration, todayAlmaty } from "./declaration";
+import { saveAiDeclaration, teamOverrides, todayAlmaty } from "./declaration";
 import { cabinetAdminUrl, displayName, getCabinet, managerLine, patchCabinet, type Cabinet } from "./server";
 
 const list = (xs: string[]) => xs.slice(0, 8).map((x) => `• ${escapeHtml(x)}`);
@@ -14,9 +14,18 @@ export async function checkAndBuildDeclaration(cabId: string, by: "client" | "ma
   const cab = await getCabinet(cabId);
   if (!cab) throw new Error("cabinet not found");
   const ai = await runDeclarationCheck(cab, todayAlmaty());
+  const ready = aiReady(ai.status);
+  // What the team corrected in the questionnaire goes into the declaration as is.
+  if (ready) {
+    const over = teamOverrides(cab);
+    const changed = Object.entries(over).filter(([k, v]) => ai.fields[k as keyof typeof ai.fields] !== v);
+    if (changed.length) {
+      Object.assign(ai.fields, over);
+      ai.checks = [...ai.checks, `Взято из анкеты, исправленной командой: ${changed.map(([, v]) => v).join(", ")}`];
+    }
+  }
   await patchCabinet(cab._id, { aiCheck: ai });
 
-  const ready = aiReady(ai.status);
   if (ready) await saveAiDeclaration({ ...cab, aiCheck: ai } as Cabinet, ai);
 
   await sendTelegram([
