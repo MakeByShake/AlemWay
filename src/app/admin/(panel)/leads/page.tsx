@@ -62,7 +62,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                 </div>
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3">
                   {l.cabinetId ? (
-                    <Link href={`/admin/clients/${l.cabinetId}`} className="text-[14px] font-semibold text-brand hover:underline">
+                    <Link prefetch={false} href={`/admin/clients/${l.cabinetId}`} className="text-[14px] font-semibold text-brand hover:underline">
                       Открыть кабинет клиента →
                     </Link>
                   ) : (

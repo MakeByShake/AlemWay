@@ -75,7 +75,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
           <ul className="card divide-y divide-line">
             {pending.map((p) => (
               <li key={p._key}>
-                <Link href={`/admin/clients/${p.row._id}`} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 hover:bg-surface">
+                <Link prefetch={false} href={`/admin/clients/${p.row._id}`} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 hover:bg-surface">
                   <span>
                     <b>{cabinetName(p.row)}</b> <span className="text-[13px] text-muted">· {fmtDate(p.createdAt)} · {p.row.managerName || "без менеджера"}</span>
                   </span>
@@ -136,7 +136,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
                 {filtered.map((r) => (
                   <tr key={r._id} className="hover:bg-surface">
                     <td className="px-4 py-2.5">
-                      <Link href={`/admin/clients/${r._id}`} className="font-semibold hover:text-brand">
+                      <Link prefetch={false} href={`/admin/clients/${r._id}`} className="font-semibold hover:text-brand">
                         {r.number ? `№${r.number} · ` : ""}
                         {cabinetName(r)}
                       </Link>

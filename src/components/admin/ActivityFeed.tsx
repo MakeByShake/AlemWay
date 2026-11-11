@@ -44,7 +44,7 @@ export function ActivityFeed({ items, names, showClient = true }: { items: Activ
               {showClient && a.cabinet && a.client && (
                 <>
                   {" · "}
-                  <Link href={`/admin/clients/${a.cabinet}`} className="font-medium text-brand hover:underline">
+                  <Link prefetch={false} href={`/admin/clients/${a.cabinet}`} className="font-medium text-brand hover:underline">
                     {a.client}
                   </Link>
                 </>

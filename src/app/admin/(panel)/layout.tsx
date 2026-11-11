@@ -12,7 +12,7 @@ export default async function PanelLayout({ children }: { children: ReactNode })
     <div className="min-h-dvh lg:flex">
       <aside className="border-b border-line bg-white lg:sticky lg:top-0 lg:h-dvh lg:w-60 lg:shrink-0 lg:border-r lg:border-b-0">
         <div className="flex items-center justify-between gap-3 px-4 py-3 lg:block lg:px-5 lg:py-6">
-          <Link href="/admin" className="block">
+          <Link prefetch={false} href="/admin" className="block">
             <span className="text-[13px] font-semibold tracking-wide text-brand uppercase">AlemWay</span>
             <span className="block text-[18px] font-bold leading-tight">Админка</span>
           </Link>

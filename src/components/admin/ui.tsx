@@ -283,7 +283,7 @@ export function ActionForm({
         <div className="mt-3">
           <LinkBox link={state.link} phone={state.phone || phone} name={state.clientName} curator={state.curator} service={state.service} />
           {state.id && (
-            <Link href={`/admin/clients/${state.id}`} className="mt-2 inline-block text-[14px] font-medium text-brand hover:underline">
+            <Link prefetch={false} href={`/admin/clients/${state.id}`} className="mt-2 inline-block text-[14px] font-medium text-brand hover:underline">
               Открыть карточку клиента →
             </Link>
           )}

@@ -202,7 +202,7 @@ export default async function ClientPage({
 
   return (
     <>
-      <Link
+      <Link prefetch={false}
         href="/admin/clients"
         className="text-[14px] text-muted hover:text-brand"
       >
@@ -245,7 +245,7 @@ export default async function ClientPage({
         aria-label="Разделы клиента"
       >
         {TABS.map((tb) => (
-          <Link
+          <Link prefetch={false}
             key={tb.id}
             href={
               tb.id === "overview"

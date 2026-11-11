@@ -74,7 +74,7 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
 
       <div className="mb-5 flex flex-wrap gap-2">
         {PERIODS.map((p) => (
-          <Link
+          <Link prefetch={false}
             key={p.value}
             href={p.value === "month" ? "/admin/activity" : `/admin/activity?period=${p.value}`}
             className={clsx(
@@ -105,7 +105,7 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
               <>
                 {" "}
                 У{" "}
-                <Link href="/admin/clients?seller=-" className="font-medium text-brand hover:underline">
+                <Link prefetch={false} href="/admin/clients?seller=-" className="font-medium text-brand hover:underline">
                   {total.noSeller} клиентов
                 </Link>{" "}
                 продавец не указан.
@@ -209,7 +209,7 @@ function WorkerCard({ m, width }: { m: MemberStats; width: number }) {
             </>
           );
           return c.href ? (
-            <Link key={c.label} href={c.href} className="rounded-lg bg-surface px-1 py-2 hover:bg-brand-soft">
+            <Link prefetch={false} key={c.label} href={c.href} className="rounded-lg bg-surface px-1 py-2 hover:bg-brand-soft">
               {inner}
             </Link>
           ) : (

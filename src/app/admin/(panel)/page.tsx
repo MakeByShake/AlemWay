@@ -31,7 +31,7 @@ export default async function AdminHome() {
           </a>
         ))}
         {ai && (
-          <Link href="/admin/finance" className="block hover:opacity-90">
+          <Link prefetch={false} href="/admin/finance" className="block hover:opacity-90">
             <AiBalance stats={ai} compact />
           </Link>
         )}
@@ -46,7 +46,7 @@ export default async function AdminHome() {
             <ul className="card divide-y divide-line">
               {d.actionClients.map((c) => (
                 <li key={c._id}>
-                  <Link href={`/admin/clients/${c._id}`} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 hover:bg-surface">
+                  <Link prefetch={false} href={`/admin/clients/${c._id}`} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 hover:bg-surface">
                     <span className="font-semibold">
                       {c.number ? `№${c.number} · ` : ""}
                       {cabinetName(c)} <span className="ml-1 text-[13px] font-normal text-muted">{SERVICE_SHORT[c.service ?? "ferienjob"]}</span>
@@ -68,7 +68,7 @@ export default async function AdminHome() {
                 const st = LEAD_STATUSES.find((x) => x.value === (l.status ?? "new")) ?? LEAD_STATUSES[0];
                 return (
                   <li key={l._id}>
-                    <Link href="/admin/leads" className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 hover:bg-surface">
+                    <Link prefetch={false} href="/admin/leads" className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 hover:bg-surface">
                       <span>
                         <span className="font-semibold">{l.name || "Без имени"}</span>
                         <span className="ml-2 text-[13px] text-muted">{l.serviceTitle}</span>

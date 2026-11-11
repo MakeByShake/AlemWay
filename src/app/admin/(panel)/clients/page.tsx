@@ -47,7 +47,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
           { g: "new", label: "Новые — заполняют сами" },
           { g: "old", label: "Старые — данные заполняем мы" },
         ].map((x) => (
-          <Link
+          <Link prefetch={false}
             key={x.g || "all"}
             href={tabHref(x.g)}
             className={`-mb-px shrink-0 border-b-2 px-4 py-2.5 text-[15px] font-semibold ${group === x.g ? "border-brand text-brand" : "border-transparent text-muted hover:text-ink"}`}
@@ -163,7 +163,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
             const wa = waLink(c.clientPhone);
             return (
               <li key={c._id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-                <Link href={`/admin/clients/${c._id}`} className="min-w-0 flex-1 hover:text-brand">
+                <Link prefetch={false} href={`/admin/clients/${c._id}`} className="min-w-0 flex-1 hover:text-brand">
                   <span className="block font-semibold">
                     {c.number && <span className="mr-1.5 text-muted tabular-nums">№{c.number}</span>}
                     {cabinetName(c)}

@@ -46,7 +46,7 @@ export default async function ConsultationsPage({ searchParams }: { searchParams
           { label: "Предстоящие", href: q({ when: undefined }), active: when === "upcoming" },
           { label: "Прошедшие", href: q({ when: "past" }), active: when === "past" },
         ].map((x) => (
-          <Link
+          <Link prefetch={false}
             key={x.label}
             href={x.href}
             className={`-mb-px border-b-2 px-4 py-2.5 text-[15px] font-semibold ${x.active ? "border-brand text-brand" : "border-transparent text-muted hover:text-ink"}`}
@@ -54,7 +54,7 @@ export default async function ConsultationsPage({ searchParams }: { searchParams
             {x.label}
           </Link>
         ))}
-        <Link
+        <Link prefetch={false}
           href={q({ mine: mine ? undefined : "1" })}
           className={`-mb-px ml-auto border-b-2 px-4 py-2.5 text-[15px] font-semibold ${mine ? "border-brand text-brand" : "border-transparent text-muted hover:text-ink"}`}
         >

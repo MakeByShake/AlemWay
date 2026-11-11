@@ -23,7 +23,7 @@ export function AdminNav({ owner, full }: { owner: boolean; full: boolean }) {
       {ITEMS.filter((i) => (owner || !("ownerOnly" in i)) && (full || !("fullOnly" in i))).map(({ href, label, icon: Icon }) => {
         const active = href === "/admin" ? path === "/admin" : path.startsWith(href);
         return (
-          <Link
+          <Link prefetch={false}
             key={href}
             href={href}
             className={clsx(
