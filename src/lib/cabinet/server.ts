@@ -39,6 +39,8 @@ export type Cabinet = {
   manager?: string;
   managerName?: string;
   /** Who sold the client (often «Отдел продаж»); they see the client too. */
+  /** Friends who travel together share the same group id. */
+  party?: string;
   seller?: string;
   sellerName?: string;
   price?: number;
@@ -47,7 +49,7 @@ export type Cabinet = {
 };
 
 const PROJECTION = `{_id, number, group, _rev, service, status, clientName, clientPhone, data, files, declarationDate, submittedAt, signedAt,
-  zavReceivedAt, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil, manager, managerName, seller, sellerName, price, payments, aiCheck}`;
+  zavReceivedAt, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil, manager, managerName, seller, sellerName, party, price, payments, aiCheck}`;
 
 export function writeClient(): SanityClient {
   const c = getWriteClient();

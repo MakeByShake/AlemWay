@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -252,6 +253,62 @@ export async function deleteCabinetAction(fd: FormData) {
   await writeClient().delete({ query: `*[_type == "activity" && cabinet == $id]`, params: { id } }).catch(() => null);
   revalidatePath("/admin", "layout");
   redirect("/admin/clients");
+}
+
+// ---------- Companions («едут вместе») ----------
+
+/** Puts two clients into one group (merging groups if both already had one). */
+export async function addCompanionAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const me = await requireAdminUser({ full: true });
+  const id = s(fd, "id", 100);
+  const raw = s(fd, "other", 200);
+  const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
+  if (!cab) return { error: "Кабинет не найден" };
+  // «№12 Имя» from the list, or just «12».
+  const num = Number(raw.match(/^\s*№?\s*(\d+)/)?.[1]);
+  const otherId = raw.startsWith("cabinets.")
+    ? raw
+    : num
+      ? await writeClient().fetch<string | null>(`*[_type == "cabinet" && number == $num && !(_id in path("drafts.**"))][0]._id`, { num })
+      : null;
+  const other = otherId ? await getCabinet(otherId) : null;
+  if (!other) return { error: "Клиент не найден — выберите из списка" };
+  if (other._id === cab._id) return { error: "Это тот же клиент" };
+  if (cab.party && cab.party === other.party) return { error: "Они уже в одной группе" };
+
+  const party = cab.party || other.party || `p-${randomUUID().slice(0, 8)}`;
+  const ids = new Set([cab._id, other._id]);
+  // Both had different groups: everyone from the second group joins the first.
+  if (cab.party && other.party) {
+    const rest = await writeClient().fetch<string[]>(`*[_type == "cabinet" && party == $p && !(_id in path("drafts.**"))]._id`, { p: other.party });
+    rest.forEach((x) => ids.add(x));
+  }
+  try {
+    for (const x of ids) await patchCabinet(x, { party });
+    const label = (c: { number?: number; clientName?: string; data?: Record<string, string | undefined> }) =>
+      [c.number ? `№${c.number}` : "", [c.data?.firstName, c.data?.lastName].filter(Boolean).join(" ") || c.clientName].filter(Boolean).join(" ");
+    await logActivity(me, "companions", `отметил(а), что едет вместе с ${label(other)}`, cab);
+    revalidatePath("/admin", "layout");
+    return { ok: true, message: `Добавлено: ${label(other)}` };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+/** Takes a client out of the group; a group of one is dissolved. */
+export async function removeCompanionAction(fd: FormData) {
+  const me = await requireAdminUser({ full: true });
+  const id = s(fd, "other", 100);
+  const from = s(fd, "id", 100);
+  const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
+  if (!cab?.party) return;
+  const party = cab.party;
+  await patchCabinet(id, {}, ["party"]);
+  const left = await writeClient().fetch<string[]>(`*[_type == "cabinet" && party == $p && !(_id in path("drafts.**"))]._id`, { p: party });
+  if (left.length === 1) await patchCabinet(left[0]!, {}, ["party"]);
+  const host = from.startsWith("cabinets.") ? await getCabinet(from) : null;
+  await logActivity(me, "companions", `убрал(а) из группы «едут вместе»: ${cab.number ? "№" + cab.number + " " : ""}${cab.clientName ?? ""}`, host);
+  revalidatePath("/admin", "layout");
 }
 
 // ---------- Feedback ----------

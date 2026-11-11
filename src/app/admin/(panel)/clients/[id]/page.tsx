@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import {
   getCabinetFull,
   cabinetName,
+  getClientOptions,
+  getCompanions,
   getManagerOptions,
 } from "@/lib/admin/data";
 import { isFullRole, requireAdminUser } from "@/lib/admin/session";
@@ -18,6 +20,8 @@ import {
   type CabinetField,
 } from "@/lib/cabinet/fields";
 import {
+  addCompanionAction,
+  removeCompanionAction,
   declarationAction,
   deleteCabinetAction,
   deleteClientFileAction,
@@ -174,6 +178,7 @@ export default async function ClientPage({
     getActivity({ cabinet: id, limit: 30 }),
   ]);
   if (!cab) notFound();
+  const [companions, clientOptions] = await Promise.all([getCompanions(cab.party, id), tab === "overview" ? getClientOptions() : []]);
   // «owner» here = full rights (owner or manager); «Отдел продаж» is read-only.
   const owner = isFullRole(me.role);
   // «Отдел продаж» opens only the clients they lead or sold.
@@ -269,6 +274,60 @@ export default async function ClientPage({
           <section className="card mb-5 p-4 sm:p-6">
             <h2 className="mb-3 text-[18px] font-bold">Процесс клиента</h2>
             <Pipeline service={service} status={cab.status} />
+          </section>
+
+          <section className="card mb-5 p-4 sm:p-6">
+            <h2 className="text-[18px] font-bold">👥 Едет вместе с</h2>
+            <p className="mt-1 text-[13px] text-muted">Друзья, которые хотят поехать вместе — чтобы оформить и устроить их рядом.</p>
+            {companions.length > 0 ? (
+              <ul className="mt-4 divide-y divide-line rounded-xl border border-line">
+                {companions.map((c) => (
+                  <li key={c._id} className="flex flex-wrap items-center gap-3 px-3 py-2.5">
+                    <Link prefetch={false} href={`/admin/clients/${c._id}`} className="min-w-0 flex-1 font-semibold hover:text-brand">
+                      {c.number && <span className="mr-1.5 text-muted tabular-nums">№{c.number}</span>}
+                      {cabinetName(c)}
+                    </Link>
+                    <Progress service={c.service} status={c.status} />
+                    <Badge tone={c.managerName ? "gray" : "amber"}>👤 {c.managerName || "не назначен"}</Badge>
+                    {owner && (
+                      <QuickButton
+                        action={removeCompanionAction}
+                        hidden={{ id, other: c._id }}
+                        confirmText={`Убрать «${cabinetName(c)}» из группы?`}
+                        className="rounded-lg px-2 py-1 text-[13px] font-medium text-muted hover:bg-red-50 hover:text-red-600"
+                      >
+                        Убрать
+                      </QuickButton>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-3 text-[14px] text-muted">Пока едет один.</p>
+            )}
+            {owner && (
+              <ActionForm action={addCompanionAction} className="mt-4 flex flex-wrap gap-2" resetOnSuccess>
+                <input type="hidden" name="id" value={id} />
+                <input
+                  name="other"
+                  list="companion-options"
+                  required
+                  autoComplete="off"
+                  placeholder="Начните вводить имя или № клиента"
+                  className="field min-w-[240px] flex-1 py-2 text-[15px]"
+                />
+                <datalist id="companion-options">
+                  {clientOptions
+                    .filter((o) => o._id !== id && !(cab.party && o.party === cab.party))
+                    .map((o) => (
+                      <option key={o._id} value={`${o.number ? `№${o.number} ` : ""}${cabinetName(o)}`} />
+                    ))}
+                </datalist>
+                <SubmitButton className="btn-ghost" pendingText="Добавляем…">
+                  + Добавить друга
+                </SubmitButton>
+              </ActionForm>
+            )}
           </section>
 
           <div className="grid gap-5 xl:grid-cols-2">

@@ -28,6 +28,9 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
   const seller = owner ? pick(sp.seller) : "";
   const group = sp.group === "old" || sp.group === "new" ? sp.group : "";
   const rows = await getCabinets({ service, status, q, manager, seller, group, mine: owner ? undefined : me.login });
+  // «Едут вместе»: how many from each group are in this list.
+  const partySize = new Map<string, number>();
+  for (const r of rows) if (r.party) partySize.set(r.party, (partySize.get(r.party) ?? 0) + 1);
   const tabHref = (g: string) => {
     const u = new URLSearchParams();
     if (g) u.set("group", g);
@@ -173,6 +176,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
                   </span>
                 </Link>
                 <div className="flex flex-wrap items-center gap-3">
+                  {c.party && (partySize.get(c.party) ?? 0) > 1 && <Badge tone="blue">👥 вместе: {partySize.get(c.party)}</Badge>}
                   {c.sellerName && <Badge tone="green">🤝 {c.sellerName}</Badge>}
                   <Badge tone={c.managerName ? "gray" : "amber"}>👤 {c.managerName || "Без ведущего"}</Badge>
                   <Progress service={c.service} status={c.status} />

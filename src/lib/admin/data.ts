@@ -60,6 +60,7 @@ export type CabinetRow = {
   lastName?: string;
   managerName?: string;
   sellerName?: string;
+  party?: string;
 };
 
 export type CabinetFull = Cabinet & { _createdAt: string; managerNote?: string; linkCreatedAt?: string; leadId?: string };
@@ -97,7 +98,7 @@ export function getCabinets(filter: { service?: string; status?: string; q?: str
        && (!defined($mine) || manager == $mine || seller == $mine)
        && (!defined($q) || string(number) == $num || clientName match $q || clientPhone match $q || data.firstName match $q || data.lastName match $q)
      ] | order(coalesce(number, 0) desc, _createdAt desc)[0...300]{
-      _id, number, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName, managerName, sellerName
+      _id, number, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName, managerName, sellerName, party
     }`,
     {
       service: filter.service || null,
@@ -109,6 +110,24 @@ export function getCabinets(filter: { service?: string; status?: string; q?: str
       mine: filter.mine || null,
       group: filter.group || null,
     }
+  );
+}
+
+/** Other clients in the same «едут вместе» group. */
+export function getCompanions(party: string | undefined, id: string) {
+  if (!party) return Promise.resolve([] as CabinetRow[]);
+  return writeClient().fetch<CabinetRow[]>(
+    `*[_type == "cabinet" && ${notDraft} && party == $party && _id != $id] | order(number asc){
+      _id, number, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName, managerName, sellerName
+    }`,
+    { party, id }
+  );
+}
+
+/** Short list of every client for pickers: «№12 Имя Фамилия». */
+export function getClientOptions() {
+  return writeClient().fetch<CabinetRow[]>(
+    `*[_type == "cabinet" && ${notDraft}] | order(coalesce(number, 0) desc){_id, number, _createdAt, clientName, "firstName": data.firstName, "lastName": data.lastName, party}`
   );
 }
 
