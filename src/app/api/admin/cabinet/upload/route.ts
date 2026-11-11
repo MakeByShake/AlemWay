@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { adminAccess, adminError, canSeeCabinet } from "@/lib/admin-auth";
-import { MANAGER_UPLOAD_KINDS, SERVICE_FILES, serviceOf, type CabinetStatus, type ManagerUploadKind } from "@/lib/cabinet/fields";
+import { logActivity } from "@/lib/admin/activity";
+import { FILE_LABELS, MANAGER_UPLOAD_KINDS, SERVICE_FILES, serviceOf, type CabinetStatus, type ManagerUploadKind } from "@/lib/cabinet/fields";
 import { cabinetAdminUrl, managerLine, displayName, getCabinet, patchCabinet } from "@/lib/cabinet/server";
 import { readUpload, storeCabinetFile } from "@/lib/cabinet/uploads";
 import { escapeHtml, sendTelegram } from "@/lib/telegram";
@@ -55,6 +56,7 @@ export async function POST(req: NextRequest) {
   if (kind === "keta") set.status = cab.status === "done" ? "done" : "keta_approved";
   await patchCabinet(id, set);
   await cleanup();
+  await logActivity({ login: access.login }, "file_upload", `загрузил(а) файл «${FILE_LABELS[kind]?.ru ?? kind}»`, cab);
 
   if (kind === "zav") {
     await sendTelegram([

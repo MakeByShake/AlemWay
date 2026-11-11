@@ -14,7 +14,7 @@ const SERVICE_FILTER = [
   { value: "keta", title: "🇰🇷 K-ETA" },
 ];
 
-export default async function ClientsPage({ searchParams }: { searchParams: Promise<{ service?: string; status?: string; q?: string; manager?: string; group?: string }> }) {
+export default async function ClientsPage({ searchParams }: { searchParams: Promise<{ service?: string; status?: string; q?: string; manager?: string; seller?: string; group?: string }> }) {
   const sp = await searchParams;
   const service = sp.service === "ferienjob" || sp.service === "keta" ? sp.service : "";
   const status = CABINET_STATUSES.some((s) => s.value === sp.status) ? sp.status! : "";
@@ -22,16 +22,17 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
   const [me, managers] = await Promise.all([requireAdminUser(), getManagerOptions()]);
   // «owner» here = full rights (owner or manager); «Отдел продаж» is read-only.
   const owner = isFullRole(me.role);
-  // Managers open «Мои клиенты» by default; "all" shows everyone.
-  // A manager sees only the clients assigned to him.
-  const managerParam = owner ? (sp.manager ?? "") : me.login;
-  const manager = managerParam === "-" || managers.some((m) => m.login === managerParam) ? managerParam : "";
+  // «Отдел продаж» sees only the clients they lead or sold.
+  const pick = (v?: string) => (v === "-" || managers.some((m) => m.login === v) ? v! : "");
+  const manager = owner ? pick(sp.manager) : "";
+  const seller = owner ? pick(sp.seller) : "";
   const group = sp.group === "old" || sp.group === "new" ? sp.group : "";
-  const rows = await getCabinets({ service, status, q, manager, group });
+  const rows = await getCabinets({ service, status, q, manager, seller, group, mine: owner ? undefined : me.login });
   const tabHref = (g: string) => {
     const u = new URLSearchParams();
     if (g) u.set("group", g);
     if (sp.manager) u.set("manager", sp.manager);
+    if (sp.seller) u.set("seller", sp.seller);
     const qs = u.toString();
     return qs ? `/admin/clients?${qs}` : "/admin/clients";
   };
@@ -76,9 +77,20 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
               <option value="keta">🇰🇷 K-ETA</option>
             </select>
           </label>
+          <label className="grid gap-1 text-[14px] font-medium sm:col-span-2">
+            🤝 Кто продал
+            <select name="seller" defaultValue="" className="field">
+              <option value="">— не указано —</option>
+              {managers.map((m) => (
+                <option key={m.login} value={m.login}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          </label>
           {owner && (
             <label className="grid gap-1 text-[14px] font-medium sm:col-span-2">
-              Менеджер
+              👤 Кто ведёт документы
               <select name="manager" defaultValue={me.login} className="field">
                 <option value="">— не назначен —</option>
                 {managers.map((m) => (
@@ -108,9 +120,9 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
           ))}
         </select>
         {owner && (
-        <select name="manager" defaultValue={sp.manager === undefined && !owner ? me.login : manager || "all"} className="field w-full sm:w-auto sm:max-w-[240px]">
-          <option value="all">Все менеджеры</option>
-          <option value={me.login}>Мои клиенты</option>
+        <select name="manager" defaultValue={manager || "all"} className="field w-full sm:w-auto sm:max-w-[240px]" aria-label="Кто ведёт">
+          <option value="all">👤 Ведёт: все</option>
+          <option value={me.login}>Веду я</option>
           {managers
             .filter((m) => m.login !== me.login)
             .map((m) => (
@@ -118,8 +130,19 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
                 {m.name}
               </option>
             ))}
-          <option value="-">Без менеджера</option>
+          <option value="-">Без ведущего</option>
         </select>
+        )}
+        {owner && (
+          <select name="seller" defaultValue={seller || "all"} className="field w-full sm:w-auto sm:max-w-[240px]" aria-label="Кто продал">
+            <option value="all">🤝 Продал: все</option>
+            {managers.map((m) => (
+              <option key={m.login} value={m.login}>
+                {m.name}
+              </option>
+            ))}
+            <option value="-">Не указано</option>
+          </select>
         )}
         <select name="status" defaultValue={status} className="field w-full sm:w-auto sm:max-w-[240px]">
           <option value="">Все этапы</option>
@@ -150,7 +173,8 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
                   </span>
                 </Link>
                 <div className="flex flex-wrap items-center gap-3">
-                  <Badge tone={c.managerName ? "gray" : "amber"}>👤 {c.managerName || "Без менеджера"}</Badge>
+                  {c.sellerName && <Badge tone="green">🤝 {c.sellerName}</Badge>}
+                  <Badge tone={c.managerName ? "gray" : "amber"}>👤 {c.managerName || "Без ведущего"}</Badge>
                   <Progress service={c.service} status={c.status} />
                   {wa && (
                     <a href={wa} target="_blank" rel="noopener noreferrer" className="text-[13px] font-semibold text-accent hover:underline">

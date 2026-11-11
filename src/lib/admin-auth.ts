@@ -60,8 +60,9 @@ export async function adminAccess(req: NextRequest): Promise<AdminAccess | null>
   return null;
 }
 
-/** Owner and managers see every client; «Отдел продаж» only the clients assigned to them. */
-export const canSeeCabinet = (a: AdminAccess, cab: { manager?: string | null }) => a.full || (!!a.login && cab.manager === a.login);
+/** Owner and managers see every client; «Отдел продаж» only the clients they lead or sold. */
+export const canSeeCabinet = (a: AdminAccess, cab: { manager?: string | null; seller?: string | null }) =>
+  a.full || (!!a.login && (cab.manager === a.login || cab.seller === a.login));
 
 const NO_LOGIN = () => NextResponse.json({ ok: false, message: "Нет доступа. Войдите в админку заново." }, { status: 401 });
 const NO_RIGHTS = () => NextResponse.json({ ok: false, message: "Нет прав: отдел продаж может только смотреть." }, { status: 403 });

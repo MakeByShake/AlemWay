@@ -71,11 +71,21 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                       <input type="hidden" name="clientName" value={l.name ?? ""} />
                       <input type="hidden" name="clientPhone" value={l.phone ?? ""} />
                       {owner && (
-                        <select name="manager" defaultValue={me.login} aria-label="Менеджер" className="rounded-lg border border-line bg-white px-2.5 py-1.5 text-[13px]">
-                          <option value="">Менеджер: не назначен</option>
+                        <select name="seller" defaultValue="" aria-label="Кто продал" className="rounded-lg border border-line bg-white px-2.5 py-1.5 text-[13px]">
+                          <option value="">🤝 Продал: не указано</option>
                           {managers.map((m) => (
                             <option key={m.login} value={m.login}>
-                              Менеджер: {m.name}
+                              🤝 Продал: {m.name}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      {owner && (
+                        <select name="manager" defaultValue={me.login} aria-label="Кто ведёт документы" className="rounded-lg border border-line bg-white px-2.5 py-1.5 text-[13px]">
+                          <option value="">👤 Ведёт: не назначен</option>
+                          {managers.map((m) => (
+                            <option key={m.login} value={m.login}>
+                              👤 Ведёт: {m.name}
                             </option>
                           ))}
                         </select>

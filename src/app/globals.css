@@ -176,6 +176,22 @@ details > summary::-webkit-details-marker {
   }
 }
 
+/* «Активность команды»: bars grow in from the left. */
+.team-bar {
+  animation: team-bar 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  transform-origin: left;
+}
+@keyframes team-bar {
+  from {
+    transform: scaleX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .team-bar {
+    animation: none;
+  }
+}
+
 /* Drop-downs: our own arrow with a comfortable gap from the edge (same on every browser). */
 @layer base {
   select:not([multiple]):not([size]) {

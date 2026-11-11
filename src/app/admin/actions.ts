@@ -22,7 +22,7 @@ import { AdminOpError, createCabinet, deleteCabinetCompletely } from "@/lib/cabi
 import { getCabinet, newLoginToken, patchCabinet, writeClient } from "@/lib/cabinet/server";
 import { checkAndBuildDeclaration } from "@/lib/cabinet/ai-flow";
 import { aiReady } from "@/lib/ai/declaration";
-import { CABINET_STATUSES, FERIENJOB_FULL_SECTIONS, FILE_KINDS, KETA_FIELDS, serviceOf, type FileKind } from "@/lib/cabinet/fields";
+import { CABINET_STATUSES, FERIENJOB_FULL_SECTIONS, FILE_KINDS, FILE_LABELS, KETA_FIELDS, serviceOf, type FileKind } from "@/lib/cabinet/fields";
 import { deleteFile } from "@/lib/cabinet/storage";
 
 const FERIENJOB_ALL_FIELDS = FERIENJOB_FULL_SECTIONS.flatMap((sec) => sec.fields);
@@ -31,6 +31,9 @@ import { formatTenge, parseAmount } from "@/lib/cabinet/payments";
 import { removePayment, setPaymentStatus } from "@/lib/cabinet/payments-server";
 import { setAiBalance } from "@/lib/ai/usage";
 import { CONSULTATION_STATUSES } from "@/lib/consultation";
+import { logActivity } from "@/lib/admin/activity";
+
+const statusTitle = (v?: string) => CABINET_STATUSES.find((x) => x.value === v)?.title ?? v ?? "";
 
 /** Every action re-checks the login: server actions can be called directly by POST. */
 
@@ -124,6 +127,13 @@ async function managerFor(me: { login: string; name: string; role: string }, pic
   return u ? { login: u.login, name: u.name } : null;
 }
 
+/** Any team member by login ("" = nobody). */
+async function memberFor(login: string) {
+  if (!login) return null;
+  const u = await getAdminUserByLogin(login);
+  return u ? { login: u.login, name: u.name } : null;
+}
+
 export async function createCabinetAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
   const me = await requireAdminUser({ full: true });
   try {
@@ -135,7 +145,9 @@ export async function createCabinetAction(_prev: ActionState, fd: FormData): Pro
       service: service || undefined,
       leadId,
       manager: await managerFor(me, fd.has("manager") ? s(fd, "manager", 40) : null),
+      seller: fd.has("seller") ? await memberFor(s(fd, "seller", 40)) : null,
     });
+    await logActivity(me, "client_created", `создал(а) клиента ${s(fd, "clientName", 80)}`, { _id: res.id, clientName: s(fd, "clientName", 80) });
     if (leadId) await patchDoc(leadId, { status: "paid" }).catch(() => {});
     revalidatePath("/admin", "layout");
     return { ok: true, ...res, clientName: s(fd, "clientName", 80), phone: s(fd, "clientPhone", 30), curator: me.role === "owner" ? undefined : me.name, service: service || undefined };
@@ -166,6 +178,12 @@ export async function updateCabinetAction(_prev: ActionState, fd: FormData): Pro
     if (m) Object.assign(set, { manager: m.login, managerName: m.name });
     else unset.push("manager", "managerName");
   }
+  // Who sold the client (usually «Отдел продаж»): they then see this client too.
+  if (fd.has("seller")) {
+    const m = await memberFor(s(fd, "seller", 40));
+    if (m) Object.assign(set, { seller: m.login, sellerName: m.name });
+    else unset.push("seller", "sellerName");
+  }
   for (const key of ["workFrom", "workTo", "ketaValidUntil"]) {
     if (!fd.has(key)) continue;
     const v = isoDate(s(fd, key, 10));
@@ -174,6 +192,17 @@ export async function updateCabinetAction(_prev: ActionState, fd: FormData): Pro
   }
   try {
     await patchCabinet(id, set, unset);
+    if (set.status && set.status !== (cab.status ?? "waiting_data"))
+      await logActivity(me, "status", `перевёл(а) на этап «${statusTitle(set.status as string)}»`, cab);
+    if (fd.has("seller") && (set.seller ?? "") !== (cab.seller ?? ""))
+      await logActivity(me, "seller", set.sellerName ? `указал(а), что продал(а): ${set.sellerName}` : "убрал(а), кто продал", cab);
+    const managerChanged = "manager" in set ? set.manager !== cab.manager : unset.includes("manager") && Boolean(cab.manager);
+    if (managerChanged)
+      await logActivity(me, "manager", set.managerName ? `назначил(а) ведущего: ${set.managerName}` : "убрал(а) ведущего", cab);
+    const edited = ["clientName", "clientPhone", "managerNote", "employerName", "workCity", "workPosition", "clientMessage", "workFrom", "workTo", "ketaValidUntil"].some(
+      (k) => fd.has(k) && (set[k] ?? "") !== ((cab as Record<string, unknown>)[k] ?? "")
+    );
+    if (edited) await logActivity(me, "contacts", "обновил(а) данные клиента", cab, 15);
     revalidatePath(`/admin/clients/${id}`);
     return { ok: true, message: "Сохранено" };
   } catch (err) {
@@ -186,16 +215,17 @@ export async function newLinkAction(_prev: ActionState, fd: FormData): Promise<A
   const id = s(fd, "id", 100);
   const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
   if (!cab) return { error: "Кабинет не найден" };
-  if (!isFullRole(me.role) && cab.manager !== me.login) return { error: "Этот клиент закреплён за другим сотрудником" };
+  if (!isFullRole(me.role) && cab.manager !== me.login && cab.seller !== me.login) return { error: "Этот клиент закреплён за другим сотрудником" };
   const { hash, link } = newLoginToken();
   await patchCabinet(id, { tokenHash: hash, linkCreatedAt: new Date().toISOString() });
+  await logActivity(me, "link", "создал(а) новую ссылку для входа", cab);
   revalidatePath(`/admin/clients/${id}`);
   const curator = cab?.managerName && cab.managerName !== "AlemWay" ? cab.managerName : undefined;
   return { ok: true, link, clientName: cab?.clientName, phone: cab?.clientPhone || cab?.data?.phone, curator, service: cab?.service };
 }
 
 export async function declarationAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  await requireAdminUser({ full: true });
+  const me = await requireAdminUser({ full: true });
   const id = s(fd, "id", 100);
   const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
   if (!cab) return { error: "Кабинет не найден" };
@@ -203,6 +233,7 @@ export async function declarationAction(_prev: ActionState, fd: FormData): Promi
   if (!cab.files?.enrollment?.path) return { error: "Нет справки с места учёбы — без неё ИИ не сделает декларацию" };
   try {
     const ai = await checkAndBuildDeclaration(id, "manager");
+    await logActivity(me, "declaration", `запустил(а) ИИ-декларацию: ${ai.status}`, cab);
     revalidatePath(`/admin/clients/${id}`);
     return aiReady(ai.status)
       ? { ok: true, message: `ИИ: ${ai.status}. Декларация создана (дата — сегодня).` }
@@ -215,7 +246,10 @@ export async function declarationAction(_prev: ActionState, fd: FormData): Promi
 
 export async function deleteCabinetAction(fd: FormData) {
   await requireAdminUser({ full: true });
-  await deleteCabinetCompletely(s(fd, "id", 100));
+  const id = s(fd, "id", 100);
+  await deleteCabinetCompletely(id);
+  // Its history goes too (the links would lead nowhere).
+  await writeClient().delete({ query: `*[_type == "activity" && cabinet == $id]`, params: { id } }).catch(() => null);
   revalidatePath("/admin", "layout");
   redirect("/admin/clients");
 }
@@ -301,41 +335,49 @@ export async function setPasswordAction(_prev: ActionState, fd: FormData): Promi
 // ---------- Payments ----------
 
 export async function setPriceAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  await requireAdminUser({ full: true });
+  const me = await requireAdminUser({ full: true });
   const id = s(fd, "id", 100);
-  if (!id.startsWith("cabinets.") || !(await getCabinet(id))) return { error: "Клиент не найден" };
+  const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
+  if (!cab) return { error: "Клиент не найден" };
   const raw = s(fd, "price", 30);
   const price = parseAmount(raw);
   if (raw && !price) return { error: "Сумма — только число, например 250000" };
   await patchCabinet(id, price ? { price } : {}, price ? [] : ["price"]);
+  await logActivity(me, "price", price ? `указал(а) сумму договора ${formatTenge(price)}` : "убрал(а) сумму договора", cab);
   revalidatePath(`/admin/clients/${id}`);
   return { ok: true, message: price ? `Сумма к оплате: ${formatTenge(price)}` : "Сумма убрана" };
 }
 
 export async function paymentStatusAction(fd: FormData) {
-  await requireAdminUser({ full: true });
+  const me = await requireAdminUser({ full: true });
   const id = s(fd, "id", 100);
   const key = s(fd, "key", 40);
   const status = s(fd, "status", 20);
   if (!id.startsWith("cabinets.") || !["confirmed", "rejected", "pending"].includes(status)) return;
   await setPaymentStatus(id, key, status as "confirmed" | "rejected" | "pending");
+  const cab = await getCabinet(id);
+  const p = cab?.payments?.find((x) => x._key === key);
+  const verb = status === "confirmed" ? "подтвердил(а)" : status === "rejected" ? "отклонил(а)" : "вернул(а) на проверку";
+  await logActivity(me, "payment_status", `${verb} оплату${p ? " " + formatTenge(p.amount) : ""}`, cab);
   revalidatePath(`/admin/clients/${id}`);
   revalidatePath("/admin/finance");
 }
 
 export async function deletePaymentAction(fd: FormData) {
-  await requireAdminUser({ full: true });
+  const me = await requireAdminUser({ full: true });
   const id = s(fd, "id", 100);
   const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
   if (!cab) return;
+  const p = cab.payments?.find((x) => x._key === s(fd, "key", 40));
   await removePayment(cab, s(fd, "key", 40));
+  await logActivity(me, "payment_status", `удалил(а) оплату${p ? " " + formatTenge(p.amount) : ""}`, cab);
   revalidatePath(`/admin/clients/${id}`);
   revalidatePath("/admin/finance");
 }
 
 /** Manager edits the client's questionnaire (any field). Empty = cleared. */
 export async function updateAnketaAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  await requireAdminUser({ full: true });
+  const me = await requireAdminUser({ full: true });
   const id = s(fd, "id", 100);
   const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
   if (!cab) return { error: "Кабинет не найден" };
@@ -350,6 +392,7 @@ export async function updateAnketaAction(_prev: ActionState, fd: FormData): Prom
   }
   try {
     await patchCabinet(id, set, unset);
+    await logActivity(me, "anketa", "исправил(а) анкету", cab, 15);
     revalidatePath(`/admin/clients/${id}`);
     return { ok: true, message: "Анкета сохранена" };
   } catch (err) {
@@ -372,7 +415,7 @@ export async function setRoleAction(fd: FormData) {
 
 /** Manager deletes one file of a client (from storage too). */
 export async function deleteClientFileAction(fd: FormData) {
-  await requireAdminUser({ full: true });
+  const me = await requireAdminUser({ full: true });
   const id = s(fd, "id", 100);
   const kind = s(fd, "kind", 20) as FileKind;
   const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
@@ -380,6 +423,7 @@ export async function deleteClientFileAction(fd: FormData) {
   const path = cab.files?.[kind]?.path;
   await patchCabinet(id, {}, [`files.${kind}`]);
   if (path) await deleteFile(path);
+  if (path) await logActivity(me, "file_delete", `удалил(а) файл «${FILE_LABELS[kind]?.ru ?? kind}»`, cab);
   revalidatePath(`/admin/clients/${id}`);
 }
 
@@ -421,6 +465,11 @@ export async function updateConsultationAction(fd: FormData) {
     }
   }
   if (Object.keys(set).length || unset.length) await patchDoc(id, set, unset);
+  if (set.status) {
+    const c = await writeClient().fetch<{ name?: string; date?: string; time?: string } | null>(`*[_id == $id][0]{name, date, time}`, { id });
+    const title = CONSULTATION_STATUSES.find((x) => x.value === set.status)?.title.toLowerCase();
+    await logActivity(me, "consultation", `консультация ${c?.name ?? ""} (${c?.date ?? ""} ${c?.time ?? ""}) — ${title}`);
+  }
   revalidatePath("/admin/consultations");
   revalidatePath("/admin");
 }

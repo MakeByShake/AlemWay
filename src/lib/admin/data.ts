@@ -59,6 +59,7 @@ export type CabinetRow = {
   firstName?: string;
   lastName?: string;
   managerName?: string;
+  sellerName?: string;
 };
 
 export type CabinetFull = Cabinet & { _createdAt: string; managerNote?: string; linkCreatedAt?: string; leadId?: string };
@@ -84,7 +85,7 @@ export function getFeedback(status?: string) {
   );
 }
 
-export function getCabinets(filter: { service?: string; status?: string; q?: string; manager?: string; group?: string }) {
+export function getCabinets(filter: { service?: string; status?: string; q?: string; manager?: string; seller?: string; mine?: string; group?: string }) {
   const q = filter.q?.trim() ? `*${filter.q.trim().replace(/[*"\\]/g, "")}*` : null;
   return writeClient().fetch<CabinetRow[]>(
     `*[_type == "cabinet" && ${notDraft}
@@ -92,11 +93,22 @@ export function getCabinets(filter: { service?: string; status?: string; q?: str
        && (!defined($status) || coalesce(status, "waiting_data") == $status)
        && (!defined($group) || coalesce(group, "new") == $group)
        && (!defined($manager) || ($manager == "-" && !defined(manager)) || manager == $manager)
+       && (!defined($seller) || ($seller == "-" && !defined(seller)) || seller == $seller)
+       && (!defined($mine) || manager == $mine || seller == $mine)
        && (!defined($q) || string(number) == $num || clientName match $q || clientPhone match $q || data.firstName match $q || data.lastName match $q)
      ] | order(coalesce(number, 0) desc, _createdAt desc)[0...300]{
-      _id, number, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName, managerName
+      _id, number, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName, managerName, sellerName
     }`,
-    { service: filter.service || null, status: filter.status || null, q, num: filter.q?.trim().replace(/^№\s*/, "") || null, manager: filter.manager || null, group: filter.group || null }
+    {
+      service: filter.service || null,
+      status: filter.status || null,
+      q,
+      num: filter.q?.trim().replace(/^№\s*/, "") || null,
+      manager: filter.manager || null,
+      seller: filter.seller || null,
+      mine: filter.mine || null,
+      group: filter.group || null,
+    }
   );
 }
 
@@ -121,14 +133,14 @@ export function getDashboard(login: string, onlyMine = false) {
     `{
       "newLeads": count(*[_type == "lead" && ${notDraft} && coalesce(status, "new") == "new"]),
       "leadsWeek": count(*[_type == "lead" && ${notDraft} && dateTime(_createdAt) > dateTime(now()) - 60*60*24*7]),
-      "activeClients": count(*[_type == "cabinet" && ${notDraft} && !(status in ["done", "keta_rejected"]) && (!$onlyMine || manager == $login)]),
-      "waitingAction": count(*[_type == "cabinet" && ${notDraft} && status in ["signed_uploaded", "keta_applying"] && (!$onlyMine || manager == $login)]),
-      "myClients": count(*[_type == "cabinet" && ${notDraft} && manager == $login && !(status in ["done", "keta_rejected"])]),
+      "activeClients": count(*[_type == "cabinet" && ${notDraft} && !(status in ["done", "keta_rejected"]) && (!$onlyMine || manager == $login || seller == $login)]),
+      "waitingAction": count(*[_type == "cabinet" && ${notDraft} && status in ["signed_uploaded", "keta_applying"] && (!$onlyMine || manager == $login || seller == $login)]),
+      "myClients": count(*[_type == "cabinet" && ${notDraft} && (manager == $login || seller == $login) && !(status in ["done", "keta_rejected"])]),
       "newFeedback": count(*[_type == "feedback" && ${notDraft} && coalesce(status, "new") == "new"]),
       "latestLeads": *[_type == "lead" && ${notDraft}] | order(coalesce(createdAt, _createdAt) desc)[0...5]{
         _id, status, name, phone, serviceTitle, "createdAt": coalesce(createdAt, _createdAt)
       },
-      "actionClients": *[_type == "cabinet" && ${notDraft} && status in ["signed_uploaded", "keta_applying"] && (!$onlyMine || manager == $login)] | order(_updatedAt desc)[0...8]{
+      "actionClients": *[_type == "cabinet" && ${notDraft} && status in ["signed_uploaded", "keta_applying"] && (!$onlyMine || manager == $login || seller == $login)] | order(_updatedAt desc)[0...8]{
         _id, number, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName
       }
     }`,

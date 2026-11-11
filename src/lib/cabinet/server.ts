@@ -38,13 +38,16 @@ export type Cabinet = {
   clientMessage?: string;
   manager?: string;
   managerName?: string;
+  /** Who sold the client (often «Отдел продаж»); they see the client too. */
+  seller?: string;
+  sellerName?: string;
   price?: number;
   payments?: Payment[];
   aiCheck?: AiCheck;
 };
 
 const PROJECTION = `{_id, number, group, _rev, service, status, clientName, clientPhone, data, files, declarationDate, submittedAt, signedAt,
-  zavReceivedAt, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil, manager, managerName, price, payments, aiCheck}`;
+  zavReceivedAt, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil, manager, managerName, seller, sellerName, price, payments, aiCheck}`;
 
 export function writeClient(): SanityClient {
   const c = getWriteClient();

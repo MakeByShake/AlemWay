@@ -42,6 +42,8 @@ import {
   waLink,
 } from "@/components/admin/bits";
 import { Pipeline } from "@/components/Pipeline";
+import { ActivityFeed } from "@/components/admin/ActivityFeed";
+import { getActivity } from "@/lib/admin/activity";
 import {
   ActionForm,
   AddPaymentForm,
@@ -165,16 +167,17 @@ export default async function ClientPage({
   const tab = TABS.some((x) => x.id === tabParam) ? tabParam! : "overview";
   const id = decodeURIComponent(raw);
   if (!/^cabinets\.[\w-]+$/.test(id)) notFound();
-  const [cab, me, managers] = await Promise.all([
+  const [cab, me, managers, history] = await Promise.all([
     getCabinetFull(id),
     requireAdminUser(),
     getManagerOptions(),
+    getActivity({ cabinet: id, limit: 30 }),
   ]);
   if (!cab) notFound();
   // «owner» here = full rights (owner or manager); «Отдел продаж» is read-only.
   const owner = isFullRole(me.role);
-  // A manager opens only the clients the owner assigned to him.
-  if (!owner && cab.manager !== me.login) notFound();
+  // «Отдел продаж» opens only the clients they lead or sold.
+  if (!owner && cab.manager !== me.login && cab.seller !== me.login) notFound();
 
   const service = serviceOf(cab.service);
   const keta = service === "keta";
@@ -228,8 +231,11 @@ export default async function ClientPage({
       <div className="-mt-3 mb-6 flex flex-wrap items-center gap-3 text-[14px] text-muted">
         <Badge tone="blue">{SERVICE_TITLES[service].ru}</Badge>
         <Progress service={service} status={cab.status} />
+        <Badge tone={cab.sellerName ? "green" : "gray"}>
+          🤝 Продал: {cab.sellerName || "не указано"}
+        </Badge>
         <Badge tone={cab.managerName ? "gray" : "amber"}>
-          👤 {cab.managerName || "Без менеджера"}
+          👤 Ведёт: {cab.managerName || "не назначен"}
         </Badge>
         <span>создан {fmtDate(cab._createdAt)}</span>
       </div>
@@ -296,8 +302,20 @@ export default async function ClientPage({
                     </select>
                   </label>
                   {owner ? (
+                    <div className="grid gap-3 sm:grid-cols-2">
                     <label className="grid gap-1 text-[14px] font-medium">
-                      Менеджер клиента
+                      🤝 Кто продал
+                      <select name="seller" defaultValue={cab.seller ?? ""} className={input}>
+                        <option value="">— не указано —</option>
+                        {managers.map((m) => (
+                          <option key={m.login} value={m.login}>
+                            {m.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="grid gap-1 text-[14px] font-medium">
+                      👤 Кто ведёт документы
                       <select
                         name="manager"
                         defaultValue={cab.manager ?? ""}
@@ -311,9 +329,10 @@ export default async function ClientPage({
                         ))}
                       </select>
                     </label>
+                    </div>
                   ) : (
                     <p className="text-[14px]">
-                      Менеджер клиента:{" "}
+                      🤝 Продал: <b>{cab.sellerName || "не указано"}</b> · 👤 Ведёт:{" "}
                       <b>{cab.managerName || "не назначен"}</b>
                     </p>
                   )}
@@ -454,6 +473,11 @@ export default async function ClientPage({
               </ActionForm>
             </Section>
           </div>
+          <section className="card mt-5 p-4 sm:p-6">
+            <h2 className="mb-1 text-[18px] font-bold">История действий</h2>
+            <p className="mb-4 text-[13px] text-muted">Кто из команды и что делал с этим клиентом.</p>
+            <ActivityFeed items={history} names={Object.fromEntries(managers.map((m) => [m.login, m.name]))} showClient={false} />
+          </section>
           {owner && (
             <div className="mt-8 flex justify-end">
               <ConfirmForm

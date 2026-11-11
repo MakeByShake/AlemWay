@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { requireAdminUser } from "@/lib/admin/session";
+import { isFullRole, requireAdminUser } from "@/lib/admin/session";
 import { logoutAction } from "../actions";
 import { AdminNav } from "@/components/admin/AdminNav";
 
@@ -20,7 +20,7 @@ export default async function PanelLayout({ children }: { children: ReactNode })
             <button className="text-[14px] text-muted hover:text-ink">Выйти</button>
           </form>
         </div>
-        <AdminNav owner={me.role === "owner"} />
+        <AdminNav owner={me.role === "owner"} full={isFullRole(me.role)} />
         <div className="hidden px-5 pt-6 text-[13px] text-muted lg:block">
           <p>
             Вы вошли как <b className="text-ink">{me.name}</b>

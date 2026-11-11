@@ -4,7 +4,8 @@ import { verifySession, ADMIN_COOKIE } from "@/lib/admin/session";
 import { getCabinet } from "@/lib/cabinet/server";
 import { readUploadForm } from "@/lib/cabinet/uploads";
 import { addPayment, saveReceipt } from "@/lib/cabinet/payments-server";
-import { PAYMENT_METHODS, parseAmount, type PaymentMethod } from "@/lib/cabinet/payments";
+import { PAYMENT_METHODS, formatTenge, parseAmount, type PaymentMethod } from "@/lib/cabinet/payments";
+import { logActivity } from "@/lib/admin/activity";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,5 +43,6 @@ export async function POST(req: NextRequest) {
     by: me?.login ?? "manager",
     byName: me?.name ?? "Менеджер",
   });
+  await logActivity(me, "payment", `добавил(а) оплату ${formatTenge(amount)}${access.full ? "" : " (ждёт подтверждения)"}`, cab);
   return NextResponse.json({ ok: true });
 }
