@@ -33,7 +33,7 @@ const commonHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   // The blank ZAV declaration is read from disk when a declaration is generated.
-  outputFileTracingIncludes: { "/api/**": ["./src/assets/**"] },
+  outputFileTracingIncludes: { "/api/**": ["./src/assets/**"], "/admin/**": ["./src/assets/**"] },
   async headers() {
     return [
       { source: "/:path*", headers: commonHeaders },
