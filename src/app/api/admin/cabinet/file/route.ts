@@ -13,9 +13,13 @@ export async function GET(req: NextRequest) {
   if (!access) return adminError("Нет доступа. Войдите в админку заново.", 401);
   const id = (req.nextUrl.searchParams.get("id") ?? "").replace(/^drafts\./, "");
   const kind = req.nextUrl.searchParams.get("kind") as FileKind;
-  if (!id.startsWith("cabinets.") || !FILE_KINDS.includes(kind)) return adminError("Некорректный запрос");
+  const archived = req.nextUrl.searchParams.get("archived");
+  if (!id.startsWith("cabinets.") || (!FILE_KINDS.includes(kind) && archived === null)) return adminError("Некорректный запрос");
   const cab = await getCabinet(id);
   if (!cab) return adminError("Кабинет не найден", 404);
   if (!canSeeCabinet(access, cab)) return adminError("Этот клиент закреплён за другим сотрудником", 403);
-  return fileResponse(cab.files?.[kind], { inline: req.nextUrl.searchParams.get("view") === "1" });
+  const inline = req.nextUrl.searchParams.get("view") === "1";
+  // Files from before the questionnaire was reset for the new form.
+  if (archived !== null) return fileResponse(cab.archivedFiles?.[Number(archived)], { inline });
+  return fileResponse(cab.files?.[kind], { inline });
 }

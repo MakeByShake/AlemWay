@@ -1,4 +1,4 @@
-// Regenerates DECLARATION_PROMPT and UNIVERSITY_DIRECTORY in src/lib/ai/prompts.ts from docs/ai/declaration.md.
+// Regenerates DECLARATION_PROMPT, UNIVERSITY_DIRECTORY and ASSISTANT_PROMPT in src/lib/ai/prompts.ts from docs/ai/*.md.
 // Run: node scripts/gen-prompts.mjs
 import { readFileSync, writeFileSync } from "node:fs";
 const md = readFileSync("docs/ai/declaration.md", "utf8");
@@ -18,6 +18,8 @@ const swap = (name, text) => {
   ts = ts.replace(re, () => `export const ${name} = \`${esc(text)}\`;`);
 };
 swap("DECLARATION_PROMPT", decl);
+const amd = readFileSync("docs/ai/assistant.md", "utf8");
+swap("ASSISTANT_PROMPT", between(amd, "Ты — помощник куратора", "\n---\n\n## Для разработчика"));
 swap("UNIVERSITY_DIRECTORY", dir);
 writeFileSync("src/lib/ai/prompts.ts", ts);
 console.log("ok", decl.length, dir.length);

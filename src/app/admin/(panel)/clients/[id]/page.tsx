@@ -47,6 +47,7 @@ import {
 } from "@/components/admin/bits";
 import { Pipeline } from "@/components/Pipeline";
 import { ActivityFeed } from "@/components/admin/ActivityFeed";
+import { OldClientMessage } from "@/components/admin/OldClientMessage";
 import { getActivity } from "@/lib/admin/activity";
 import {
   ActionForm,
@@ -426,9 +427,18 @@ export default async function ClientPage({
               </ActionForm>
             </Section>
 
+            {!keta && owner && (
+              <Section
+                title={`📨 Новый бланк 06/2026 — сообщение клиенту${cab.reform ? " · анкета уже обнулена" : ""}`}
+                hint="Создаст личную ссылку и готовый текст с именем, ссылкой и сроком: старым клиентам — заполнить анкету заново, клиентам с сайта — распечатать декларацию в 2 экземплярах."
+              >
+                <OldClientMessage id={id} name={cab.data?.firstName || cab.clientName || ""} phone={cab.clientPhone || cab.data?.phone} reformed={Boolean(cab.reform)} old={(cab.group ?? "new") === "old"} />
+              </Section>
+            )}
+
             <Section
               title="Ссылка для входа клиента"
-              hint="Клиент входит по личной ссылке без пароля. Потерял ссылку — создайте новую (старая перестанет работать)."
+              hint="Клиент входит по личной ссылке без пароля. Потерял ссылку — создайте новую (старые ссылки тоже продолжат работать)."
             >
               <p className="mb-3 text-[14px]">
                 Последняя ссылка создана: {fmtDate(cab.linkCreatedAt)}
@@ -695,6 +705,31 @@ export default async function ClientPage({
                   );
                 })}
               </ul>
+              {(cab.archivedFiles?.length ?? 0) > 0 && (
+                <details className="mt-3 rounded-xl border border-line p-3">
+                  <summary className="cursor-pointer text-[14px] font-semibold text-muted">
+                    🗄 Архив — файлы до перехода на новый бланк ({cab.archivedFiles!.length})
+                  </summary>
+                  <ul className="mt-2 divide-y divide-line">
+                    {cab.archivedFiles!.map((f, i) => (
+                      <li key={i} className="flex flex-wrap items-center justify-between gap-2 py-2 text-[14px]">
+                        <span>
+                          {FILE_LABELS[f.kind as keyof typeof FILE_LABELS]?.ru ?? f.kind}
+                          <span className="ml-2 text-[12.5px] text-muted">{fmtDate(f.uploadedAt, false)}</span>
+                        </span>
+                        <a
+                          href={`/api/admin/cabinet/file?id=${encodeURIComponent(id)}&archived=${i}&view=1`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-brand hover:underline"
+                        >
+                          Открыть
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
               {!keta && owner && (
                 <div className="mt-3 border-t border-line pt-3">
                   <ActionForm action={declarationAction}>

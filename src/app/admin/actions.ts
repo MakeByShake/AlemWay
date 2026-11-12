@@ -20,7 +20,7 @@ import {
 } from "@/lib/admin/session";
 import { deleteDoc, patchDoc } from "@/lib/admin/data";
 import { AdminOpError, createCabinet, deleteCabinetCompletely } from "@/lib/cabinet/admin-ops";
-import { getCabinet, newLoginToken, patchCabinet, writeClient } from "@/lib/cabinet/server";
+import { freshLink, getCabinet, patchCabinet, writeClient } from "@/lib/cabinet/server";
 import { checkAndBuildDeclaration } from "@/lib/cabinet/ai-flow";
 import { aiReady } from "@/lib/ai/declaration";
 import { CABINET_STATUSES, FERIENJOB_FULL_SECTIONS, FILE_KINDS, FILE_LABELS, KETA_FIELDS, serviceOf, type FileKind } from "@/lib/cabinet/fields";
@@ -217,8 +217,8 @@ export async function newLinkAction(_prev: ActionState, fd: FormData): Promise<A
   const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
   if (!cab) return { error: "Кабинет не найден" };
   if (!isFullRole(me.role) && cab.manager !== me.login && cab.seller !== me.login) return { error: "Этот клиент закреплён за другим сотрудником" };
-  const { hash, link } = newLoginToken();
-  await patchCabinet(id, { tokenHash: hash, linkCreatedAt: new Date().toISOString() });
+  const { link, set } = await freshLink(id);
+  await patchCabinet(id, set);
   await logActivity(me, "link", "создал(а) новую ссылку для входа", cab);
   revalidatePath(`/admin/clients/${id}`);
   const curator = cab?.managerName && cab.managerName !== "AlemWay" ? cab.managerName : undefined;
@@ -253,6 +253,53 @@ export async function deleteCabinetAction(fd: FormData) {
   await writeClient().delete({ query: `*[_type == "activity" && cabinet == $id]`, params: { id } }).catch(() => null);
   revalidatePath("/admin", "layout");
   redirect("/admin/clients");
+}
+
+// ---------- Old clients → new declaration form 06/2026 ----------
+
+const REFORM_KINDS = ["passport", "enrollment", "calendar", "license", "declaration", "signed", "signed2"] as const;
+
+/**
+ * Makes a fresh login link for the «новый бланк» message. With reset: the questionnaire and the declaration
+ * documents are cleared (only name and phone stay) so the client fills everything in again; the old files
+ * are moved to an archive, not deleted.
+ */
+export async function reformOldClientAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const me = await requireAdminUser({ full: true });
+  const id = s(fd, "id", 100);
+  const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
+  if (!cab) return { error: "Кабинет не найден" };
+  const reset = s(fd, "reset", 5) === "yes";
+  const now = new Date().toISOString();
+  const fresh = await freshLink(id);
+  const link = fresh.link;
+  const set: Record<string, unknown> = { ...fresh.set };
+  const unset: string[] = [];
+  if (reset) {
+    const moved = REFORM_KINDS.flatMap((k) => {
+      const f = cab.files?.[k];
+      return f?.path ? [{ ...f, kind: k, archivedAt: now, _key: randomUUID().slice(0, 12) }] : [];
+    });
+    const phone = cab.data?.phone || cab.clientPhone;
+    Object.assign(set, {
+      data: phone ? { phone } : {},
+      status: "waiting_data",
+      reform: true,
+      reformAt: now,
+      archivedFiles: [...(cab.archivedFiles ?? []), ...moved],
+      // The old questionnaire is kept too, in case something is needed from it.
+      archivedData: cab.data ?? {},
+    });
+    unset.push(...REFORM_KINDS.map((k) => `files.${k}`), "aiCheck", "teamEdited", "declarationDate", "signedAt");
+  }
+  try {
+    await patchCabinet(id, set, unset);
+    await logActivity(me, "link", reset ? "обнулил(а) анкету под новый бланк 06/2026 и создал(а) ссылку" : "создал(а) ссылку для сообщения о новом бланке", cab);
+    revalidatePath(`/admin/clients/${id}`);
+    return { ok: true, link, phone: cab.clientPhone || cab.data?.phone, clientName: cab.clientName };
+  } catch (err) {
+    return fail(err);
+  }
 }
 
 // ---------- Companions («едут вместе») ----------

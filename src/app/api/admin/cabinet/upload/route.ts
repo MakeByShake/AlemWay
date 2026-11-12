@@ -4,6 +4,7 @@ import { logActivity } from "@/lib/admin/activity";
 import { FILE_LABELS, MANAGER_UPLOAD_KINDS, SERVICE_FILES, serviceOf, type CabinetStatus, type ManagerUploadKind } from "@/lib/cabinet/fields";
 import { cabinetAdminUrl, managerLine, displayName, getCabinet, patchCabinet } from "@/lib/cabinet/server";
 import { readUpload, storeCabinetFile } from "@/lib/cabinet/uploads";
+import { missingAnketaFromDeclaration, readDeclarationFields } from "@/lib/cabinet/declaration";
 import { escapeHtml, sendTelegram } from "@/lib/telegram";
 
 export const runtime = "nodejs";
@@ -54,6 +55,8 @@ export async function POST(req: NextRequest) {
   if (kind === "signed") Object.assign(set, { status: atLeast(cab.status, "signed_uploaded"), signedAt: file.uploadedAt });
   // Approved K-ETA: always moves to «одобрено» (also after a mistaken «отказ»).
   if (kind === "keta") set.status = cab.status === "done" ? "done" : "keta_approved";
+  // A declaration uploaded by hand: its field values fill the empty questionnaire fields.
+  if (kind === "declaration" && up.type === "application/pdf") Object.assign(set, missingAnketaFromDeclaration(cab, await readDeclarationFields(new Uint8Array(up.buf))));
   await patchCabinet(id, set);
   await cleanup();
   await logActivity({ login: access.login }, "file_upload", `загрузил(а) файл «${FILE_LABELS[kind]?.ru ?? kind}»`, cab);

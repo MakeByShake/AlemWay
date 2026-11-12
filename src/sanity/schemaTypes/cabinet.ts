@@ -59,7 +59,7 @@ export const cabinet = defineType({
       type: "datetime",
       group: "main",
       readOnly: true,
-      description: "Ссылку видно только при создании. Потеряли — нажмите «Новая ссылка для клиента» в меню действий (старая перестанет работать).",
+      description: "Ссылку видно только при создании. Потеряли — нажмите «Новая ссылка для клиента» в меню действий (старые ссылки тоже продолжат работать).",
     }),
     defineField({ name: "tokenHash", title: "Хэш ключа входа", type: "string", hidden: true, readOnly: true }),
     defineField({ name: "lead", title: "Заявка", type: "reference", to: [{ type: "lead" }], weak: true, group: "main", readOnly: true }),

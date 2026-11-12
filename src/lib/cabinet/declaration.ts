@@ -149,6 +149,37 @@ export function teamOverrides(cab: Pick<Cabinet, "data" | "teamEdited">): Partia
   return out;
 }
 
+/** Reads the field values of a filled declaration PDF (made by our site or the team's script); empty if it has no form. */
+export async function readDeclarationFields(bytes: Uint8Array): Promise<Partial<DeclarationFields>> {
+  const out: Partial<DeclarationFields> = {};
+  try {
+    const form = (await PDFDocument.load(bytes, { ignoreEncryption: true })).getForm();
+    for (const key of DECLARATION_PDF_KEYS) {
+      const f = form.getFieldMaybe(key);
+      if (!f) continue;
+      if (key === "rbtnStudiumFortsetzung") {
+        const v = String(f.acroField.dict.get(PDFName.of("V")) ?? "");
+        if (v) out[key] = /\/(1|no|nein)$/i.test(v) ? "No" : "Yes";
+      } else if ("getText" in f) {
+        const v = (f as unknown as { getText(): string | undefined }).getText()?.trim();
+        if (v) out[key] = v;
+      }
+    }
+  } catch {
+    // Scanned or flattened PDF: nothing to read.
+  }
+  return out;
+}
+
+/** Questionnaire fields that are still empty, filled from the declaration's values (never overwrites). */
+export function missingAnketaFromDeclaration(cab: Pick<Cabinet, "data">, fields: Partial<DeclarationFields>) {
+  return Object.fromEntries(
+    Object.entries(anketaFromDeclaration(fields))
+      .filter(([k]) => !(cab.data?.[k] ?? "").trim())
+      .map(([k, v]) => [`data.${k}`, v])
+  );
+}
+
 /** Stores the declaration made from the AI check and moves the cabinet to «Декларация готова». */
 export async function saveAiDeclaration(cab: Cabinet, ai: AiCheck): Promise<StoredFile> {
   const dateIso = todayAlmaty();

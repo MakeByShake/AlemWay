@@ -48,10 +48,15 @@ export type Cabinet = {
   aiCheck?: AiCheck;
   /** Questionnaire fields the team corrected in the admin: they win over the documents in the declaration. */
   teamEdited?: string[];
+  /** Old client moved to the new form (06/2026): the questionnaire was reset and must be filled in again. */
+  reform?: boolean;
+  reformAt?: string;
+  /** Files set aside when the questionnaire was reset (kept, not deleted). */
+  archivedFiles?: (StoredFile & { kind: string; archivedAt: string })[];
 };
 
 const PROJECTION = `{_id, number, group, _rev, service, status, clientName, clientPhone, data, files, declarationDate, submittedAt, signedAt,
-  zavReceivedAt, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil, manager, managerName, seller, sellerName, party, teamEdited, price, payments, aiCheck}`;
+  zavReceivedAt, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil, manager, managerName, seller, sellerName, party, teamEdited, reform, reformAt, archivedFiles, price, payments, aiCheck}`;
 
 export function writeClient(): SanityClient {
   const c = getWriteClient();
@@ -78,9 +83,19 @@ export function newCabinetId() {
 
 export async function findCabinetByToken(token: string): Promise<Cabinet | null> {
   if (!isTokenShape(token)) return null;
-  return writeClient().fetch<Cabinet | null>(`*[_type == "cabinet" && tokenHash == $h && !(_id in path("drafts.**"))][0]${PROJECTION}`, {
-    h: hashToken(token),
-  });
+  // Earlier links keep working too (extraTokenHashes): a new link never locks the client out.
+  return writeClient().fetch<Cabinet | null>(
+    `*[_type == "cabinet" && (tokenHash == $h || $h in extraTokenHashes) && !(_id in path("drafts.**"))][0]${PROJECTION}`,
+    { h: hashToken(token) }
+  );
+}
+
+/** A new login link for a cabinet; the previous links (up to 5) stay valid. Returns the fields to save. */
+export async function freshLink(id: string) {
+  const cur = await writeClient().fetch<{ tokenHash?: string; extraTokenHashes?: string[] } | null>(`*[_id == $id][0]{tokenHash, extraTokenHashes}`, { id });
+  const { hash, link } = newLoginToken();
+  const keep = [cur?.tokenHash, ...(cur?.extraTokenHashes ?? [])].filter((h): h is string => Boolean(h) && h !== hash).slice(0, 5);
+  return { link, set: { tokenHash: hash, extraTokenHashes: keep, linkCreatedAt: new Date().toISOString() } };
 }
 
 /** The cabinet of the current visitor (from the httpOnly cookie), or null. */

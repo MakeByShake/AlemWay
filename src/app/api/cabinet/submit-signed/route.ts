@@ -11,7 +11,8 @@ export async function POST(req: NextRequest) {
   if (!isSameOrigin(req)) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   const cab = await currentCabinet();
   if (!cab) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
-  if (!cab.files?.signed?.path) return NextResponse.json({ ok: false, error: "no_file" }, { status: 400 });
+  // The new form (06/2026) goes in 2 signed copies.
+  if (!cab.files?.signed?.path || !cab.files?.signed2?.path) return NextResponse.json({ ok: false, error: "no_file" }, { status: 400 });
   if (cab.status !== "declaration_ready") return NextResponse.json({ ok: true, already: true });
 
   await patchCabinet(cab._id, { status: "signed_uploaded", signedAt: new Date().toISOString() });

@@ -52,6 +52,8 @@ export type CabinetView = {
   data: CabinetData;
   files: Record<FileKind, FileMeta>;
   declarationDate: string | null;
+  /** Old client moved to the new form 06/2026: fills the questionnaire again. */
+  reform: boolean;
   /** Last AI check, when it said what is missing. */
   ai: { status: string; missing: string[]; clientMessage: string } | null;
   job: { employer: string | null; city: string | null; position: string | null; from: string | null; to: string | null; message: string | null };
@@ -234,7 +236,7 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
       const json = (await res.json().catch(() => ({}))) as { file?: FileMeta; error?: string };
       if (res.ok && json.file) {
         setFiles((f) => ({ ...f, [kind]: json.file! }));
-        if (kind === "signed") router.refresh();
+        if (kind === "signed" || kind === "signed2") router.refresh();
       } else {
         setNotice({
           tone: "err",
@@ -300,6 +302,7 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
           </div>
         )}
 
+        {view.reform && view.status === "waiting_data" && <Banner tone="warn" title={t.reformTitle} text={t.reformText} />}
         {view.status === "done" && !keta && <Banner title={t.doneTitle} text={t.doneText} />}
         {view.status === "keta_applying" && <Banner tone="wait" title={t.ketaApplyingTitle} text={t.ketaApplyingText} />}
         {view.status === "keta_applied" && <Banner tone="wait" title={t.ketaAppliedTitle} text={t.ketaAppliedText} />}
@@ -349,15 +352,22 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
 
             {view.status === "declaration_ready" && (
               <div className="mt-6 border-t border-line pt-5">
-                <FileRow
-                  label={t.signedTitle}
-                  meta={files.signed}
-                  busy={busy === "signed"}
-                  t={t}
-                  buttonText={files.signed ? t.replace : t.signedUpload}
-                  onPick={(f) => upload("signed", f)}
-                />
-                {files.signed && (
+                <p className="mb-3 text-[15px] font-semibold">{t.signedTitle}</p>
+                <div className="grid gap-4">
+                  {(["signed", "signed2"] as const).map((k, i) => (
+                    <FileRow
+                      key={k}
+                      label={t.signedCopy[i]!}
+                      meta={files[k]}
+                      busy={busy === k}
+                      t={t}
+                      buttonText={files[k] ? t.replace : t.signedUpload}
+                      onPick={(f) => upload(k, f)}
+                    />
+                  ))}
+                </div>
+                {files.signed && !files.signed2 && <p className="mt-3 text-[14px] text-muted">{t.signedNeedSecond}</p>}
+                {files.signed && files.signed2 && (
                   <div className="mt-4 rounded-xl bg-brand-soft p-4">
                     <p className="text-[15px]">{t.submitSignedHint}</p>
                     <button type="button" onClick={submitSigned} disabled={busy !== null} className="btn-primary mt-3 w-full sm:w-auto">

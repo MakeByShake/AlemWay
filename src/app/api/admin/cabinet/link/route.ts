@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { adminAccess, adminError, canSeeCabinet } from "@/lib/admin-auth";
 import { readJsonObject } from "@/lib/http";
-import { getCabinet, newLoginToken, patchCabinet } from "@/lib/cabinet/server";
+import { freshLink, getCabinet, patchCabinet } from "@/lib/cabinet/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   if (!cab) return adminError("Кабинет не найден", 404);
   if (!canSeeCabinet(access, cab)) return adminError("Этот клиент закреплён за другим сотрудником", 403);
 
-  const { hash, link } = newLoginToken();
-  await patchCabinet(id, { tokenHash: hash, linkCreatedAt: new Date().toISOString() });
+  const { link, set } = await freshLink(id);
+  await patchCabinet(id, set);
   return NextResponse.json({ ok: true, link });
 }

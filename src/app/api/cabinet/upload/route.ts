@@ -22,8 +22,8 @@ export async function POST(req: NextRequest) {
   const status = cab.status ?? "waiting_data";
   if (service === "keta") {
     if (status !== "waiting_data") return fail("locked", 409);
-  } else if (kind === "signed") {
-    // Signed scan: after the declaration exists, and can be replaced until ZAV arrives.
+  } else if (kind === "signed" || kind === "signed2") {
+    // Signed scans (2 copies): after the declaration exists, and can be replaced until ZAV arrives.
     if (!cab.files?.declaration?.path) return fail("no_declaration", 409);
     if (status !== "declaration_ready" && status !== "signed_uploaded") return fail("locked", 409);
   } else if (status !== "waiting_data" && status !== "declaration_ready") {

@@ -59,7 +59,7 @@ export const NewLinkAction: DocumentActionComponent = (props) => {
       ? {
           type: "confirm",
           tone: "caution",
-          message: "Создать новую ссылку? Старая ссылка клиента перестанет работать.",
+          message: "Создать новую ссылку? Старые ссылки клиента тоже продолжат работать.",
           onCancel: () => setConfirm(false),
           onConfirm: async () => {
             setConfirm(false);
