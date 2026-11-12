@@ -155,6 +155,34 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
     return () => window.removeEventListener("pagehide", flush);
   }, [editable]);
 
+  /**
+   * The AI takes up to 1–2 minutes; on a phone the connection can drop meanwhile while the server keeps working.
+   * Then we wait for the result instead of showing an error.
+   */
+  async function waitForAi(startedAt: string) {
+    setNotice({ tone: "ok", text: t.aiStillWorking });
+    for (let i = 0; i < 36; i++) {
+      await new Promise((r) => setTimeout(r, 5000));
+      const j = (await fetch("/api/cabinet/status", { cache: "no-store" })
+        .then((r) => r.json())
+        .catch(() => null)) as { status?: string; ai?: { status: string; missing: string[]; clientMessage: string; checkedAt?: string } | null } | null;
+      if (!j) continue;
+      if (j.status && j.status !== "waiting_data") {
+        setNotice(null);
+        router.refresh();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+      if (j.ai?.checkedAt && j.ai.checkedAt >= startedAt) {
+        setNotice(null);
+        setAi(j.ai);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+    }
+    setNotice({ tone: "err", text: t.aiFailed });
+  }
+
   async function onSubmit() {
     setNotice(null);
     const errs = validateCabinetData(data, view.service);
@@ -169,6 +197,7 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
       return;
     }
     setBusy("submit");
+    const startedAt = new Date(Date.now() - 60_000).toISOString();
     try {
       const { res, json } = await post(true);
       if (res.ok) {
@@ -181,9 +210,12 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
         setErrors(json.errors ?? {});
         setNotice({ tone: "err", text: json.missingFiles?.length ? t.needFiles : t.fixErrors });
       } else if (json.error === "ai_failed") setNotice({ tone: "err", text: t.aiFailed });
+      // Gateway timeout and the like: the server may still be finishing the declaration.
+      else if (res.status >= 500) await waitForAi(startedAt);
       else setNotice({ tone: "err", text: t.errorGeneric });
     } catch {
-      setNotice({ tone: "err", text: t.errorGeneric });
+      // Connection dropped (phone, 4G): the AI keeps working on the server.
+      await waitForAi(startedAt);
     } finally {
       setBusy(null);
     }

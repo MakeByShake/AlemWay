@@ -1,31 +1,113 @@
 import "server-only";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { PDFDocument } from "pdf-lib";
+import { PDFArray, PDFDict, PDFDocument, PDFHexString, PDFName, PDFNumber, PDFRawStream, decodePDFRawStream } from "pdf-lib";
 import { FERIENJOB_FULL_SECTIONS, toGermanDate } from "./fields";
 import { DECLARATION_PDF_KEYS, type AiCheck, type DeclarationFields } from "@/lib/ai/declaration";
 import { deleteFile, saveFile } from "./storage";
 import { patchCabinet, type Cabinet, type StoredFile } from "./server";
 
-// Official one-page BA form "Declaration of Certificate of Enrolment – Vacation Job" (08/2025),
-// emptied of any sample data. Fields keep their original names; the yes/no radio uses "ja"/"nein".
-const BLANK = path.join(process.cwd(), "src", "assets", "zav-declaration-blank.pdf");
+// Official BA form «Declaration of Certificate of Enrolment – Vacation Job», AMZ 06/2026 (2 pages), unchanged.
+// Only the field values are written, the way the team's fill2.py does it: same Roboto 9 pt font from the form,
+// the form keeps its frames, logo, barcodes *S1*/*S2* and stays fillable (nothing is flattened).
+const BLANK = path.join(process.cwd(), "src", "assets", "zav-declaration-2026-06.pdf");
 
 /** Today in Kazakhstan, as YYYY-MM-DD. */
 export function todayAlmaty() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Almaty" }).format(new Date());
 }
 
+const FONT = "Roboto-Regular";
+const SIZE = 9;
+
+/** The form's font is WinAnsi (cp1252): typographic marks → ASCII, Kazakh letters → Latin, the rest dropped. */
+function toWinAnsi(s: string) {
+  const map: Record<string, string> = { "–": "-", "—": "-", "‘": "'", "’": "'", "“": '"', "”": '"', "«": '"', "»": '"', "№": "No.", "\u00a0": " ",
+    ә: "a", Ә: "A", ғ: "g", Ғ: "G", қ: "k", Қ: "K", ң: "n", Ң: "N", ө: "o", Ө: "O", ұ: "u", Ұ: "U", ү: "u", Ү: "U", һ: "h", Һ: "H", і: "i", І: "I" };
+  return [...s.normalize("NFC")]
+    .map((c) => map[c] ?? c)
+    .join("")
+    .split("")
+    .filter((c) => {
+      const n = c.charCodeAt(0);
+      return n >= 0x20 && n <= 0xff && !(n >= 0x7f && n <= 0x9f);
+    })
+    .join("");
+}
+
 /** Fills the official form with the AI's data (keys = PDF field names, dates DD.MM.YYYY). */
 export async function buildDeclarationPdf(fields: DeclarationFields): Promise<Uint8Array> {
   const doc = await PDFDocument.load(await fs.readFile(BLANK));
   const form = doc.getForm();
+  const acro = doc.catalog.lookup(PDFName.of("AcroForm"), PDFDict);
+  const fontRef = acro.lookup(PDFName.of("DR"), PDFDict).lookup(PDFName.of("Font"), PDFDict).get(PDFName.of(FONT))!;
+  const font = doc.context.lookup(fontRef, PDFDict);
+  const first = (font.lookup(PDFName.of("FirstChar"), PDFNumber) as PDFNumber).asNumber();
+  const widths = font.lookup(PDFName.of("Widths"), PDFArray).asArray().map((w) => (doc.context.lookup(w) as PDFNumber).asNumber());
+  const textWidth = (t: string, size = SIZE) => [...t].reduce((sum, c) => sum + (widths[c.charCodeAt(0) - first] ?? 500), 0) * (size / 1000);
+  const lit = (t: string) => `(${t.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)")})`;
+  const wrap = (t: string, max: number) => {
+    const lines: string[] = [];
+    let cur = "";
+    for (const word of t.split(" ")) {
+      const next = `${cur} ${word}`.trim();
+      if (cur && textWidth(next) > max) {
+        lines.push(cur);
+        cur = word;
+      } else cur = next;
+    }
+    return [...lines, cur];
+  };
+
   for (const key of DECLARATION_PDF_KEYS) {
-    const v = (fields[key] ?? "").trim();
-    if (key === "rbtnStudiumFortsetzung") form.getRadioGroup(key).select(/^(no|nein|нет)$/i.test(v) ? "nein" : "ja");
-    else form.getTextField(key).setText(v);
+    const raw = (fields[key] ?? "").trim();
+    const field = form.getField(key);
+
+    if (key === "rbtnStudiumFortsetzung") {
+      // Widget states: /0 = Yes, /1 = No.
+      const on = /^(no|nein|нет)$/i.test(raw) ? "1" : "0";
+      field.acroField.dict.set(PDFName.of("V"), PDFName.of(on));
+      for (const w of field.acroField.getWidgets()) {
+        const states = w.dict.lookup(PDFName.of("AP"), PDFDict).lookup(PDFName.of("N"), PDFDict).keys().map((k) => k.decodeText());
+        w.dict.set(PDFName.of("AS"), PDFName.of(states.includes(on) ? on : "Off"));
+      }
+      continue;
+    }
+
+    const v = toWinAnsi(raw);
+    field.acroField.dict.set(PDFName.of("V"), PDFHexString.fromText(v));
+    for (const w of field.acroField.getWidgets()) {
+      const { width: W, height: H } = w.getRectangle();
+      const ap = w.dict.lookup(PDFName.of("AP"), PDFDict);
+      const old = doc.context.lookup(ap.get(PDFName.of("N"))) as PDFRawStream;
+      const content = Buffer.from(decodePDFRawStream(old).decode()).toString("latin1");
+      let size = SIZE;
+      let body: string;
+      if (H > 20) {
+        // University name: two lines, wrapped by width.
+        const lines = wrap(v, W - 4);
+        body = `2 ${(H - 11.5).toFixed(1)} Td\n` + lines.map((l) => `${lit(l)} Tj`).join(" 0 -10.5 Td\n");
+      } else {
+        // A value too long for its box is set a bit smaller instead of being cut off.
+        if (textWidth(v) > W - 4) size = Math.max(6, Math.floor(((W - 4) / textWidth(v, 1)) * 10) / 10);
+        body = `2 6.2 Td\n${lit(v)} Tj`;
+      }
+      const text = `/Tx BMC\nq\n1 1 ${(W - 2).toFixed(0)} ${(H - 2).toFixed(0)} re\nW\nn\nBT\n/${FONT} ${size} Tf 0 g\n${body}\nET\nQ\nEMC\n`;
+      if (!content.includes("/Tx BMC\nEMC\n")) throw new Error(`Unexpected appearance in field ${key}`);
+      const next = content.replace("/Tx BMC\nEMC\n", text);
+
+      const dict = old.dict.clone(doc.context);
+      dict.delete(PDFName.of("Filter"));
+      dict.delete(PDFName.of("DecodeParms"));
+      const res = ((old.dict.lookup(PDFName.of("Resources")) as PDFDict | undefined) ?? doc.context.obj({})).clone(doc.context);
+      const fonts = (res.lookup(PDFName.of("Font")) as PDFDict | undefined)?.clone(doc.context) ?? doc.context.obj({});
+      fonts.set(PDFName.of(FONT), fontRef);
+      res.set(PDFName.of("Font"), fonts);
+      dict.set(PDFName.of("Resources"), res);
+      const stream = PDFRawStream.of(dict, Buffer.from(next, "latin1"));
+      ap.set(PDFName.of("N"), doc.context.register(stream));
+    }
   }
-  form.flatten();
   return doc.save();
 }
 
