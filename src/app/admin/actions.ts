@@ -302,6 +302,17 @@ export async function reformOldClientAction(_prev: ActionState, fd: FormData): P
   }
 }
 
+/** The dean's office problem is sorted out: it disappears from the client card. */
+export async function resolveDeanIssueAction(fd: FormData) {
+  const me = await requireAdminUser({ full: true });
+  const id = s(fd, "id", 100);
+  const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
+  if (!cab?.deanIssue) return;
+  await patchCabinet(id, { "deanIssue.resolvedAt": new Date().toISOString(), "deanIssue.resolvedBy": me.name });
+  await logActivity(me, "contacts", "отметил(а): вопрос с деканатом решён", cab);
+  revalidatePath("/admin", "layout");
+}
+
 // ---------- Companions («едут вместе») ----------
 
 /** Puts two clients into one group (merging groups if both already had one). */

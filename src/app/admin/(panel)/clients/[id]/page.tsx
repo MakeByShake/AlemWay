@@ -21,6 +21,7 @@ import {
 } from "@/lib/cabinet/fields";
 import {
   addCompanionAction,
+  resolveDeanIssueAction,
   removeCompanionAction,
   declarationAction,
   deleteCabinetAction,
@@ -277,6 +278,48 @@ export default async function ClientPage({
             <Pipeline service={service} status={cab.status} />
           </section>
 
+          {cab.deanIssue && !cab.deanIssue.resolvedAt && (
+            <section className="card mb-5 border-warn/40 bg-warn-soft p-4 sm:p-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-[18px] font-bold">⚠️ Деканат не ставит подпись и печать</h2>
+                  <p className="mt-1 text-[13px] text-muted">Клиент написал {fmtDate(cab.deanIssue.at)}</p>
+                </div>
+                {owner && (
+                  <QuickButton action={resolveDeanIssueAction} hidden={{ id }} className="btn-ghost min-h-9 bg-white px-3 text-[13px]">
+                    ✓ Решено
+                  </QuickButton>
+                )}
+              </div>
+              <dl className="mt-4 grid gap-x-6 gap-y-2 text-[14.5px] sm:grid-cols-[auto_1fr]">
+                <dt className="text-muted">Университет</dt>
+                <dd className="font-medium">{cab.deanIssue.uni}</dd>
+                <dt className="text-muted">Факультет</dt>
+                <dd className="font-medium">{cab.deanIssue.faculty}</dd>
+                <dt className="text-muted">Группа</dt>
+                <dd className="font-medium">{cab.deanIssue.group}</dd>
+                <dt className="text-muted">Номер деканата</dt>
+                <dd className="font-medium">
+                  {cab.deanIssue.phone ? (
+                    <a href={`tel:${cab.deanIssue.phone.replace(/[^\d+]/g, "")}`} className="text-brand hover:underline">
+                      {cab.deanIssue.phone}
+                    </a>
+                  ) : (
+                    "не указан"
+                  )}
+                </dd>
+                <dt className="text-muted">Почему</dt>
+                <dd className="whitespace-pre-line font-medium">{cab.deanIssue.reason}</dd>
+              </dl>
+            </section>
+          )}
+          {cab.deanIssue?.resolvedAt && (
+            <p className="mb-5 text-[13px] text-muted">
+              ✓ Вопрос с деканатом решён {fmtDate(cab.deanIssue.resolvedAt)}
+              {cab.deanIssue.resolvedBy ? ` (${cab.deanIssue.resolvedBy})` : ""}: {cab.deanIssue.uni}, {cab.deanIssue.faculty}, группа {cab.deanIssue.group}.
+            </p>
+          )}
+
           <section className="card mb-5 p-4 sm:p-6">
             <h2 className="text-[18px] font-bold">👥 Едет вместе с</h2>
             <p className="mt-1 text-[13px] text-muted">Друзья, которые хотят поехать вместе — чтобы оформить и устроить их рядом.</p>
@@ -432,7 +475,7 @@ export default async function ClientPage({
                 title={`📨 Новый бланк 06/2026 — сообщение клиенту${cab.reform ? " · анкета уже обнулена" : ""}`}
                 hint="Создаст личную ссылку и готовый текст с именем, ссылкой и сроком: старым клиентам — про новый бланк и анкету заново, клиентам с сайта — обычное приветствие (там уже сказано про 2 экземпляра)."
               >
-                <OldClientMessage id={id} name={cab.data?.firstName || cab.clientName || ""} phone={cab.clientPhone || cab.data?.phone} reformed={Boolean(cab.reform)} old={(cab.group ?? "new") === "old"} curator={cab.managerName && cab.managerName !== "AlemWay" ? cab.managerName : undefined} />
+                <OldClientMessage id={id} name={cab.data?.firstName || cab.clientName || ""} phone={cab.clientPhone || cab.data?.phone} reformed={Boolean(cab.reform)} old={(cab.group ?? "new") === "old" || Boolean(cab.reform)} curator={cab.managerName && cab.managerName !== "AlemWay" ? cab.managerName : undefined} />
               </Section>
             )}
 

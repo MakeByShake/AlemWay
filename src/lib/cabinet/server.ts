@@ -12,6 +12,8 @@ export const CABINET_COOKIE = "aw_cabinet";
 export { CABINET_SUPPORT_WHATSAPP } from "./fields";
 export const CABINET_COOKIE_MAX_AGE = 60 * 60 * 24 * 180; // 180 days
 
+export type DeanIssue = { uni: string; faculty: string; group: string; reason: string; phone?: string; at: string; resolvedAt?: string; resolvedBy?: string };
+
 export type StoredFile = { path: string; name: string; contentType: string; size: number; uploadedAt: string };
 
 export type Cabinet = {
@@ -49,6 +51,8 @@ export type Cabinet = {
   /** Questionnaire fields the team corrected in the admin: they win over the documents in the declaration. */
   teamEdited?: string[];
   /** Old client moved to the new form (06/2026): the questionnaire was reset and must be filled in again. */
+  /** Client says the dean's office won't sign and stamp the declaration. */
+  deanIssue?: DeanIssue;
   reform?: boolean;
   reformAt?: string;
   /** Files set aside when the questionnaire was reset (kept, not deleted). */
@@ -56,7 +60,7 @@ export type Cabinet = {
 };
 
 const PROJECTION = `{_id, number, group, _rev, service, status, clientName, clientPhone, data, files, declarationDate, submittedAt, signedAt,
-  zavReceivedAt, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil, manager, managerName, seller, sellerName, party, teamEdited, reform, reformAt, archivedFiles, price, payments, aiCheck}`;
+  zavReceivedAt, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil, manager, managerName, seller, sellerName, party, teamEdited, deanIssue, reform, reformAt, archivedFiles, price, payments, aiCheck}`;
 
 export function writeClient(): SanityClient {
   const c = getWriteClient();

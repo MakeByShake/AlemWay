@@ -54,6 +54,8 @@ export type CabinetView = {
   declarationDate: string | null;
   /** Old client moved to the new form 06/2026: fills the questionnaire again. */
   reform: boolean;
+  /** Open «деканат не ставит печать» report, if any. */
+  deanIssue: DeanIssueView | null;
   /** Last AI check, when it said what is missing. */
   ai: { status: string; missing: string[]; clientMessage: string } | null;
   job: { employer: string | null; city: string | null; position: string | null; from: string | null; to: string | null; message: string | null };
@@ -383,6 +385,7 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
                 )}
               </div>
             )}
+            {view.status === "declaration_ready" && <DeanIssueBox t={t} initial={view.deanIssue} uniName={view.data.uniName} />}
             {view.status === "declaration_ready" && !files.passport && (
               <div className="mt-6 border-t border-line pt-5">
                 <FileRow
@@ -514,6 +517,82 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
 }
 
 type T = (typeof CABINET_TEXT)[CabinetLocale];
+type DeanIssueView = { uni: string; faculty: string; group: string; reason: string; phone: string };
+
+/** «Деканат не ставит подпись и печать?» — the client tells where and why; the team gets it in Telegram. */
+function DeanIssueBox({ t, initial, uniName }: { t: T; initial: DeanIssueView | null; uniName?: string }) {
+  const [sent, setSent] = useState<DeanIssueView | null>(initial);
+  const [editing, setEditing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [form, setForm] = useState<DeanIssueView>(initial ?? { uni: uniName ?? "", faculty: "", group: "", reason: "", phone: "" });
+  const set = (k: keyof DeanIssueView) => (e: { target: { value: string } }) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  if (sent && !editing)
+    return (
+      <div className="mt-6 rounded-xl bg-warn-soft p-4 text-[15px]">
+        <p className="font-semibold">{t.deanSentTitle}</p>
+        <p className="mt-1 text-muted">{t.deanSentText}</p>
+        <button type="button" onClick={() => setEditing(true)} className="mt-2 text-[14px] font-semibold text-brand hover:underline">
+          {t.deanEdit}
+        </button>
+      </div>
+    );
+
+  return (
+    <details className="mt-6 rounded-xl border border-line p-4" open={editing}>
+      <summary className="cursor-pointer text-[15px] font-semibold text-warn">{t.deanTitle}</summary>
+      <p className="mt-2 text-[14px] text-muted">{t.deanHint}</p>
+      <form
+        className="mt-3 grid gap-3"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          setBusy(true);
+          setError(null);
+          try {
+            const res = await fetch("/api/cabinet/dean-issue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+            if (!res.ok) throw new Error();
+            setSent(form);
+            setEditing(false);
+          } catch {
+            setError(t.errorGeneric);
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        <label className="grid gap-1 text-[14px] font-medium">
+          {t.deanUni}
+          <input required value={form.uni} onChange={set("uni")} className="field" maxLength={200} />
+        </label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="grid gap-1 text-[14px] font-medium">
+            {t.deanFaculty}
+            <input required value={form.faculty} onChange={set("faculty")} className="field" maxLength={200} />
+          </label>
+          <label className="grid gap-1 text-[14px] font-medium">
+            {t.deanGroup}
+            <input required value={form.group} onChange={set("group")} className="field" maxLength={60} />
+          </label>
+        </div>
+        <label className="grid gap-1 text-[14px] font-medium">
+          {t.deanReason}
+          <textarea required value={form.reason} onChange={set("reason")} rows={3} className="field" maxLength={1500} placeholder={t.deanReasonPh} />
+        </label>
+        <label className="grid gap-1 text-[14px] font-medium">
+          {t.deanPhone}
+          <input value={form.phone} onChange={set("phone")} inputMode="tel" className="field" maxLength={60} placeholder="+7 727 …" />
+        </label>
+        {error && <p className="text-[14px] text-warn">{error}</p>}
+        <div>
+          <button type="submit" disabled={busy} className="btn-primary disabled:opacity-60">
+            {busy && <Loader2 className="h-4 w-4 animate-spin" />} {t.deanSend}
+          </button>
+        </div>
+      </form>
+    </details>
+  );
+}
 type SaveState = "idle" | "pending" | "saving" | "saved" | "err";
 
 /** Inline status next to the submit button: replaces the old «Сохранить» button. */

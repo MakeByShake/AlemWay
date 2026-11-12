@@ -61,6 +61,8 @@ export type CabinetRow = {
   managerName?: string;
   sellerName?: string;
   party?: string;
+  /** Open «деканат не ставит печать» report. */
+  dean?: boolean;
 };
 
 export type CabinetFull = Cabinet & { _createdAt: string; managerNote?: string; linkCreatedAt?: string; leadId?: string };
@@ -98,7 +100,8 @@ export function getCabinets(filter: { service?: string; status?: string; q?: str
        && (!defined($mine) || manager == $mine || seller == $mine)
        && (!defined($q) || string(number) == $num || clientName match $q || clientPhone match $q || data.firstName match $q || data.lastName match $q)
      ] | order(coalesce(number, 0) desc, _createdAt desc)[0...300]{
-      _id, number, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName, managerName, sellerName, party
+      _id, number, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName, managerName, sellerName, party,
+      "dean": defined(deanIssue) && !defined(deanIssue.resolvedAt)
     }`,
     {
       service: filter.service || null,
