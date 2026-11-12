@@ -5,9 +5,9 @@ import { Check, Copy, Download, Loader2 } from "lucide-react";
 import { reformOldClientAction } from "@/app/admin/actions";
 import {
   oldClientMessage,
-  siteClientMessage,
   type OldClientLang,
 } from "@/lib/cabinet/old-client-message";
+import { welcomeMessage } from "@/lib/cabinet/whatsapp-template";
 
 const DEADLINE_KEY = "aw_old_client_deadline";
 
@@ -21,33 +21,41 @@ export function OldClientMessage({
   phone,
   reformed,
   old,
+  curator,
 }: {
   id: string;
   name: string;
   phone?: string;
   reformed: boolean;
   old: boolean;
+  curator?: string;
 }) {
   const [state, action, pending] = useActionState(reformOldClientAction, null);
   const [, startTransition] = useTransition();
   const [name, setName] = useState(defaultName);
   const [deadline, setDeadline] = useState("");
   const [lang, setLang] = useState<OldClientLang>("ru");
-  // Old clients (declaration by hand) fill everything in again; site clients only get the «2 copies» news.
+  // Old clients get the «new form, fill in again» message; site clients the usual welcome with the link (2 copies included).
   const [mode, setMode] = useState<"old" | "site">(old ? "old" : "site");
   const [reset, setReset] = useState(old && !reformed);
   const [copied, setCopied] = useState(false);
 
   const link = state?.ok ? state.link : undefined;
-  const make = mode === "old" ? oldClientMessage : siteClientMessage;
-  const text = link
-    ? make({
-        name: name.trim() || "{Имя}",
-        link,
-        deadline: deadline.trim() || "{срок}",
-        lang,
-      })
-    : "";
+  const text = !link
+    ? ""
+    : mode === "old"
+      ? oldClientMessage({
+          name: name.trim() || "{Имя}",
+          link,
+          deadline: deadline.trim() || "{срок}",
+          lang,
+        })
+      : welcomeMessage({
+          name: name.trim(),
+          link,
+          curator,
+          service: "ferienjob",
+        });
   const digits = (state?.phone || phone || "")
     .replace(/\D/g, "")
     .replace(/^8(\d{10})$/, "7$1");
@@ -65,7 +73,7 @@ export function OldClientMessage({
         {(
           [
             ["old", "Старый клиент — анкета заново"],
-            ["site", "Клиент с сайта — 2 экземпляра"],
+            ["site", "Клиент с сайта — обычное приветствие"],
           ] as const
         ).map(([v, title]) => (
           <button
@@ -91,43 +99,47 @@ export function OldClientMessage({
             placeholder="Алихан"
           />
         </label>
-        <label className="grid gap-1 text-[14px] font-medium">
-          Срок («Просим сделать это до …»)
-          <input
-            value={deadline}
-            onChange={(e) => remember(e.target.value)}
-            onFocus={() => {
-              if (deadline) return;
-              try {
-                const saved = localStorage.getItem(DEADLINE_KEY);
-                if (saved) setDeadline(saved);
-              } catch {}
-            }}
-            className="field py-2 text-[15px]"
-            placeholder="1 декабря"
-          />
-        </label>
-      </div>
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[14px]">
-        <span className="font-medium">Язык:</span>
-        {(
-          [
-            ["ru", "Русский"],
-            ["kk", "Қазақша"],
-            ["both", "Оба"],
-          ] as const
-        ).map(([v, title]) => (
-          <label key={v} className="flex items-center gap-1.5">
+        {mode === "old" && (
+          <label className="grid gap-1 text-[14px] font-medium">
+            Срок («Просим сделать это до …»)
             <input
-              type="radio"
-              name="lang"
-              checked={lang === v}
-              onChange={() => setLang(v)}
-            />{" "}
-            {title}
+              value={deadline}
+              onChange={(e) => remember(e.target.value)}
+              onFocus={() => {
+                if (deadline) return;
+                try {
+                  const saved = localStorage.getItem(DEADLINE_KEY);
+                  if (saved) setDeadline(saved);
+                } catch {}
+              }}
+              className="field py-2 text-[15px]"
+              placeholder="1 декабря"
+            />
           </label>
-        ))}
+        )}
       </div>
+      {mode === "old" && (
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[14px]">
+          <span className="font-medium">Язык:</span>
+          {(
+            [
+              ["ru", "Русский"],
+              ["kk", "Қазақша"],
+              ["both", "Оба"],
+            ] as const
+          ).map(([v, title]) => (
+            <label key={v} className="flex items-center gap-1.5">
+              <input
+                type="radio"
+                name="lang"
+                checked={lang === v}
+                onChange={() => setLang(v)}
+              />{" "}
+              {title}
+            </label>
+          ))}
+        </div>
+      )}
       {mode === "old" && (
         <label className="flex items-start gap-2 rounded-xl bg-warn-soft px-3 py-2.5 text-[14px]">
           <input

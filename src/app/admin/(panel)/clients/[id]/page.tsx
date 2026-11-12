@@ -430,9 +430,9 @@ export default async function ClientPage({
             {!keta && owner && (
               <Section
                 title={`📨 Новый бланк 06/2026 — сообщение клиенту${cab.reform ? " · анкета уже обнулена" : ""}`}
-                hint="Создаст личную ссылку и готовый текст с именем, ссылкой и сроком: старым клиентам — заполнить анкету заново, клиентам с сайта — распечатать декларацию в 2 экземплярах."
+                hint="Создаст личную ссылку и готовый текст с именем, ссылкой и сроком: старым клиентам — про новый бланк и анкету заново, клиентам с сайта — обычное приветствие (там уже сказано про 2 экземпляра)."
               >
-                <OldClientMessage id={id} name={cab.data?.firstName || cab.clientName || ""} phone={cab.clientPhone || cab.data?.phone} reformed={Boolean(cab.reform)} old={(cab.group ?? "new") === "old"} />
+                <OldClientMessage id={id} name={cab.data?.firstName || cab.clientName || ""} phone={cab.clientPhone || cab.data?.phone} reformed={Boolean(cab.reform)} old={(cab.group ?? "new") === "old"} curator={cab.managerName && cab.managerName !== "AlemWay" ? cab.managerName : undefined} />
               </Section>
             )}
 
