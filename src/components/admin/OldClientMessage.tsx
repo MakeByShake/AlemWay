@@ -72,7 +72,7 @@ export function OldClientMessage({
       <div className="flex flex-wrap gap-2">
         {(
           [
-            ["old", "Старый клиент — анкета заново"],
+            ["old", "Новый бланк — анкета заново"],
             ["site", "Клиент с сайта — обычное приветствие"],
           ] as const
         ).map(([v, title]) => (
