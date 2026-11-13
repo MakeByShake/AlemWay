@@ -4,6 +4,24 @@ import { escapeHtml, sendTelegram } from "@/lib/telegram";
 import { saveAiDeclaration, teamOverrides, todayAlmaty } from "./declaration";
 import { cabinetAdminUrl, displayName, getCabinet, managerLine, patchCabinet, type Cabinet } from "./server";
 
+// ZAV allows at most 90 days of holidays: a longer summer is cut to 90 days (both days counted) instead of blocking.
+const MAX_HOLIDAY_DAYS = 90;
+function clampHolidays(fields: AiCheck["fields"]): string | null {
+  const parse = (v: string) => {
+    const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(v?.trim() ?? "");
+    return m ? Date.UTC(+m[3], +m[2] - 1, +m[1]) : NaN;
+  };
+  const from = parse(fields.dateStudiumFerienVon);
+  const to = parse(fields.dateStudiumFerienBis);
+  if (Number.isNaN(from) || Number.isNaN(to)) return null;
+  if ((to - from) / 86_400_000 + 1 <= MAX_HOLIDAY_DAYS) return null;
+  const end = new Date(from + (MAX_HOLIDAY_DAYS - 1) * 86_400_000);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const was = fields.dateStudiumFerienBis;
+  fields.dateStudiumFerienBis = `${pad(end.getUTCDate())}.${pad(end.getUTCMonth() + 1)}.${end.getUTCFullYear()}`;
+  return `Каникулы длиннее 90 дней (${fields.dateStudiumFerienVon}–${was}) — конец укорочен до ${fields.dateStudiumFerienBis}, проверить.`;
+}
+
 const list = (xs: string[]) => xs.slice(0, 8).map((x) => `• ${escapeHtml(x)}`);
 
 /**
@@ -23,6 +41,8 @@ export async function checkAndBuildDeclaration(cabId: string, by: "client" | "ma
       Object.assign(ai.fields, over);
       ai.checks = [...ai.checks, `Взято из анкеты, исправленной командой: ${changed.map(([, v]) => v).join(", ")}`];
     }
+    const cut = clampHolidays(ai.fields);
+    if (cut) ai.checks = [...ai.checks, cut];
   }
   await patchCabinet(cab._id, { aiCheck: ai });
 
