@@ -50,6 +50,8 @@ import { Pipeline } from "@/components/Pipeline";
 import { ActivityFeed } from "@/components/admin/ActivityFeed";
 import { OldClientMessage } from "@/components/admin/OldClientMessage";
 import { getActivity } from "@/lib/admin/activity";
+import { getEmployerOptions } from "@/lib/admin/employers";
+import { setClientEmployerAction } from "../../../employer-actions";
 import {
   ActionForm,
   AddPaymentForm,
@@ -180,7 +182,11 @@ export default async function ClientPage({
     getActivity({ cabinet: id, limit: 30 }),
   ]);
   if (!cab) notFound();
-  const [companions, clientOptions] = await Promise.all([getCompanions(cab.party, id), tab === "overview" ? getClientOptions() : []]);
+  const [companions, clientOptions, employers] = await Promise.all([
+    getCompanions(cab.party, id),
+    tab === "overview" ? getClientOptions() : [],
+    tab === "overview" && serviceOf(cab.service) === "ferienjob" ? getEmployerOptions() : [],
+  ]);
   // «owner» here = full rights (owner or manager); «Отдел продаж» is read-only.
   const owner = isFullRole(me.role);
   // «Отдел продаж» opens only the clients they lead or sold.
@@ -509,7 +515,44 @@ export default async function ClientPage({
                   : "Если заполните — клиент увидит это в кабинете после загрузки ZAV."
               }
             >
-              <ActionForm action={updateCabinetAction} className="grid gap-3" autoSave>
+              {!keta && (
+                <ActionForm action={setClientEmployerAction} className="mb-4 grid gap-1" autoSave>
+                  <fieldset disabled={!owner} className="contents">
+                    <input type="hidden" name="id" value={id} />
+                    <label className="grid gap-1 text-[14px] font-medium">
+                      🏢 Закреплён за работодателем
+                      <select name="employer" defaultValue={cab.employer ?? ""} className={input}>
+                        <option value="">— не закреплён —</option>
+                        {employers.map((e) => (
+                          <option key={e._id} value={e._id}>
+                            {e.name}
+                            {e.city ? ` · ${e.city}` : ""}
+                            {e.status === "stopped" ? " (не работаем)" : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <span className="text-[13px] text-muted">
+                      {cab.employer ? (
+                        <Link prefetch={false} href={`/admin/employers/${cab.employer}`} className="font-semibold text-brand hover:underline">
+                          Открыть карточку работодателя →
+                        </Link>
+                      ) : employers.length === 0 ? (
+                        <>
+                          Работодателей ещё нет —{" "}
+                          <Link prefetch={false} href="/admin/employers" className="font-semibold text-brand hover:underline">
+                            добавьте в разделе «Работодатели»
+                          </Link>
+                          .
+                        </>
+                      ) : (
+                        "Название, город, должность и даты подставятся ниже сами (если пустые)."
+                      )}
+                    </span>
+                  </fieldset>
+                </ActionForm>
+              )}
+              <ActionForm key={cab.employer ?? "none"} action={updateCabinetAction} className="grid gap-3" autoSave>
                 <fieldset disabled={!owner} className="contents">
                   <input type="hidden" name="id" value={id} />
                   {keta ? (
@@ -526,7 +569,7 @@ export default async function ClientPage({
                     <>
                       <div className="grid gap-3 sm:grid-cols-2">
                         <label className="grid gap-1 text-[14px] font-medium">
-                          Работодатель
+                          Работодатель (видит клиент)
                           <input
                             name="employerName"
                             defaultValue={cab.employerName}

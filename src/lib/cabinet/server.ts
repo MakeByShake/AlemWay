@@ -32,6 +32,8 @@ export type Cabinet = {
   service?: ServiceId;
   ketaValidUntil?: string;
   zavReceivedAt?: string;
+  /** Attached employer (`employers.<uuid>`); employerName is its name shown to the client. */
+  employer?: string;
   employerName?: string;
   workCity?: string;
   workPosition?: string;
@@ -60,7 +62,7 @@ export type Cabinet = {
 };
 
 const PROJECTION = `{_id, number, group, _rev, service, status, clientName, clientPhone, data, files, declarationDate, submittedAt, signedAt,
-  zavReceivedAt, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil, manager, managerName, seller, sellerName, party, teamEdited, deanIssue, reform, reformAt, archivedFiles, price, payments, aiCheck}`;
+  zavReceivedAt, employer, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil, manager, managerName, seller, sellerName, party, teamEdited, deanIssue, reform, reformAt, archivedFiles, price, payments, aiCheck}`;
 
 export function writeClient(): SanityClient {
   const c = getWriteClient();

@@ -23,7 +23,8 @@ export type ActivityKind =
   | "link"
   | "declaration"
   | "consultation"
-  | "companions";
+  | "companions"
+  | "employer";
 
 export const ACTIVITY_ICONS: Record<ActivityKind, string> = {
   client_created: "🆕",
@@ -41,6 +42,7 @@ export const ACTIVITY_ICONS: Record<ActivityKind, string> = {
   declaration: "🤖",
   consultation: "📅",
   companions: "👥",
+  employer: "🏢",
 };
 
 export type Activity = {

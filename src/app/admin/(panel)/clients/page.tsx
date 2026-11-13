@@ -178,6 +178,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
                 <div className="flex flex-wrap items-center gap-3">
                   {c.dean && <Badge tone="red">⚠️ Деканат</Badge>}
                   {c.party && (partySize.get(c.party) ?? 0) > 1 && <Badge tone="blue">👥 вместе: {partySize.get(c.party)}</Badge>}
+                  {c.employerName && <Badge tone="blue">🏢 {c.employerName}</Badge>}
                   {c.sellerName && <Badge tone="green">🤝 {c.sellerName}</Badge>}
                   <Badge tone={c.managerName ? "gray" : "amber"}>👤 {c.managerName || "Без ведущего"}</Badge>
                   <Progress service={c.service} status={c.status} />
