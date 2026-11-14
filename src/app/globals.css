@@ -194,6 +194,10 @@ details > summary::-webkit-details-marker {
 
 /* Drop-downs: our own arrow with a comfortable gap from the edge (same on every browser). */
 @layer base {
+  /* A fieldset never grows wider than its parent (browsers default it to its content width). */
+  fieldset {
+    min-width: 0;
+  }
   select:not([multiple]):not([size]) {
     appearance: none;
     -webkit-appearance: none;

@@ -65,13 +65,13 @@ export default async function TeamPage() {
           <ul className="mt-3 divide-y divide-line">
             {users.map((u) => (
               <li key={u._id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                <div>
+                <div className="min-w-0">
                   <p className="font-semibold">
                     {u.name} <span className="font-normal text-muted">· {u.login}</span>{" "}
                     <Badge tone={u.role === "owner" ? "blue" : u.role === "sales" ? "amber" : "gray"}>{ROLE_TITLES[u.role] ?? "Менеджер"}</Badge>
                   </p>
                   <p className="text-[13px] text-muted">добавлен {fmtDate(u.createdAt, false)}</p>
-                  <div className="mt-1.5 flex items-center gap-2 text-[13px]">
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[13px]">
                     <span className="text-muted">Консультации:</span>
                     <AutoSelect
                       action={setConsultantAction}
@@ -100,7 +100,7 @@ export default async function TeamPage() {
                         { value: "owner", title: "Владелец" },
                       ]}
                     />
-                    <ActionForm action={setPasswordAction} className="flex gap-2" resetOnSuccess>
+                    <ActionForm action={setPasswordAction} className="flex flex-wrap gap-2" resetOnSuccess>
                       <input type="hidden" name="login" value={u.login} />
                       <input name="password" type="text" minLength={8} required placeholder="Новый пароль" className="field w-40 py-1.5 text-[14px]" />
                       <SubmitButton className="btn-ghost min-h-9 px-3 text-[13px]">Сбросить</SubmitButton>

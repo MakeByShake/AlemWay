@@ -45,7 +45,7 @@ export default async function ConsultationPage({ params }: { params: Promise<{ l
   void CONSULTATION_PRICE;
   return (
     <section className="bg-surface py-12 sm:py-20">
-      <div className="container-x grid gap-10 lg:grid-cols-[1fr_1.3fr] lg:gap-16">
+      <div className="container-x grid grid-cols-1 gap-10 lg:grid-cols-[1fr_1.3fr] lg:gap-16 [&>*]:min-w-0">
         <div className="lg:pt-4">
           <SectionHeading eyebrow={t.eyebrow} title={t.heading} accent={t.accent} subtitle={t.lead} />
           <ul className="-mt-4 space-y-3">

@@ -37,7 +37,7 @@ export default async function AdminHome() {
         )}
       </div>
 
-      <div className="mt-8 grid gap-6 xl:grid-cols-2">
+      <div className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-2 [&>*]:min-w-0">
         <section>
           <h2 className="mb-3 text-[18px] font-bold">Ждут нашего действия</h2>
           {d.actionClients.length === 0 ? (

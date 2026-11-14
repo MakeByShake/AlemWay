@@ -91,7 +91,7 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
         {kpis.map((k) => (
           <div key={k.label} className="card p-4">
             <p className="text-[13px] text-muted">{k.label}</p>
-            <p className={`mt-1 text-[22px] font-bold tabular-nums ${k.tone}`}>{k.value}</p>
+            <p className={`mt-1 text-[17px] font-bold tabular-nums min-[400px]:text-[19px] sm:text-[22px] ${k.tone}`}>{k.value}</p>
           </div>
         ))}
       </div>

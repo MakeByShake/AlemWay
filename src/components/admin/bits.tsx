@@ -13,8 +13,8 @@ const TONES = {
 } as const;
 export type Tone = keyof typeof TONES;
 
-export function Badge({ tone = "gray", children }: { tone?: Tone; children: ReactNode }) {
-  return <span className={clsx("inline-flex items-center rounded-full px-2.5 py-0.5 text-[12.5px] font-semibold whitespace-nowrap", TONES[tone])}>{children}</span>;
+export function Badge({ tone = "gray", children, className }: { tone?: Tone; children: ReactNode; className?: string }) {
+  return <span className={clsx("inline-flex items-center rounded-full px-2.5 py-0.5 text-[12.5px] font-semibold whitespace-nowrap", TONES[tone], className)}>{children}</span>;
 }
 
 export function PageTitle({ title, children }: { title: string; children?: ReactNode }) {
@@ -85,13 +85,13 @@ export function clientProgress(service: string | undefined, status: string | und
 export function Progress({ service, status }: { service?: string; status?: string }) {
   const p = clientProgress(service, status);
   return (
-    <div className="flex items-center gap-2.5">
-      <div className="flex gap-1" aria-hidden>
+    <div className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2.5 gap-y-1.5">
+      <div className="flex shrink-0 gap-1" aria-hidden>
         {Array.from({ length: p.total }, (_, i) => (
-          <span key={i} className={clsx("h-1.5 w-5 rounded-full", i < p.step ? (p.tone === "green" ? "bg-accent" : p.tone === "red" ? "bg-red-500" : "bg-brand") : "bg-line")} />
+          <span key={i} className={clsx("h-1.5 w-3.5 rounded-full sm:w-5", i < p.step ? (p.tone === "green" ? "bg-accent" : p.tone === "red" ? "bg-red-500" : "bg-brand") : "bg-line")} />
         ))}
       </div>
-      <Badge tone={p.tone}>
+      <Badge tone={p.tone} className="max-w-full !whitespace-normal">
         {p.step}/{p.total} · {p.label}
       </Badge>
       {p.next && <span className="hidden text-[12.5px] text-muted xl:inline">→ {p.next}</span>}

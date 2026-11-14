@@ -55,6 +55,8 @@ export async function Footer({ locale }: { locale: string }) {
               <Link href="/consultation" className={linkCls}>
                 {nav("consultation")}
               </Link>
+            </li>
+            <li>
               <Link href="/feedback" className={linkCls}>
                 {nav("feedback")}
               </Link>

@@ -63,7 +63,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
         {cards.map((c) => (
           <div key={c.label} className="card p-4">
             <p className="text-[13px] text-muted">{c.label}</p>
-            <p className={`mt-1 text-[22px] font-bold tabular-nums ${c.tone}`}>{formatTenge(c.value)}</p>
+            <p className={`mt-1 text-[17px] font-bold tabular-nums min-[400px]:text-[19px] sm:text-[22px] ${c.tone}`}>{formatTenge(c.value)}</p>
             {c.extra && <p className="text-[13px] text-muted">{c.extra}</p>}
           </div>
         ))}
@@ -105,9 +105,9 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
               {[...byManager.entries()].map(([name, m]) => (
                 <tr key={name}>
                   <td className="px-4 py-2.5 font-semibold">{name}</td>
-                  <td className="px-4 py-2.5 tabular-nums">{m.clients}</td>
-                  <td className="px-4 py-2.5 tabular-nums">{formatTenge(m.paid)}</td>
-                  <td className="px-4 py-2.5 tabular-nums">{formatTenge(m.debt)}</td>
+                  <td className="px-4 py-2.5 tabular-nums whitespace-nowrap">{m.clients}</td>
+                  <td className="px-4 py-2.5 tabular-nums whitespace-nowrap">{formatTenge(m.paid)}</td>
+                  <td className="px-4 py-2.5 tabular-nums whitespace-nowrap">{formatTenge(m.debt)}</td>
                 </tr>
               ))}
             </tbody>
@@ -143,12 +143,12 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
                       <span className="block text-[12.5px] text-muted">{SERVICE_SHORT[r.service ?? "ferienjob"]}</span>
                     </td>
                     <td className="px-4 py-2.5">{r.managerName || "—"}</td>
-                    <td className="px-4 py-2.5 tabular-nums">{r.money.hasPrice ? formatTenge(r.money.price) : <span className="text-muted">не указана</span>}</td>
-                    <td className="px-4 py-2.5 tabular-nums">
+                    <td className="px-4 py-2.5 tabular-nums whitespace-nowrap">{r.money.hasPrice ? formatTenge(r.money.price) : <span className="whitespace-nowrap text-muted">не указана</span>}</td>
+                    <td className="px-4 py-2.5 tabular-nums whitespace-nowrap">
                       {formatTenge(r.money.paid)}
                       {r.money.pending > 0 && <span className="block text-[12px] text-brand">+ {formatTenge(r.money.pending)} на проверке</span>}
                     </td>
-                    <td className="px-4 py-2.5 tabular-nums">
+                    <td className="px-4 py-2.5 tabular-nums whitespace-nowrap">
                       {!r.money.hasPrice ? "—" : r.money.remaining > 0 ? <Badge tone="amber">{formatTenge(r.money.remaining)}</Badge> : <Badge tone="green">Оплачено ✅</Badge>}
                     </td>
                   </tr>

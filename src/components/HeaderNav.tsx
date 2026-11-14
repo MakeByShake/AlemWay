@@ -143,9 +143,9 @@ export function HeaderNav({
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2">
         {t("skip")}
       </a>
-      <div className="container-x flex h-16 items-center justify-between gap-4 lg:h-[72px]">
-        <Link href="/" className="shrink-0" aria-label={`AlemWay Visa — ${t("home")}`}>
-          <Logo variant={transparent ? "white" : "color"} className="h-[26px] w-auto sm:h-8" />
+      <div className="container-x flex h-16 items-center justify-between gap-2 sm:gap-4 lg:h-[72px]">
+        <Link href="/" className="min-w-0 shrink" aria-label={`AlemWay Visa — ${t("home")}`}>
+          <Logo variant={transparent ? "white" : "color"} className="h-[22px] w-auto max-w-full min-[360px]:h-[26px] sm:h-8" />
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
@@ -216,7 +216,7 @@ export function HeaderNav({
           </WhatsAppLink>
         </div>
 
-        <div className="flex items-center gap-2 lg:hidden">
+        <div className="flex shrink-0 items-center gap-2 lg:hidden">
           <LanguageSwitcher light={transparent} />
           <button
             type="button"

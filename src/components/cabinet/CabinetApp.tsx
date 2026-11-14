@@ -275,15 +275,15 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
   return (
     <section className="container-x py-10 sm:py-16">
       <div className="mx-auto max-w-3xl">
-        <div className="flex items-start justify-between gap-4">
-          <div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
             <p className="eyebrow">{SERVICE_TITLES[view.service][locale]}</p>
             <h1 className="h-section mt-2">
               {t.hello}, {view.name}
             </h1>
           </div>
-          <button type="button" onClick={logout} className="btn-ghost min-h-10 shrink-0 px-3 text-[14px]">
-            <LogOut className="h-4 w-4" /> {t.logout}
+          <button type="button" onClick={logout} aria-label={t.logout} className="btn-ghost min-h-10 shrink-0 px-3 text-[14px]">
+            <LogOut className="h-4 w-4" /> <span className="hidden min-[360px]:inline">{t.logout}</span>
           </button>
         </div>
 

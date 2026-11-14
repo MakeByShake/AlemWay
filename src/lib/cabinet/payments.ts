@@ -47,7 +47,7 @@ export function paymentTotals(price: number | undefined | null, payments: Paymen
   return { price: total, paid, pending, remaining: Math.max(total - paid, 0), hasPrice: Boolean(price) };
 }
 
-export const formatTenge = (n: number) => `${new Intl.NumberFormat("ru-RU").format(Math.round(n))} ₸`;
+export const formatTenge = (n: number) => `${new Intl.NumberFormat("ru-RU").format(Math.round(n))}\u00a0₸`;
 
 /** Parses «12 000», «12000 ₸», «12,000» → 12000. Returns null for anything that isn't a positive amount. */
 export function parseAmount(raw: unknown): number | null {
