@@ -57,6 +57,7 @@ import {
   ActionForm,
   AddPaymentForm,
   ConfirmForm,
+  CopyButton,
   FileUpload,
   QuickButton,
   SubmitButton,
@@ -277,6 +278,24 @@ export default async function ClientPage({
 
       {tab === "overview" && (
         <>
+          <section className="card mb-5 p-4 sm:p-6">
+            <h2 className="mb-2 text-[18px] font-bold">🔗 Ссылка на кабинет клиента</h2>
+            {cab.loginLink ? (
+              <>
+                <p className="mb-3 break-all rounded-lg bg-surface px-3 py-2 font-mono text-[13px]">{cab.loginLink}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <CopyButton text={cab.loginLink} label="Скопировать ссылку" />
+                  <a href={cab.loginLink} target="_blank" rel="noopener noreferrer" className="btn-ghost min-h-10 px-4 text-[14px]">
+                    Открыть кабинет
+                  </a>
+                  <span className="text-[13px] text-muted">создана {fmtDate(cab.linkCreatedAt)}</span>
+                </div>
+              </>
+            ) : (
+              <p className="text-[14px] text-muted">Ссылки ещё нет — создайте её внизу страницы: «Новая ссылка для клиента».</p>
+            )}
+          </section>
+
           <section className="card mb-5 p-4 sm:p-6">
             <h2 className="mb-3 text-[18px] font-bold">Процесс клиента</h2>
             <Pipeline service={service} status={cab.status} />

@@ -51,6 +51,7 @@ export async function createCabinet(input: { clientName: string; clientPhone: st
     ...(input.manager ? { manager: input.manager.login, managerName: input.manager.name } : {}),
     ...(input.seller ? { seller: input.seller.login, sellerName: input.seller.name } : {}),
     tokenHash: hash,
+    loginLink: link,
     linkCreatedAt: new Date().toISOString(),
     ...(leadId ? { lead: { _type: "reference", _ref: leadId, _weak: true } } : {}),
     data: clientPhone.replace(/\D/g, "") ? { phone: clientPhone } : {},

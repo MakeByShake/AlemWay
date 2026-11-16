@@ -96,12 +96,13 @@ export async function findCabinetByToken(token: string): Promise<Cabinet | null>
   );
 }
 
-/** A new login link for a cabinet; the previous links (up to 5) stay valid. Returns the fields to save. */
+/** A new login link for a cabinet; the previous links (up to 5) stay valid. Returns the fields to save.
+ * The link itself is kept too (admin-only document) so the team can always copy it from the card. */
 export async function freshLink(id: string) {
   const cur = await writeClient().fetch<{ tokenHash?: string; extraTokenHashes?: string[] } | null>(`*[_id == $id][0]{tokenHash, extraTokenHashes}`, { id });
   const { hash, link } = newLoginToken();
   const keep = [cur?.tokenHash, ...(cur?.extraTokenHashes ?? [])].filter((h): h is string => Boolean(h) && h !== hash).slice(0, 5);
-  return { link, set: { tokenHash: hash, extraTokenHashes: keep, linkCreatedAt: new Date().toISOString() } };
+  return { link, set: { tokenHash: hash, extraTokenHashes: keep, loginLink: link, linkCreatedAt: new Date().toISOString() } };
 }
 
 /** The cabinet of the current visitor (from the httpOnly cookie), or null. */

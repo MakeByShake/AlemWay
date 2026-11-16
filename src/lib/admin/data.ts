@@ -66,7 +66,7 @@ export type CabinetRow = {
   employerName?: string;
 };
 
-export type CabinetFull = Cabinet & { _createdAt: string; managerNote?: string; linkCreatedAt?: string; leadId?: string };
+export type CabinetFull = Cabinet & { _createdAt: string; managerNote?: string; linkCreatedAt?: string; loginLink?: string; leadId?: string };
 
 const notDraft = `!(_id in path("drafts.**"))`;
 
