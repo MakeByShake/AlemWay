@@ -1,0 +1,13 @@
+import { NextResponse, type NextRequest } from "next/server";
+import { checkSheetKey, sheetRows } from "@/lib/admin/sheet-export";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+/** JSON for the team's Google Sheet (the sheet's script calls this every 10 minutes). Needs the secret key. */
+export async function GET(req: NextRequest) {
+  const key = req.nextUrl.searchParams.get("key") ?? "";
+  if (!checkSheetKey(key)) return NextResponse.json({ ok: false }, { status: 404 });
+  const rows = await sheetRows(req.nextUrl.origin.includes("localhost") ? req.nextUrl.origin : "https://alemway.kz");
+  return NextResponse.json({ ok: true, at: new Date().toISOString(), rows }, { headers: { "Cache-Control": "no-store", "X-Robots-Tag": "noindex" } });
+}
