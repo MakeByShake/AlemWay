@@ -89,9 +89,12 @@ export function getFeedback(status?: string) {
   );
 }
 
-export function getCabinets(filter: { service?: string; status?: string; q?: string; manager?: string; seller?: string; mine?: string; group?: string }) {
+/** «Деканат не ставит печать», not yet marked solved. */
+const deanOpen = `(defined(deanIssue) && !defined(deanIssue.resolvedAt))`;
+
+export async function getCabinets(filter: { service?: string; status?: string; q?: string; manager?: string; seller?: string; mine?: string; group?: string; dean?: boolean }) {
   const q = filter.q?.trim() ? `*${filter.q.trim().replace(/[*"\\]/g, "")}*` : null;
-  return writeClient().fetch<CabinetRow[]>(
+  const rows = await writeClient().fetch<CabinetRow[]>(
     `*[_type == "cabinet" && ${notDraft}
        && (!defined($service) || coalesce(service, "ferienjob") == $service)
        && (!defined($status) || coalesce(status, "waiting_data") == $status)
@@ -99,10 +102,11 @@ export function getCabinets(filter: { service?: string; status?: string; q?: str
        && (!defined($manager) || ($manager == "-" && !defined(manager)) || manager == $manager)
        && (!defined($seller) || ($seller == "-" && !defined(seller)) || seller == $seller)
        && (!defined($mine) || manager == $mine || seller == $mine)
+       && (!$dean || (defined(deanIssue) && !defined(deanIssue.resolvedAt)))
        && (!defined($q) || string(number) == $num || clientName match $q || clientPhone match $q || data.firstName match $q || data.lastName match $q)
      ] | order(coalesce(number, 0) desc, _createdAt desc)[0...300]{
       _id, number, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName, managerName, sellerName, party,
-      "dean": defined(deanIssue) && !defined(deanIssue.resolvedAt), "employerName": select(defined(employer) => employerName)
+      "dean": ${deanOpen}, "employerName": select(defined(employer) => employerName)
     }`,
     {
       service: filter.service || null,
@@ -113,8 +117,11 @@ export function getCabinets(filter: { service?: string; status?: string; q?: str
       seller: filter.seller || null,
       mine: filter.mine || null,
       group: filter.group || null,
+      dean: Boolean(filter.dean),
     }
   );
+  // Clients whose dean's office won't sign wait for us: they go first.
+  return rows.sort((a, b) => Number(Boolean(b.dean)) - Number(Boolean(a.dean)));
 }
 
 /** Other clients in the same «едут вместе» group. */
@@ -142,12 +149,13 @@ export function getCabinetFull(id: string) {
   );
 }
 
-export function getDashboard(login: string, onlyMine = false) {
-  return writeClient().fetch<{
+export async function getDashboard(login: string, onlyMine = false) {
+  const d = await writeClient().fetch<{
     newLeads: number;
     leadsWeek: number;
     activeClients: number;
     waitingAction: number;
+    deanIssues: number;
     newFeedback: number;
     myClients: number;
     latestLeads: Lead[];
@@ -157,18 +165,21 @@ export function getDashboard(login: string, onlyMine = false) {
       "newLeads": count(*[_type == "lead" && ${notDraft} && coalesce(status, "new") == "new"]),
       "leadsWeek": count(*[_type == "lead" && ${notDraft} && dateTime(_createdAt) > dateTime(now()) - 60*60*24*7]),
       "activeClients": count(*[_type == "cabinet" && ${notDraft} && !(status in ["done", "keta_rejected"]) && (!$onlyMine || manager == $login || seller == $login)]),
-      "waitingAction": count(*[_type == "cabinet" && ${notDraft} && status in ["signed_uploaded", "keta_applying"] && (!$onlyMine || manager == $login || seller == $login)]),
+      "waitingAction": count(*[_type == "cabinet" && ${notDraft} && (status in ["signed_uploaded", "keta_applying"] || ${deanOpen}) && (!$onlyMine || manager == $login || seller == $login)]),
+      "deanIssues": count(*[_type == "cabinet" && ${notDraft} && ${deanOpen} && (!$onlyMine || manager == $login || seller == $login)]),
       "myClients": count(*[_type == "cabinet" && ${notDraft} && (manager == $login || seller == $login) && !(status in ["done", "keta_rejected"])]),
       "newFeedback": count(*[_type == "feedback" && ${notDraft} && coalesce(status, "new") == "new"]),
       "latestLeads": *[_type == "lead" && ${notDraft}] | order(coalesce(createdAt, _createdAt) desc)[0...5]{
         _id, status, name, phone, serviceTitle, "createdAt": coalesce(createdAt, _createdAt)
       },
-      "actionClients": *[_type == "cabinet" && ${notDraft} && status in ["signed_uploaded", "keta_applying"] && (!$onlyMine || manager == $login || seller == $login)] | order(_updatedAt desc)[0...8]{
-        _id, number, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName
+      "actionClients": *[_type == "cabinet" && ${notDraft} && (status in ["signed_uploaded", "keta_applying"] || ${deanOpen}) && (!$onlyMine || manager == $login || seller == $login)] | order(_updatedAt desc)[0...12]{
+        _id, number, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName, "dean": ${deanOpen}
       }
     }`,
     { login, onlyMine }
   );
+  d.actionClients.sort((a, b) => Number(Boolean(b.dean)) - Number(Boolean(a.dean)));
+  return d;
 }
 
 /** Logins and names for the «Менеджер» pickers. */

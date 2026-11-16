@@ -285,10 +285,10 @@ export default async function ClientPage({
           </section>
 
           {cab.deanIssue && !cab.deanIssue.resolvedAt && (
-            <section className="card mb-5 border-warn/40 bg-warn-soft p-4 sm:p-6">
+            <section className="card mb-5 border-2 border-orange-400 bg-orange-50 p-4 sm:p-6">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-[18px] font-bold">⚠️ Деканат не ставит подпись и печать</h2>
+                  <h2 className="text-[18px] font-bold text-orange-900">🟠 Деканат не ставит подпись и печать — клиент ждёт нашего действия</h2>
                   <p className="mt-1 text-[13px] text-muted">Клиент написал {fmtDate(cab.deanIssue.at)}</p>
                 </div>
                 {owner && (

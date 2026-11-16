@@ -4,7 +4,7 @@ import { almatyNow } from "@/lib/consultation";
 import { isFullRole, requireAdminUser } from "@/lib/admin/session";
 import { getAiStats } from "@/lib/ai/usage";
 import { AiBalance } from "@/components/admin/AiBalance";
-import { Badge, Empty, PageTitle, Progress, SERVICE_SHORT, fmtDate } from "@/components/admin/bits";
+import { Badge, DeanBadge, Empty, PageTitle, Progress, SERVICE_SHORT, fmtDate } from "@/components/admin/bits";
 
 export const metadata = { title: "Главная" };
 
@@ -18,6 +18,7 @@ export default async function AdminHome() {
     { label: "Заявок за 7 дней", value: d.leadsWeek, href: "/admin/leads" },
     { label: "Клиенты в работе", value: d.activeClients, href: "/admin/clients" },
     { label: "Ждут нашего действия", value: d.waitingAction, href: "/admin/clients?status=signed_uploaded", hot: d.waitingAction > 0 },
+    ...(d.deanIssues > 0 ? [{ label: "🟠 Деканат не ставит печать", value: d.deanIssues, href: "/admin/clients?dean=1", hot: true, orange: true }] : []),
     { label: "Новые отзывы", value: d.newFeedback, href: "/admin/feedback?status=new", hot: d.newFeedback > 0 },
   ];
   return (
@@ -25,9 +26,9 @@ export default async function AdminHome() {
       <PageTitle title={`Здравствуйте, ${me.name}!`} />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         {cards.map((c) => (
-          <a key={c.label} href={c.href} className={`card p-4 transition-colors hover:border-brand ${c.hot ? "border-brand" : ""}`}>
-            <p className="text-[13px] text-muted">{c.label}</p>
-            <p className={`mt-1 text-[30px] font-bold tabular-nums ${c.hot ? "text-brand" : ""}`}>{c.value}</p>
+          <a key={c.label} href={c.href} className={`card p-4 transition-colors hover:border-brand ${"orange" in c ? "border-orange-400 bg-orange-50" : c.hot ? "border-brand" : ""}`}>
+            <p className={`text-[13px] ${"orange" in c ? "font-semibold text-orange-900" : "text-muted"}`}>{c.label}</p>
+            <p className={`mt-1 text-[30px] font-bold tabular-nums ${"orange" in c ? "text-orange-600" : c.hot ? "text-brand" : ""}`}>{c.value}</p>
           </a>
         ))}
         {ai && (
@@ -45,13 +46,16 @@ export default async function AdminHome() {
           ) : (
             <ul className="card divide-y divide-line">
               {d.actionClients.map((c) => (
-                <li key={c._id}>
+                <li key={c._id} className={c.dean ? "border-l-4 border-l-orange-500 bg-orange-50" : ""}>
                   <Link prefetch={false} href={`/admin/clients/${c._id}`} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 hover:bg-surface">
                     <span className="font-semibold">
                       {c.number ? `№${c.number} · ` : ""}
                       {cabinetName(c)} <span className="ml-1 text-[13px] font-normal text-muted">{SERVICE_SHORT[c.service ?? "ferienjob"]}</span>
                     </span>
-                    <Progress service={c.service} status={c.status} />
+                    <span className="flex flex-wrap items-center gap-2">
+                      {c.dean && <DeanBadge />}
+                      <Progress service={c.service} status={c.status} />
+                    </span>
                   </Link>
                 </li>
               ))}

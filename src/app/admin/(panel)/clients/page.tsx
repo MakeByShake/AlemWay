@@ -3,7 +3,7 @@ import { getCabinets, cabinetName, getManagerOptions } from "@/lib/admin/data";
 import { isFullRole, requireAdminUser } from "@/lib/admin/session";
 import { CABINET_STATUSES } from "@/lib/cabinet/fields";
 import { createCabinetAction } from "../../actions";
-import { Badge, Empty, PageTitle, Progress, SERVICE_SHORT, fmtDate, waLink } from "@/components/admin/bits";
+import { Badge, DeanBadge, Empty, PageTitle, Progress, SERVICE_SHORT, fmtDate, waLink } from "@/components/admin/bits";
 import { ActionForm, CloseDetailsButton, SubmitButton } from "@/components/admin/ui";
 
 export const metadata = { title: "Клиенты" };
@@ -14,7 +14,7 @@ const SERVICE_FILTER = [
   { value: "keta", title: "🇰🇷 K-ETA" },
 ];
 
-export default async function ClientsPage({ searchParams }: { searchParams: Promise<{ service?: string; status?: string; q?: string; manager?: string; seller?: string; group?: string }> }) {
+export default async function ClientsPage({ searchParams }: { searchParams: Promise<{ service?: string; status?: string; q?: string; manager?: string; seller?: string; group?: string; dean?: string }> }) {
   const sp = await searchParams;
   const service = sp.service === "ferienjob" || sp.service === "keta" ? sp.service : "";
   const status = CABINET_STATUSES.some((s) => s.value === sp.status) ? sp.status! : "";
@@ -27,7 +27,9 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
   const manager = owner ? pick(sp.manager) : "";
   const seller = owner ? pick(sp.seller) : "";
   const group = sp.group === "old" || sp.group === "new" ? sp.group : "";
-  const rows = await getCabinets({ service, status, q, manager, seller, group, mine: owner ? undefined : me.login });
+  const dean = sp.dean === "1";
+  const rows = await getCabinets({ service, status, q, manager, seller, group, dean, mine: owner ? undefined : me.login });
+  const deanCount = rows.filter((r) => r.dean).length;
   // «Едут вместе»: how many from each group are in this list.
   const partySize = new Map<string, number>();
   for (const r of rows) if (r.party) partySize.set(r.party, (partySize.get(r.party) ?? 0) + 1);
@@ -158,6 +160,28 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
         <button className="btn-ghost">Найти</button>
       </form>
 
+      {dean ? (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-orange-300 bg-orange-50 px-4 py-3 text-[14.5px]">
+          <span className="font-semibold text-orange-900">🟠 Показаны только клиенты, у которых деканат не ставит печать</span>
+          <Link prefetch={false} href="/admin/clients" className="font-semibold text-brand hover:underline">
+            Показать всех
+          </Link>
+        </div>
+      ) : (
+        deanCount > 0 && (
+          <Link
+            prefetch={false}
+            href="/admin/clients?dean=1"
+            className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-orange-300 bg-orange-50 px-4 py-3 text-[14.5px] hover:bg-orange-100"
+          >
+            <span className="font-semibold text-orange-900">
+              🟠 Деканат не ставит печать: {deanCount} {deanCount % 10 === 1 && deanCount % 100 !== 11 ? "клиент ждёт" : "клиента ждут"} нашего действия
+            </span>
+            <span className="font-semibold text-brand">Показать →</span>
+          </Link>
+        )
+      )}
+
       {rows.length === 0 ? (
         <Empty>Клиентов не найдено</Empty>
       ) : (
@@ -165,7 +189,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
           {rows.map((c) => {
             const wa = waLink(c.clientPhone);
             return (
-              <li key={c._id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+              <li key={c._id} className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 ${c.dean ? "border-l-4 border-l-orange-500 bg-orange-50" : ""}`}>
                 <Link prefetch={false} href={`/admin/clients/${c._id}`} className="min-w-0 flex-1 hover:text-brand">
                   <span className="block font-semibold">
                     {c.number && <span className="mr-1.5 text-muted tabular-nums">№{c.number}</span>}
@@ -176,7 +200,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
                   </span>
                 </Link>
                 <div className="flex flex-wrap items-center gap-3">
-                  {c.dean && <Badge tone="red">⚠️ Деканат</Badge>}
+                  {c.dean && <DeanBadge />}
                   {c.party && (partySize.get(c.party) ?? 0) > 1 && <Badge tone="blue">👥 вместе: {partySize.get(c.party)}</Badge>}
                   {c.employerName && <Badge tone="blue">🏢 {c.employerName}</Badge>}
                   {c.sellerName && <Badge tone="green">🤝 {c.sellerName}</Badge>}

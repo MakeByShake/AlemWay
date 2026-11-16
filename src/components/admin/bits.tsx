@@ -10,11 +10,21 @@ const TONES = {
   green: "bg-accent-soft text-[#0a7a42]",
   gray: "bg-surface text-muted",
   red: "bg-red-50 text-red-700",
+  orange: "bg-orange-500 text-white",
 } as const;
 export type Tone = keyof typeof TONES;
 
 export function Badge({ tone = "gray", children, className }: { tone?: Tone; children: ReactNode; className?: string }) {
   return <span className={clsx("inline-flex items-center rounded-full px-2.5 py-0.5 text-[12.5px] font-semibold whitespace-nowrap", TONES[tone], className)}>{children}</span>;
+}
+
+/** «Деканат не ставит печать» — the client waits for us. */
+export function DeanBadge() {
+  return (
+    <Badge tone="orange" className="!whitespace-normal">
+      🟠 Деканат не ставит печать — ждут нас
+    </Badge>
+  );
 }
 
 export function PageTitle({ title, children }: { title: string; children?: ReactNode }) {
