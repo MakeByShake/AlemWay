@@ -566,6 +566,31 @@ export async function updatePaymentAction(_prev: ActionState, fd: FormData): Pro
   return { ok: true, message: "Платёж сохранён" };
 }
 
+/** Hand-in deadline for the client: «+3 дня / +1 неделя / +2 недели», a date, or «убрать». The client sees a countdown. */
+export async function setDeadlineAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const me = await requireAdminUser();
+  const id = s(fd, "id", 100);
+  const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
+  if (!cab) return { error: "Клиент не найден" };
+  if (!ownsClient(me, cab)) return { error: "Этот клиент закреплён за другим сотрудником" };
+  const days = s(fd, "days", 10);
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Almaty" }).format(new Date());
+  let date = "";
+  if (days === "clear") date = "";
+  else if (/^\d{1,3}$/.test(days)) date = new Date(Date.parse(`${today}T00:00:00Z`) + Number(days) * 86_400_000).toISOString().slice(0, 10);
+  else {
+    date = s(fd, "deadline", 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { error: "Выберите дату" };
+    if (date < today) return { error: "Дата уже прошла" };
+  }
+  await patchCabinet(id, date ? { deadline: date } : {}, date ? [] : ["deadline"]);
+  const nice = date ? date.split("-").reverse().join(".") : "";
+  await logActivity(me, "deadline", date ? `поставил(а) срок сдачи до ${nice}` : "убрал(а) срок сдачи", cab);
+  revalidatePath(`/admin/clients/${id}`);
+  revalidatePath("/admin/clients");
+  return { ok: true, message: date ? `Срок: до ${nice} 23:59 — клиент видит таймер в кабинете` : "Срок убран" };
+}
+
 export async function deleteReceiptAction(fd: FormData) {
   const me = await requireAdminUser();
   const id = s(fd, "id", 100);

@@ -32,6 +32,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
   const dean = sp.dean === "1";
   const rows = await getCabinets({ service, status, q, manager, seller, group, dean, mine: owner ? undefined : me.login });
   const deanCount = rows.filter((r) => r.dean).length;
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Almaty" }).format(new Date());
   // «Едут вместе»: how many from each group are in this list.
   const partySize = new Map<string, number>();
   for (const r of rows) if (r.party) partySize.set(r.party, (partySize.get(r.party) ?? 0) + 1);
@@ -206,6 +207,14 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
                 </Link>
                 <div className="flex flex-wrap items-center gap-3">
                   {c.dean && <DeanBadge />}
+                  {c.deadline && ["waiting_data", "declaration_ready"].includes(c.status ?? "waiting_data") && (() => {
+                    const days = Math.round((Date.parse(c.deadline) - Date.parse(today)) / 86_400_000);
+                    return (
+                      <Badge tone={days < 0 ? "red" : days <= 2 ? "amber" : "blue"}>
+                        ⏰ {days < 0 ? `срок прошёл ${fmtDate(c.deadline, false)}` : days === 0 ? "срок сегодня" : `${days} дн. до срока`}
+                      </Badge>
+                    );
+                  })()}
                   {c.party && (partySize.get(c.party) ?? 0) > 1 && <Badge tone="blue">👥 вместе: {partySize.get(c.party)}</Badge>}
                   {c.employerName && <Badge tone="blue">🏢 {c.employerName}</Badge>}
                   {c.sellerName && <Badge tone="green">🤝 {c.sellerName}</Badge>}

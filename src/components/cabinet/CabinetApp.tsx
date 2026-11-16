@@ -54,6 +54,8 @@ export type CabinetView = {
   declarationDate: string | null;
   /** Old client moved to the new form 06/2026: fills the questionnaire again. */
   reform: boolean;
+  /** Hand-in deadline set by the team (YYYY-MM-DD, until 23:59 Almaty). */
+  deadline: string | null;
   /** Open «деканат не ставит печать» report, if any. */
   deanIssue: DeanIssueView | null;
   /** Last AI check, when it said what is missing. */
@@ -286,6 +288,8 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
             <LogOut className="h-4 w-4" /> <span className="hidden min-[360px]:inline">{t.logout}</span>
           </button>
         </div>
+
+        {view.deadline && !keta && <DeadlineTimer t={t} deadline={view.deadline} done={!CLIENT_TURN.includes(view.status)} locale={locale} />}
 
         <div className="mt-8" aria-label={t.title}>
           <Pipeline service={view.service} status={view.status} locale={locale} />
@@ -905,6 +909,69 @@ function FileRow({
           </>
         )}
       </button>
+    </div>
+  );
+}
+
+/** While the client still has to hand in the documents and the signed declaration. */
+const CLIENT_TURN: CabinetStatus[] = ["waiting_data", "declaration_ready"];
+
+/** Countdown to the hand-in deadline; stops (green) once the signed declaration is in. */
+function DeadlineTimer({ t, deadline, done, locale }: { t: T; deadline: string; done: boolean; locale: CabinetLocale }) {
+  // The deadline day ends at 23:59:59 in Kazakhstan (UTC+5).
+  const end = Date.parse(`${deadline}T23:59:59+05:00`);
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => {
+    if (done) return;
+    const tick = () => setNow(Date.now());
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [done]);
+  const dateText = new Intl.DateTimeFormat(locale === "kk" ? "kk-KZ" : "ru-RU", { day: "numeric", month: "long", timeZone: "Asia/Almaty" }).format(new Date(end));
+
+  if (done)
+    return (
+      <div className="mt-6 flex items-center gap-2 rounded-xl bg-accent-soft px-4 py-3 text-[15px] font-semibold">
+        <CheckCircle2 className="h-5 w-5 shrink-0 text-accent" /> {t.deadlineDone}
+      </div>
+    );
+  if (now === null) return <div className="card mt-6 h-[132px] animate-pulse bg-surface" aria-hidden />;
+  const left = end - now;
+  if (left <= 0)
+    return (
+      <div role="alert" className="mt-6 rounded-2xl border-2 border-red-300 bg-red-50 p-5">
+        <p className="flex items-center gap-2 text-[17px] font-bold text-red-700">
+          <AlertCircle className="h-5 w-5 shrink-0" /> {t.deadlineOverTitle}
+        </p>
+        <p className="mt-1 text-[15px] text-red-800">{t.deadlineOverText}</p>
+      </div>
+    );
+  const s = Math.floor(left / 1000);
+  const parts = [
+    { v: Math.floor(s / 86400), l: t.deadlineDays },
+    { v: Math.floor((s % 86400) / 3600), l: t.deadlineHours },
+    { v: Math.floor((s % 3600) / 60), l: t.deadlineMinutes },
+    { v: s % 60, l: t.deadlineSeconds },
+  ];
+  const urgent = left < 86_400_000;
+  const warn = left < 3 * 86_400_000;
+  return (
+    <div className={clsx("mt-6 rounded-2xl border-2 p-5", urgent ? "border-red-300 bg-red-50" : warn ? "border-orange-300 bg-orange-50" : "border-brand/30 bg-brand-soft")}>
+      <p className="text-[15px] font-semibold">
+        ⏰ {t.deadlineTitle}: {locale === "kk" ? `${dateText} ${t.deadlineUntil}` : `${t.deadlineUntil} ${dateText}`}
+      </p>
+      <div className="mt-3 grid grid-cols-4 gap-2" aria-live="off">
+        {parts.map((p) => (
+          <div key={p.l} className="rounded-xl bg-white px-1 py-2 text-center shadow-sm">
+            <p className={clsx("text-[26px] font-bold tabular-nums leading-none sm:text-[32px]", urgent ? "text-red-700" : warn ? "text-orange-700" : "text-brand")}>
+              {String(p.v).padStart(2, "0")}
+            </p>
+            <p className="mt-1 text-[12px] text-muted">{p.l}</p>
+          </div>
+        ))}
+      </div>
+      {urgent && <p className="mt-3 text-[14px] font-semibold text-red-700">{t.deadlineSoon}</p>}
     </div>
   );
 }

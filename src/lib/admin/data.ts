@@ -49,6 +49,7 @@ export type Feedback = {
 };
 
 export type CabinetRow = {
+  deadline?: string;
   _id: string;
   number?: number;
   _createdAt: string;
@@ -106,7 +107,7 @@ export async function getCabinets(filter: { service?: string; status?: string; q
        && (!defined($q) || string(number) == $num || clientName match $q || clientPhone match $q || data.firstName match $q || data.lastName match $q)
      ] | order(coalesce(number, 0) desc, _createdAt desc)[0...300]{
       _id, number, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName, managerName, sellerName, party,
-      "dean": ${deanOpen}, "employerName": select(defined(employer) => employerName)
+      "dean": ${deanOpen}, deadline, "employerName": select(defined(employer) => employerName)
     }`,
     {
       service: filter.service || null,

@@ -34,6 +34,7 @@ import {
   newLinkAction,
   paymentStatusAction,
   setPriceAction,
+  setDeadlineAction,
   updateCabinetAction,
 } from "../../../actions";
 import {
@@ -212,6 +213,12 @@ export default async function ClientPage({
     `Оплатить можно через Kaspi: ${KASPI_PAY_URL}`,
     "После оплаты пришлите, пожалуйста, чек сюда. Спасибо!",
   ].join("\n");
+  // Hand-in deadline: days left (Almaty), or done once the signed declaration is in.
+  const todayKz = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Almaty" }).format(new Date());
+  const deadline = {
+    state: !cab.deadline ? "none" : !["waiting_data", "declaration_ready"].includes(cab.status ?? "waiting_data") ? "done" : cab.deadline < todayKz ? "overdue" : "open",
+    days: cab.deadline ? Math.round((Date.parse(cab.deadline) - Date.parse(todayKz)) / 86_400_000) : 0,
+  };
   const reminderLink = wa ? `${wa}?text=${encodeURIComponent(reminderText)}` : null;
   const fileCount = Object.values(cab.files ?? {}).filter(
     (f) => f?.path,
@@ -292,6 +299,50 @@ export default async function ClientPage({
 
       {tab === "overview" && (
         <>
+          {!keta && (
+            <section className={`card mb-5 p-4 sm:p-6 ${deadline.state === "overdue" ? "border-2 border-red-300 bg-red-50" : ""}`}>
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <h2 className="text-[18px] font-bold">⏰ Срок сдачи документов и декларации</h2>
+                  <p className="mt-1 text-[13px] text-muted">Клиент видит таймер в кабинете. Он останавливается, когда клиент загрузит подписанную декларацию.</p>
+                </div>
+                {cab.deadline && (
+                  <Badge tone={deadline.state === "done" ? "green" : deadline.state === "overdue" ? "red" : deadline.days <= 2 ? "amber" : "blue"}>
+                    {deadline.state === "done"
+                      ? "Сдано ✓"
+                      : deadline.state === "overdue"
+                        ? `Просрочено с ${fmtDate(cab.deadline, false)}`
+                        : `до ${fmtDate(cab.deadline, false)} · ${deadline.days === 0 ? "сегодня" : `осталось ${deadline.days} дн.`}`}
+                  </Badge>
+                )}
+              </div>
+              <ActionForm action={setDeadlineAction} className="mt-3 flex flex-wrap items-end gap-2">
+                <input type="hidden" name="id" value={id} />
+                <label className="grid gap-1 text-[13px] font-medium">
+                  Срок (дата)
+                  <input type="date" name="deadline" defaultValue={cab.deadline ?? ""} className={`${input} w-44`} />
+                </label>
+                <SubmitButton className="btn-primary min-h-10 px-4 text-[14px]" pendingText="Сохраняем…">
+                  Поставить
+                </SubmitButton>
+                {[
+                  ["3", "+3 дня"],
+                  ["7", "+1 неделя"],
+                  ["14", "+2 недели"],
+                ].map(([v, l]) => (
+                  <button key={v} name="days" value={v} className="btn-ghost min-h-10 px-3 text-[14px]">
+                    {l}
+                  </button>
+                ))}
+                {cab.deadline && (
+                  <button name="days" value="clear" className="min-h-10 px-2 text-[14px] text-red-600 hover:underline">
+                    Убрать срок
+                  </button>
+                )}
+              </ActionForm>
+            </section>
+          )}
+
           <section className="card mb-5 p-4 sm:p-6">
             <h2 className="mb-2 text-[18px] font-bold">🔗 Ссылка на кабинет клиента</h2>
             {cab.loginLink ? (

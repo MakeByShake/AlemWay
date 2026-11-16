@@ -60,6 +60,8 @@ export type Cabinet = {
   /** Old client moved to the new form (06/2026): the questionnaire was reset and must be filled in again. */
   /** Client says the dean's office won't sign and stamp the declaration. */
   deanIssue?: DeanIssue;
+  /** Date (YYYY-MM-DD) by which the client must hand in the documents and the signed declaration; ends at 23:59 Almaty. */
+  deadline?: string;
   reform?: boolean;
   reformAt?: string;
   /** Files set aside when the questionnaire was reset (kept, not deleted). */
@@ -67,7 +69,7 @@ export type Cabinet = {
 };
 
 const PROJECTION = `{_id, number, group, _rev, service, status, clientName, clientPhone, data, files, declarationDate, submittedAt, signedAt,
-  zavReceivedAt, employer, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil, manager, managerName, seller, sellerName, party, teamEdited, deanIssue, reform, reformAt, archivedFiles, price, discount, discountNote, plan, payments, aiCheck}`;
+  zavReceivedAt, employer, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil, manager, managerName, seller, sellerName, party, teamEdited, deanIssue, reform, reformAt, archivedFiles, deadline, price, discount, discountNote, plan, payments, aiCheck}`;
 
 export function writeClient(): SanityClient {
   const c = getWriteClient();
