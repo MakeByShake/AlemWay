@@ -35,6 +35,7 @@ import {
   type FileKind,
   type UploadKind,
   FILE_LABELS,
+  fieldVisible,
 } from "@/lib/cabinet/fields";
 import { CABINET_TEXT, type CabinetLocale } from "@/lib/cabinet/i18n";
 import { Pipeline } from "@/components/Pipeline";
@@ -308,6 +309,23 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
           </div>
         )}
 
+        {!editable && !keta && LICENSE_LATER.includes(view.data.licenseStatus ?? "") && view.status !== "done" && (
+          <div className="card mt-6 p-5 sm:p-7">
+            <h2 className="h-card">{t.licenseLaterTitle}</h2>
+            <p className="mt-2 text-[14px] text-muted">{files.license ? t.licenseLaterDone : t.licenseLaterText}</p>
+            <div className="mt-4">
+              <FileRow
+                label={FILE_LABELS.license[locale].replace(/ \((необязательно|міндетті емес)\)$/, "")}
+                meta={files.license}
+                busy={busy === "license"}
+                t={t}
+                buttonText={files.license ? t.replace : t.upload}
+                onPick={(f) => upload("license", f)}
+              />
+            </div>
+          </div>
+        )}
+
         {view.reform && view.status === "waiting_data" && <Banner tone="warn" title={t.reformTitle} text={t.reformText} />}
         {view.status === "done" && !keta && <Banner title={t.doneTitle} text={t.doneText} />}
         {view.status === "keta_applying" && <Banner tone="wait" title={t.ketaApplyingTitle} text={t.ketaApplyingText} />}
@@ -446,7 +464,7 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
                   {section.title[locale]}
                 </h2>
                 <div className="mt-5 grid gap-5 sm:grid-cols-2">
-                  {section.fields.map((f) => (
+                  {section.fields.filter((f) => fieldVisible(f, data)).map((f) => (
                     <Field
                       key={f.key}
                       f={f}
@@ -975,3 +993,6 @@ function DeadlineTimer({ t, deadline, done, locale }: { t: T; deadline: string; 
     </div>
   );
 }
+
+/** Clients who have or are getting a licence can add the scan any time, also after the questionnaire is closed. */
+const LICENSE_LATER = ["yes", "soon"];

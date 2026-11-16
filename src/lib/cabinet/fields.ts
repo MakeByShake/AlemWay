@@ -31,7 +31,12 @@ export type CabinetField = {
   maxLength?: number;
   /** For kind "select". */
   options?: FieldOption[];
+  /** Shown (and checked) only when another answer has one of these values. */
+  showIf?: { key: string; values: string[] };
 };
+
+/** Whether a field is shown for these answers (fields with `showIf` depend on another answer). */
+export const fieldVisible = (f: CabinetField, data: Record<string, string | undefined>) => !f.showIf || f.showIf.values.includes(data[f.showIf.key] ?? "");
 
 export type CabinetSection = { id: string; title: { ru: string; kk: string }; fields: CabinetField[] };
 
@@ -79,13 +84,34 @@ export const FERIENJOB_FULL_SECTIONS: CabinetSection[] = [
         placeholder: "Алматы",
       },
       {
+        key: "licenseStatus",
+        kind: "select",
+        optional: true,
+        label: { ru: "Водительские права", kk: "Жүргізуші куәлігі" },
+        hint: { ru: "С правами больше вариантов работы. Файл можно загрузить позже.", kk: "Куәлікпен жұмыс түрлері көбірек. Файлды кейін жүктеуге болады." },
+        options: [
+          { value: "none", label: { ru: "Нет прав", kk: "Куәлік жоқ" } },
+          { value: "yes", label: { ru: "Есть права", kk: "Куәлік бар" } },
+          { value: "soon", label: { ru: "Получаю — будут позже", kk: "Алып жатырмын — кейін болады" } },
+        ],
+      },
+      {
         key: "driverLicense",
         kind: "text",
         optional: true,
         maxLength: 20,
+        showIf: { key: "licenseStatus", values: ["yes", "soon"] },
         label: { ru: "Категория прав", kk: "Жүргізуші куәлігінің санаты" },
-        hint: { ru: "Если прав нет — оставьте пустым.", kk: "Куәлік жоқ болса, бос қалдырыңыз." },
         placeholder: "B",
+      },
+      {
+        key: "licenseReady",
+        kind: "text",
+        optional: true,
+        maxLength: 40,
+        showIf: { key: "licenseStatus", values: ["soon"] },
+        label: { ru: "Когда примерно получите", kk: "Шамамен қашан аласыз" },
+        placeholder: "декабрь 2026",
       },
     ],
   },
@@ -323,7 +349,7 @@ export const CABINET_SECTIONS: CabinetSection[] = [
   {
     id: "contacts",
     title: { ru: "Контакты", kk: "Байланыс" },
-    fields: [FULL.phone, FULL.city, FULL.driverLicense],
+    fields: [FULL.phone, FULL.city, FULL.licenseStatus, FULL.driverLicense, FULL.licenseReady],
   },
   {
     id: "study",
@@ -529,6 +555,7 @@ const daysBetween = (a: string, b: string) => Math.round((Date.parse(b) - Date.p
 export function validateCabinetData(data: CabinetData, service: ServiceId = "ferienjob"): Record<string, FieldError> {
   const errors: Record<string, FieldError> = {};
   for (const f of fieldsFor(service)) {
+    if (!fieldVisible(f, data)) continue;
     const e = validateField(f, data[f.key]);
     if (e) errors[f.key] = e;
   }

@@ -26,6 +26,9 @@ export async function POST(req: NextRequest) {
     // Signed scans (2 copies): after the declaration exists, and can be replaced until ZAV arrives.
     if (!cab.files?.declaration?.path) return fail("no_declaration", 409);
     if (status !== "declaration_ready" && status !== "signed_uploaded") return fail("locked", 409);
+  } else if (kind === "license") {
+    // Driving licence: often comes a month later — can be added until the trip.
+    if (status === "done") return fail("locked", 409);
   } else if (status !== "waiting_data" && status !== "declaration_ready") {
     return fail("locked", 409);
   }
