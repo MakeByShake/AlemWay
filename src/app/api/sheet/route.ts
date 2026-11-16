@@ -8,6 +8,9 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const key = req.nextUrl.searchParams.get("key") ?? "";
   if (!checkSheetKey(key)) return NextResponse.json({ ok: false }, { status: 404 });
+  // The partner sheet's first script wrote phones as formulas (#ERROR!) — only the fixed script (v=2) gets data.
+  if (req.nextUrl.searchParams.get("view") !== "team" && req.nextUrl.searchParams.get("v") !== "2")
+    return NextResponse.json({ ok: false, error: "Обновите скрипт в таблице (новая версия)" }, { status: 410 });
   const base = req.nextUrl.origin.includes("localhost") ? req.nextUrl.origin : "https://alemway.kz";
   // view=team: our own sheet «wt 2027 AlemWay» (simple colour view); default: the partner-format tab.
   const rows = req.nextUrl.searchParams.get("view") === "team" ? await teamSheetRows(base) : await sheetRows(base);
