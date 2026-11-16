@@ -5,7 +5,7 @@ import type { SanityClient } from "next-sanity";
 import { getWriteClient } from "@/sanity/client";
 import { siteUrl } from "@/lib/i18n-content";
 import type { CabinetData, CabinetStatus, FileKind, ServiceId } from "./fields";
-import type { Payment } from "./payments";
+import type { Payment, PlanItem } from "./payments";
 import type { AiCheck } from "@/lib/ai/declaration";
 
 export const CABINET_COOKIE = "aw_cabinet";
@@ -49,6 +49,11 @@ export type Cabinet = {
   sellerName?: string;
   price?: number;
   payments?: Payment[];
+  /** Discount off the price, ₸, and why. */
+  discount?: number;
+  discountNote?: string;
+  /** Payment plan: parts with due dates (prepayment, rest, debt…). */
+  plan?: PlanItem[];
   aiCheck?: AiCheck;
   /** Questionnaire fields the team corrected in the admin: they win over the documents in the declaration. */
   teamEdited?: string[];
@@ -62,7 +67,7 @@ export type Cabinet = {
 };
 
 const PROJECTION = `{_id, number, group, _rev, service, status, clientName, clientPhone, data, files, declarationDate, submittedAt, signedAt,
-  zavReceivedAt, employer, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil, manager, managerName, seller, sellerName, party, teamEdited, deanIssue, reform, reformAt, archivedFiles, price, payments, aiCheck}`;
+  zavReceivedAt, employer, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil, manager, managerName, seller, sellerName, party, teamEdited, deanIssue, reform, reformAt, archivedFiles, price, discount, discountNote, plan, payments, aiCheck}`;
 
 export function writeClient(): SanityClient {
   const c = getWriteClient();

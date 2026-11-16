@@ -372,7 +372,7 @@ export function AddPaymentForm({ id, methods }: { id: string; methods: readonly 
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [receipt, setReceipt] = useState<File | null>(null);
+  const [receipts, setReceipts] = useState<File[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
   const today = new Date().toISOString().slice(0, 10);
   return (
@@ -387,16 +387,27 @@ export function AddPaymentForm({ id, methods }: { id: string; methods: readonly 
           const fd = new FormData(form);
           fd.set("id", id);
           fd.delete("file");
-          // Big photos of receipts are shrunk in the browser first (the server takes up to 4 MB).
-          if (receipt) fd.set("file", await compressForUpload(receipt));
+          // Big photos of receipts are shrunk in the browser first (the server takes up to 4 MB per request).
+          const [first, ...rest] = receipts;
+          if (first) fd.set("file", await compressForUpload(first));
           const res = await fetch("/api/admin/cabinet/payment", { method: "POST", body: fd });
-          const j = (await res.json().catch(() => ({}))) as { message?: string };
+          const j = (await res.json().catch(() => ({}))) as { message?: string; key?: string };
           if (!res.ok) throw new Error(j.message || `Ошибка ${res.status}`);
+          // The other receipts go one by one to the same payment.
+          for (const f of rest) {
+            const r = new FormData();
+            r.set("id", id);
+            r.set("key", j.key ?? "");
+            r.set("file", await compressForUpload(f));
+            const rr = await fetch("/api/admin/cabinet/payment/receipt", { method: "POST", body: r });
+            if (!rr.ok) throw new Error(((await rr.json().catch(() => ({}))) as { message?: string }).message || `Чек «${f.name}» не загрузился`);
+          }
           form.reset();
-          setReceipt(null);
+          setReceipts([]);
           router.refresh();
         } catch (err) {
           setError(err instanceof Error ? err.message : String(err));
+          router.refresh();
         } finally {
           setBusy(false);
         }
@@ -420,55 +431,68 @@ export function AddPaymentForm({ id, methods }: { id: string; methods: readonly 
         Дата оплаты
         <input name="paidAt" type="date" defaultValue={today} className="field py-2 text-[15px]" />
       </label>
-      <div className="grid gap-1 text-[13px] font-medium">
-        Чек (необязательно)
+      <label className="grid gap-1 text-[13px] font-medium">
+        Тип
+        <select name="kind" className="field py-2 text-[15px]">
+          <option value="payment">Оплата от клиента</option>
+          <option value="refund">Возврат клиенту</option>
+        </select>
+      </label>
+      <label className="grid gap-1 text-[13px] font-medium">
+        Кто платил (если не сам клиент)
+        <input name="payer" placeholder="Например: мама, Айгуль" className="field py-2 text-[15px]" />
+      </label>
+      <label className="grid gap-1 text-[13px] font-medium">
+        Комментарий
+        <input name="note" placeholder="Например: предоплата 50%" className="field py-2 text-[15px]" />
+      </label>
+      <div className="grid gap-1 text-[13px] font-medium sm:col-span-2">
+        Чеки (необязательно, можно несколько)
         <input
           ref={fileRef}
           type="file"
+          multiple
           accept="application/pdf,image/jpeg,image/png"
           className="sr-only"
           tabIndex={-1}
           aria-hidden
-          onChange={(e) => setReceipt(e.target.files?.[0] ?? null)}
+          onChange={(e) => {
+            const picked = [...(e.target.files ?? [])];
+            e.target.value = "";
+            setReceipts((rs) => [...rs, ...picked].slice(0, 10));
+          }}
         />
-        {receipt ? (
-          <div className="flex min-h-[42px] items-center gap-2 rounded-xl border border-accent/50 bg-accent-soft px-3 text-[14px]">
-            <Check className="h-4 w-4 shrink-0 text-accent" />
-            <span className="min-w-0 flex-1 truncate font-medium" title={receipt.name}>
-              {receipt.name}
-            </span>
-            <button type="button" onClick={() => fileRef.current?.click()} className="shrink-0 text-[13px] font-semibold text-brand hover:underline">
-              Заменить
-            </button>
-            <button
-              type="button"
-              aria-label="Убрать чек"
-              onClick={() => {
-                setReceipt(null);
-                if (fileRef.current) fileRef.current.value = "";
-              }}
-              className="shrink-0 px-1 text-[16px] leading-none text-muted hover:text-red-600"
-            >
-              ×
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            className="flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-dashed border-brand/50 bg-brand-soft/40 px-3 text-[14px] font-semibold text-brand hover:border-brand hover:bg-brand-soft"
-          >
-            <Upload className="h-4 w-4" /> Загрузить чек
-          </button>
+        {receipts.length > 0 && (
+          <ul className="grid gap-1.5">
+            {receipts.map((f, i) => (
+              <li key={`${f.name}-${i}`} className="flex min-h-[40px] items-center gap-2 rounded-xl border border-accent/50 bg-accent-soft px-3 text-[14px]">
+                <Check className="h-4 w-4 shrink-0 text-accent" />
+                <span className="min-w-0 flex-1 truncate font-medium" title={f.name}>
+                  {f.name}
+                </span>
+                <button
+                  type="button"
+                  aria-label="Убрать чек"
+                  onClick={() => setReceipts((rs) => rs.filter((_, j) => j !== i))}
+                  className="shrink-0 px-1 text-[16px] leading-none text-muted hover:text-red-600"
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          className="flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-dashed border-brand/50 bg-brand-soft/40 px-3 text-[14px] font-semibold text-brand hover:border-brand hover:bg-brand-soft"
+        >
+          <Upload className="h-4 w-4" /> {receipts.length ? "Добавить ещё чек" : "Загрузить чек"}
+        </button>
       </div>
-      <label className="grid gap-1 text-[13px] font-medium sm:col-span-2">
-        Комментарий
-        <input name="note" placeholder="Например: предоплата 50%" className="field py-2 text-[15px]" />
-      </label>
       <div className="sm:col-span-2">
         <button type="submit" disabled={busy} className="btn-primary min-h-10 px-4 text-[14px] disabled:opacity-60">
-          {busy && <Loader2 className="h-4 w-4 animate-spin" />} Добавить оплату
+          {busy && <Loader2 className="h-4 w-4 animate-spin" />} Добавить
         </button>
         {error && <p className="mt-2 text-[13px] text-warn">{error}</p>}
       </div>

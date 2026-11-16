@@ -30,19 +30,24 @@ export async function POST(req: NextRequest) {
   const paidAtRaw = String(form.get("paidAt") ?? "");
   const paidAt = /^\d{4}-\d{2}-\d{2}$/.test(paidAtRaw) ? paidAtRaw : new Date().toISOString().slice(0, 10);
   const note = String(form.get("note") ?? "").trim().slice(0, 300);
+  const payer = String(form.get("payer") ?? "").trim().slice(0, 120);
+  const refund = form.get("kind") === "refund";
 
   const receipt = upload?.ok ? await saveReceipt(id, upload) : undefined;
-  await addPayment(id, {
+  const payment = await addPayment(id, {
     amount,
+    ...(refund ? { kind: "refund" as const } : {}),
     method,
     paidAt,
     ...(note ? { note } : {}),
+    ...(payer ? { payer } : {}),
     ...(receipt ? { receipt } : {}),
     // «Отдел продаж» payments wait for confirmation.
     status: access.full ? "confirmed" : "pending",
     by: me?.login ?? "manager",
     byName: me?.name ?? "Менеджер",
   });
-  await logActivity(me, "payment", `добавил(а) оплату ${formatTenge(amount)}${access.full ? "" : " (ждёт подтверждения)"}`, cab);
-  return NextResponse.json({ ok: true });
+  await logActivity(me, "payment", `${refund ? "оформил(а) возврат" : "добавил(а) оплату"} ${formatTenge(amount)}${access.full ? "" : " (ждёт подтверждения)"}`, cab);
+  // The form uploads the other receipts of this payment one by one (each request stays under the size limit).
+  return NextResponse.json({ ok: true, key: payment._key });
 }

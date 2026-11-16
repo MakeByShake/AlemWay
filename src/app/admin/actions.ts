@@ -28,8 +28,8 @@ import { deleteFile } from "@/lib/cabinet/storage";
 
 const FERIENJOB_ALL_FIELDS = FERIENJOB_FULL_SECTIONS.flatMap((sec) => sec.fields);
 import { FEEDBACK_STATUS_LIST, LEAD_STATUSES } from "@/lib/admin/data";
-import { formatTenge, parseAmount } from "@/lib/cabinet/payments";
-import { removePayment, setPaymentStatus } from "@/lib/cabinet/payments-server";
+import { PAYMENT_METHODS, formatTenge, parseAmount, type PlanItem } from "@/lib/cabinet/payments";
+import { removePayment, removeReceipt, setPaymentStatus, updatePayment } from "@/lib/cabinet/payments-server";
 import { setAiBalance } from "@/lib/ai/usage";
 import { CONSULTATION_STATUSES } from "@/lib/consultation";
 import { logActivity } from "@/lib/admin/activity";
@@ -448,19 +448,133 @@ export async function setPasswordAction(_prev: ActionState, fd: FormData): Promi
 }
 
 // ---------- Payments ----------
+// «Отдел продаж» handles the money of its own clients (price, discount, plan, payments, receipts);
+// confirming payments stays with the owner and managers.
+
+const ownsClient = (me: { login: string; role: string }, cab: { manager?: string; seller?: string }) =>
+  isFullRole(me.role) || cab.manager === me.login || cab.seller === me.login;
+/** Full roles edit any payment; «Отдел продаж» only its own not yet confirmed ones. */
+const canEditPayment = (me: { login: string; role: string }, p: { by?: string; status: string }) =>
+  isFullRole(me.role) || (p.by === me.login && p.status !== "confirmed");
 
 export async function setPriceAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  const me = await requireAdminUser({ full: true });
+  const me = await requireAdminUser();
   const id = s(fd, "id", 100);
   const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
   if (!cab) return { error: "Клиент не найден" };
+  if (!ownsClient(me, cab)) return { error: "Этот клиент закреплён за другим сотрудником" };
   const raw = s(fd, "price", 30);
   const price = parseAmount(raw);
   if (raw && !price) return { error: "Сумма — только число, например 250000" };
-  await patchCabinet(id, price ? { price } : {}, price ? [] : ["price"]);
-  await logActivity(me, "price", price ? `указал(а) сумму договора ${formatTenge(price)}` : "убрал(а) сумму договора", cab);
+  // Discount: a sum («50000») or a percent of the price («10%»).
+  const dRaw = s(fd, "discount", 30);
+  let discount: number | null = null;
+  if (dRaw) {
+    const pct = dRaw.match(/^(\d+(?:[.,]\d+)?)\s*%$/);
+    discount = pct ? Math.round(((price ?? 0) * Number(pct[1].replace(",", "."))) / 100) : parseAmount(dRaw);
+    if (!discount) return { error: "Скидка — число (50000) или процент (10%)" };
+    if (price && discount >= price) return { error: "Скидка больше суммы договора" };
+  }
+  const discountNote = s(fd, "discountNote", 200);
+  const set: Record<string, unknown> = {};
+  const unset: string[] = [];
+  if (price) set.price = price;
+  else unset.push("price");
+  if (fd.has("discount")) {
+    if (discount) set.discount = discount;
+    else unset.push("discount");
+    if (discount && discountNote) set.discountNote = discountNote;
+    else unset.push("discountNote");
+  }
+  await patchCabinet(id, set, unset);
+  const changed = price !== (cab.price ?? null) || (fd.has("discount") && (discount ?? 0) !== (cab.discount ?? 0));
+  if (changed)
+    await logActivity(
+      me,
+      "price",
+      price ? `указал(а) сумму договора ${formatTenge(price)}${discount ? `, скидка ${formatTenge(discount)}` : ""}` : "убрал(а) сумму договора",
+      cab
+    );
   revalidatePath(`/admin/clients/${id}`);
-  return { ok: true, message: price ? `Сумма к оплате: ${formatTenge(price)}` : "Сумма убрана" };
+  revalidatePath("/admin/finance");
+  const total = price ? price - (discount ?? 0) : 0;
+  return { ok: true, message: price ? `К оплате: ${formatTenge(total)}${discount ? ` (со скидкой ${formatTenge(discount)})` : ""}` : "Сумма убрана" };
+}
+
+/** Payment plan: up to 6 parts (title, amount, due date). Empty rows are skipped; no rows = no plan. */
+export async function savePlanAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const me = await requireAdminUser();
+  const id = s(fd, "id", 100);
+  const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
+  if (!cab) return { error: "Клиент не найден" };
+  if (!ownsClient(me, cab)) return { error: "Этот клиент закреплён за другим сотрудником" };
+  const plan: PlanItem[] = [];
+  for (let i = 0; i < 6; i++) {
+    const rawAmount = s(fd, `amount_${i}`, 30);
+    const title = s(fd, `title_${i}`, 80);
+    const due = s(fd, `due_${i}`, 10);
+    if (!rawAmount && !title) continue;
+    const amount = parseAmount(rawAmount);
+    if (!amount) return { error: `Строка ${i + 1}: укажите сумму числом` };
+    plan.push({
+      _key: randomUUID().replace(/-/g, "").slice(0, 12),
+      title: title || `Часть ${plan.length + 1}`,
+      amount,
+      ...(/^\d{4}-\d{2}-\d{2}$/.test(due) ? { dueDate: due } : {}),
+    });
+  }
+  await patchCabinet(id, plan.length ? { plan } : {}, plan.length ? [] : ["plan"]);
+  const sum = plan.reduce((x, p) => x + p.amount, 0);
+  await logActivity(me, "price", plan.length ? `составил(а) план оплаты: ${plan.length} ч., ${formatTenge(sum)}` : "убрал(а) план оплаты", cab, 15);
+  revalidatePath(`/admin/clients/${id}`);
+  revalidatePath("/admin/finance");
+  const total = (cab.price ?? 0) - (cab.discount ?? 0);
+  const warn = total && sum !== total ? ` · ⚠️ сумма частей ${formatTenge(sum)}, а к оплате ${formatTenge(total)}` : "";
+  return { ok: true, message: plan.length ? `План сохранён${warn}` : "План убран" };
+}
+
+/** Manager corrects a payment: amount, date, method, payer, note, payment/refund. */
+export async function updatePaymentAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const me = await requireAdminUser();
+  const id = s(fd, "id", 100);
+  const key = s(fd, "key", 40);
+  const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
+  const p = cab?.payments?.find((x) => x._key === key);
+  if (!cab || !p) return { error: "Платёж не найден" };
+  if (!ownsClient(me, cab) || !canEditPayment(me, p)) return { error: "Подтверждённый платёж исправляет менеджер" };
+  const amount = parseAmount(s(fd, "amount", 30));
+  if (!amount) return { error: "Укажите сумму числом" };
+  const methodRaw = s(fd, "method", 20);
+  const paidAt = s(fd, "paidAt", 10);
+  const note = s(fd, "note", 300);
+  const payer = s(fd, "payer", 120);
+  const set: Record<string, unknown> = {
+    amount,
+    method: PAYMENT_METHODS.some((m) => m.value === methodRaw) ? methodRaw : "other",
+    kind: s(fd, "kind", 10) === "refund" ? "refund" : "payment",
+  };
+  const unset: string[] = [];
+  if (/^\d{4}-\d{2}-\d{2}$/.test(paidAt)) set.paidAt = paidAt;
+  if (note) set.note = note;
+  else unset.push("note");
+  if (payer) set.payer = payer;
+  else unset.push("payer");
+  await updatePayment(id, key, set, unset);
+  if (amount !== p.amount) await logActivity(me, "payment_status", `исправил(а) платёж: ${formatTenge(p.amount)} → ${formatTenge(amount)}`, cab);
+  revalidatePath(`/admin/clients/${id}`);
+  revalidatePath("/admin/finance");
+  return { ok: true, message: "Платёж сохранён" };
+}
+
+export async function deleteReceiptAction(fd: FormData) {
+  const me = await requireAdminUser();
+  const id = s(fd, "id", 100);
+  const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
+  if (!cab || !ownsClient(me, cab)) return;
+  const p = cab.payments?.find((x) => x._key === s(fd, "key", 40));
+  if (!p || !canEditPayment(me, p)) return;
+  await removeReceipt(cab, s(fd, "key", 40), s(fd, "r", 40));
+  revalidatePath(`/admin/clients/${id}`);
 }
 
 export async function paymentStatusAction(fd: FormData) {
@@ -479,11 +593,12 @@ export async function paymentStatusAction(fd: FormData) {
 }
 
 export async function deletePaymentAction(fd: FormData) {
-  const me = await requireAdminUser({ full: true });
+  const me = await requireAdminUser();
   const id = s(fd, "id", 100);
   const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
-  if (!cab) return;
+  if (!cab || !ownsClient(me, cab)) return;
   const p = cab.payments?.find((x) => x._key === s(fd, "key", 40));
+  if (!p || !canEditPayment(me, p)) return;
   await removePayment(cab, s(fd, "key", 40));
   await logActivity(me, "payment_status", `удалил(а) оплату${p ? " " + formatTenge(p.amount) : ""}`, cab);
   revalidatePath(`/admin/clients/${id}`);

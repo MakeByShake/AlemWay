@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 import { adminAccess, adminError, canSeeCabinet } from "@/lib/admin-auth";
 import { getCabinet } from "@/lib/cabinet/server";
 import { fileResponse } from "@/lib/cabinet/file-response";
+import { receiptsOf } from "@/lib/cabinet/payments";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,5 +16,7 @@ export async function GET(req: NextRequest) {
   const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
   if (!cab) return adminError("Клиент не найден", 404);
   if (!canSeeCabinet(access, cab)) return adminError("Этот клиент закреплён за другим сотрудником", 403);
-  return fileResponse(cab.payments?.find((p) => p._key === key)?.receipt, { inline: req.nextUrl.searchParams.get("view") === "1" });
+  const p = cab.payments?.find((x) => x._key === key);
+  const rKey = req.nextUrl.searchParams.get("r") ?? "main";
+  return fileResponse(p ? receiptsOf(p).find((r) => r._key === rKey) : undefined, { inline: req.nextUrl.searchParams.get("view") === "1" });
 }

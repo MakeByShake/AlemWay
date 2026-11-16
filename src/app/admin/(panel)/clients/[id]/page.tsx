@@ -29,17 +29,22 @@ import {
   deleteClientFileAction,
   updateAnketaAction,
   deletePaymentAction,
+  deleteReceiptAction,
+  updatePaymentAction,
   newLinkAction,
   paymentStatusAction,
   setPriceAction,
   updateCabinetAction,
 } from "../../../actions";
 import {
+  KASPI_PAY_URL,
   PAYMENT_METHODS,
   PAYMENT_STATUS_TITLES,
   formatTenge,
   paymentTotals,
+  receiptsOf,
 } from "@/lib/cabinet/payments";
+import { AddReceiptButton, PlanEditor } from "@/components/admin/PaymentTools";
 import {
   Badge,
   PageTitle,
@@ -198,7 +203,16 @@ export default async function ClientPage({
   const keta = service === "keta";
   const name = cabinetName(cab);
   const wa = waLink(cab.clientPhone || cab.data?.phone);
-  const money = paymentTotals(cab.price, cab.payments);
+  const money = paymentTotals(cab.price, cab.payments, { discount: cab.discount, plan: cab.plan, today: new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Almaty" }).format(new Date()) });
+  // «Напомнить об оплате»: WhatsApp with the sum, the date and the Kaspi link.
+  const firstName = (cab.clientName || cab.data?.firstName || "").trim().split(/\s+/)[0];
+  const reminderText = [
+    `Здравствуйте${firstName ? `, ${firstName}` : ""}!`,
+    `Напоминаем об оплате услуг AlemWay: ${money.next ? `${money.next.title.toLowerCase()} — ${formatTenge(money.next.left)}${money.next.dueDate ? ` до ${fmtDate(money.next.dueDate, false)}` : ""}` : `осталось ${formatTenge(money.remaining)}`}.`,
+    `Оплатить можно через Kaspi: ${KASPI_PAY_URL}`,
+    "После оплаты пришлите, пожалуйста, чек сюда. Спасибо!",
+  ].join("\n");
+  const reminderLink = wa ? `${wa}?text=${encodeURIComponent(reminderText)}` : null;
   const fileCount = Object.values(cab.files ?? {}).filter(
     (f) => f?.path,
   ).length;
@@ -925,149 +939,254 @@ export default async function ClientPage({
 
       {tab === "payment" && (
         <>
-          <section className="card p-4 sm:p-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
+          {/* Summary: what is due, paid, left, and what comes next. */}
+          <section className="card mb-5 p-4 sm:p-6">
+            <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h2 className="text-[18px] font-bold">Оплата</h2>
-                <p className="mt-1 text-[14px] text-muted">
-                  Только для учёта внутри команды — клиент оплату не видит.
-                </p>
+                <p className="mt-1 text-[14px] text-muted">Только для команды — клиент этого не видит.</p>
               </div>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-xl bg-surface px-3 py-2">
-                  <p className="text-[12px] text-muted">К оплате</p>
-                  <p className="font-bold tabular-nums">
-                    {money.hasPrice ? formatTenge(money.price) : "—"}
-                  </p>
-                </div>
-                <div className="rounded-xl bg-accent-soft px-3 py-2">
-                  <p className="text-[12px] text-muted">Оплачено</p>
-                  <p className="font-bold tabular-nums">
-                    {formatTenge(money.paid)}
-                  </p>
-                </div>
-                <div
-                  className={`rounded-xl px-3 py-2 ${money.remaining > 0 ? "bg-warn-soft" : "bg-surface"}`}
-                >
-                  <p className="text-[12px] text-muted">Остаток</p>
-                  <p className="font-bold tabular-nums">
-                    {money.hasPrice ? formatTenge(money.remaining) : "—"}
-                  </p>
-                </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {money.remaining > 0 && reminderLink && (
+                  <a href={reminderLink} target="_blank" rel="noopener noreferrer" className="btn-whatsapp min-h-9 px-3 text-[13px]">
+                    Напомнить об оплате
+                  </a>
+                )}
+                <CopyButton text={KASPI_PAY_URL} label="Ссылка Kaspi" />
               </div>
             </div>
-
-            {owner && (
-              <ActionForm
-                action={setPriceAction}
-                className="mt-4 flex flex-wrap items-end gap-2"
-              >
-                <input type="hidden" name="id" value={id} />
-                <label className="grid gap-1 text-[14px] font-medium">
-                  Сумма к оплате за услугу, ₸
-                  <input
-                    name="price"
-                    inputMode="numeric"
-                    defaultValue={cab.price ?? ""}
-                    placeholder="например 250000"
-                    className={`${input} w-56`}
-                  />
-                </label>
-                <SubmitButton
-                  className="btn-ghost min-h-10 px-4 text-[14px]"
-                  pendingText="Сохраняем…"
-                >
-                  Сохранить сумму
-                </SubmitButton>
-              </ActionForm>
-            )}
-
-            <div className="mt-5 grid gap-6 lg:grid-cols-2">
-              <div>
-                <h3 className="mb-2 text-[15px] font-bold">Платежи и чеки</h3>
-                {payments.length === 0 ? (
-                  <p className="text-[14px] text-muted">Платежей пока нет.</p>
-                ) : (
-                  <ul className="divide-y divide-line">
-                    {payments.map((p) => (
-                      <li key={p._key} className="py-3">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <p className="font-bold tabular-nums">
-                            {formatTenge(p.amount)}
-                          </p>
-                          <Badge
-                            tone={
-                              p.status === "confirmed"
-                                ? "green"
-                                : p.status === "pending"
-                                  ? "amber"
-                                  : "red"
-                            }
-                          >
-                            {PAYMENT_STATUS_TITLES[p.status]}
-                          </Badge>
-                        </div>
-                        <p className="text-[13px] text-muted">
-                          {fmtDate(p.paidAt, false)} ·{" "}
-                          {PAYMENT_METHODS.find((m) => m.value === p.method)
-                            ?.title ?? "—"}{" "}
-                          ·{" "}
-                          {p.by === "client"
-                            ? "чек от клиента"
-                            : `добавил ${p.byName ?? "менеджер"}`}
-                          {p.note ? ` · ${p.note}` : ""}
-                        </p>
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          {p.receipt && (
-                            <a
-                              href={`/api/admin/cabinet/receipt?id=${encodeURIComponent(id)}&key=${p._key}&view=1`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="btn-primary min-h-8 px-2.5 text-[13px]"
-                            >
-                              Открыть чек
-                            </a>
-                          )}
-                          {owner && p.status !== "confirmed" && (
-                            <QuickButton
-                              action={paymentStatusAction}
-                              hidden={{ id, key: p._key, status: "confirmed" }}
-                              className="btn-whatsapp min-h-8 px-2.5 text-[13px]"
-                            >
-                              Подтвердить
-                            </QuickButton>
-                          )}
-                          {owner && p.status === "pending" && (
-                            <QuickButton
-                              action={paymentStatusAction}
-                              hidden={{ id, key: p._key, status: "rejected" }}
-                            >
-                              Отклонить
-                            </QuickButton>
-                          )}
-                          {owner && (
-                            <QuickButton
-                              action={deletePaymentAction}
-                              hidden={{ id, key: p._key }}
-                              confirmText={`Удалить платёж ${formatTenge(p.amount)}?`}
-                              className="min-h-8 px-2 text-[13px] text-red-600 hover:underline"
-                            >
-                              Удалить
-                            </QuickButton>
-                          )}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <div className="rounded-xl bg-surface px-3 py-2.5">
+                <p className="text-[12px] text-muted">К оплате</p>
+                <p className="font-bold tabular-nums">{money.hasPrice ? formatTenge(money.price) : "—"}</p>
+                {money.discount > 0 && (
+                  <p className="text-[12px] text-muted">
+                    <s>{formatTenge(money.fullPrice)}</s> − скидка {formatTenge(money.discount)}
+                  </p>
                 )}
               </div>
-              <div>
-                <h3 className="mb-2 text-[15px] font-bold">
-                  Добавить оплату вручную
-                </h3>
-                <AddPaymentForm id={id} methods={PAYMENT_METHODS} />
+              <div className="rounded-xl bg-accent-soft px-3 py-2.5">
+                <p className="text-[12px] text-muted">Оплачено</p>
+                <p className="font-bold tabular-nums">{formatTenge(money.paid)}</p>
+                {money.pending !== 0 && <p className="text-[12px] text-brand">+ {formatTenge(money.pending)} на проверке</p>}
+              </div>
+              <div className={`rounded-xl px-3 py-2.5 ${money.overdue > 0 ? "bg-red-50" : money.remaining > 0 ? "bg-warn-soft" : "bg-surface"}`}>
+                <p className="text-[12px] text-muted">{money.overpaid > 0 ? "Переплата" : "Остаток"}</p>
+                <p className={`font-bold tabular-nums ${money.overdue > 0 ? "text-red-700" : ""}`}>
+                  {!money.hasPrice ? "—" : formatTenge(money.overpaid > 0 ? money.overpaid : money.remaining)}
+                </p>
+                {money.overdue > 0 && <p className="text-[12px] font-semibold text-red-700">просрочено {formatTenge(money.overdue)}</p>}
+              </div>
+              <div className="rounded-xl bg-surface px-3 py-2.5">
+                <p className="text-[12px] text-muted">Следующий платёж</p>
+                {money.hasPrice && money.remaining === 0 ? (
+                  <p className="font-bold text-[#0a7a42]">Оплачено ✅</p>
+                ) : money.next ? (
+                  <>
+                    <p className="font-bold tabular-nums">{formatTenge(money.next.left)}</p>
+                    <p className="text-[12px] text-muted">
+                      {money.next.title}
+                      {money.next.dueDate ? ` · до ${fmtDate(money.next.dueDate, false)}` : ""}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-[13px] text-muted">{money.hasPrice ? "план не составлен" : "—"}</p>
+                )}
               </div>
             </div>
+          </section>
+
+          <div className="mb-5 grid grid-cols-1 gap-5 lg:grid-cols-2 [&>*]:min-w-0">
+            {/* Price and discount + the plan. */}
+            <section className="card p-4 sm:p-6">
+              <h3 className="text-[16px] font-bold">Сумма и скидка</h3>
+              <ActionForm action={setPriceAction} className="mt-3 grid gap-2 sm:grid-cols-2">
+                <input type="hidden" name="id" value={id} />
+                <label className="grid gap-1 text-[13px] font-medium">
+                  Цена услуги, ₸
+                  <input name="price" inputMode="numeric" defaultValue={cab.price ?? ""} placeholder="750000" className={input} />
+                </label>
+                <label className="grid gap-1 text-[13px] font-medium">
+                  Скидка (₸ или %)
+                  <input name="discount" defaultValue={cab.discount ?? ""} placeholder="50000 или 10%" className={input} />
+                </label>
+                <label className="grid gap-1 text-[13px] font-medium sm:col-span-2">
+                  За что скидка
+                  <input name="discountNote" defaultValue={cab.discountNote ?? ""} placeholder="Например: пришёл с другом, студент-отличник" className={input} />
+                </label>
+                <div className="sm:col-span-2">
+                  <SubmitButton className="btn-ghost min-h-9 px-4 text-[14px]" pendingText="Сохраняем…">
+                    Сохранить
+                  </SubmitButton>
+                </div>
+              </ActionForm>
+
+              <h3 className="mt-6 text-[16px] font-bold">План оплаты</h3>
+              <p className="mt-1 text-[13px] text-muted">Предоплата, остаток, в долг — с датами. Оплаченное закрывает части по порядку.</p>
+              {money.plan.length > 0 && (
+                <ul className="mt-3 divide-y divide-line rounded-xl border border-line">
+                  {money.plan.map((pl) => (
+                    <li key={pl._key} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5">
+                      <span className="min-w-0">
+                        <span className="block font-semibold">{pl.title}</span>
+                        <span className="text-[12.5px] text-muted">
+                          {formatTenge(pl.amount)}
+                          {pl.dueDate ? ` · до ${fmtDate(pl.dueDate, false)}` : ""}
+                          {pl.state === "partial" ? ` · внесено ${formatTenge(pl.paid)}` : ""}
+                        </span>
+                      </span>
+                      <Badge tone={pl.state === "paid" ? "green" : pl.state === "overdue" ? "red" : pl.state === "partial" ? "blue" : "amber"}>
+                        {pl.state === "paid" ? "Оплачено" : pl.state === "overdue" ? `Просрочено · ${formatTenge(pl.left)}` : pl.state === "partial" ? `Осталось ${formatTenge(pl.left)}` : "Ждём"}
+                      </Badge>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <details className="mt-3" open={money.plan.length === 0}>
+                <summary className="cursor-pointer text-[14px] font-semibold text-brand">{money.plan.length ? "Изменить план" : "Составить план"}</summary>
+                <div className="mt-3">
+                  <PlanEditor id={id} total={money.price} plan={cab.plan} />
+                </div>
+              </details>
+            </section>
+
+            <section className="card p-4 sm:p-6">
+              <h3 className="mb-1 text-[16px] font-bold">Добавить оплату</h3>
+              <p className="mb-3 text-[13px] text-muted">
+                Можно сразу несколько чеков.{!owner && " Ваши платежи подтверждает менеджер."}
+              </p>
+              <AddPaymentForm id={id} methods={PAYMENT_METHODS} />
+            </section>
+          </div>
+
+          <section className="card p-4 sm:p-6">
+            <h3 className="mb-2 text-[16px] font-bold">Платежи и чеки</h3>
+            {payments.length === 0 ? (
+              <p className="text-[14px] text-muted">Платежей пока нет.</p>
+            ) : (
+              <ul className="divide-y divide-line">
+                {payments.map((p) => {
+                  const refund = p.kind === "refund";
+                  const editable = owner || (p.by === me.login && p.status !== "confirmed");
+                  const receipts = receiptsOf(p);
+                  return (
+                    <li key={p._key} className="py-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className={`text-[16px] font-bold tabular-nums ${refund ? "text-red-700" : ""}`}>
+                          {refund ? "− " : ""}
+                          {formatTenge(p.amount)}
+                          {refund && <span className="ml-2 text-[13px] font-semibold">возврат клиенту</span>}
+                        </p>
+                        <Badge tone={p.status === "confirmed" ? "green" : p.status === "pending" ? "amber" : "red"}>{PAYMENT_STATUS_TITLES[p.status]}</Badge>
+                      </div>
+                      <p className="text-[13px] text-muted">
+                        {[
+                          fmtDate(p.paidAt, false),
+                          PAYMENT_METHODS.find((m) => m.value === p.method)?.title,
+                          p.payer && `платил(а): ${p.payer}`,
+                          p.by === "client" ? "чек от клиента" : `добавил(а) ${p.byName ?? "менеджер"}`,
+                          p.note,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        {receipts.map((r, i) => (
+                          <span key={r._key} className="inline-flex items-center overflow-hidden rounded-lg border border-line">
+                            <a
+                              href={`/api/admin/cabinet/receipt?id=${encodeURIComponent(id)}&key=${p._key}&r=${r._key}&view=1`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2.5 py-1 text-[13px] font-semibold text-brand hover:bg-brand-soft"
+                            >
+                              🧾 Чек {receipts.length > 1 ? i + 1 : ""}
+                            </a>
+                            {editable && (
+                              <QuickButton
+                                action={deleteReceiptAction}
+                                hidden={{ id, key: p._key, r: r._key ?? "main" }}
+                                confirmText="Удалить этот чек?"
+                                className="border-l border-line px-2 py-1 text-[13px] text-muted hover:bg-red-50 hover:text-red-600"
+                              >
+                                ×
+                              </QuickButton>
+                            )}
+                          </span>
+                        ))}
+                        <AddReceiptButton id={id} paymentKey={p._key} />
+                        {owner && p.status !== "confirmed" && (
+                          <QuickButton action={paymentStatusAction} hidden={{ id, key: p._key, status: "confirmed" }} className="btn-whatsapp min-h-8 px-2.5 text-[13px]">
+                            Подтвердить
+                          </QuickButton>
+                        )}
+                        {owner && p.status === "pending" && (
+                          <QuickButton action={paymentStatusAction} hidden={{ id, key: p._key, status: "rejected" }}>
+                            Отклонить
+                          </QuickButton>
+                        )}
+                        {editable && (
+                          <QuickButton
+                            action={deletePaymentAction}
+                            hidden={{ id, key: p._key }}
+                            confirmText={`Удалить платёж ${formatTenge(p.amount)}?`}
+                            className="min-h-8 px-2 text-[13px] text-red-600 hover:underline"
+                          >
+                            Удалить
+                          </QuickButton>
+                        )}
+                      </div>
+                      {editable && (
+                        <details className="mt-2">
+                          <summary className="cursor-pointer text-[13px] font-semibold text-brand">Исправить</summary>
+                          <ActionForm action={updatePaymentAction} className="mt-2 grid gap-2 rounded-xl bg-surface p-3 sm:grid-cols-3">
+                            <input type="hidden" name="id" value={id} />
+                            <input type="hidden" name="key" value={p._key} />
+                            <label className="grid gap-1 text-[13px] font-medium">
+                              Сумма, ₸
+                              <input name="amount" inputMode="numeric" defaultValue={p.amount} className={input} />
+                            </label>
+                            <label className="grid gap-1 text-[13px] font-medium">
+                              Дата
+                              <input name="paidAt" type="date" defaultValue={p.paidAt ?? ""} className={input} />
+                            </label>
+                            <label className="grid gap-1 text-[13px] font-medium">
+                              Способ
+                              <select name="method" defaultValue={p.method ?? "other"} className={input}>
+                                {PAYMENT_METHODS.map((m) => (
+                                  <option key={m.value} value={m.value}>
+                                    {m.title}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <label className="grid gap-1 text-[13px] font-medium">
+                              Тип
+                              <select name="kind" defaultValue={refund ? "refund" : "payment"} className={input}>
+                                <option value="payment">Оплата</option>
+                                <option value="refund">Возврат клиенту</option>
+                              </select>
+                            </label>
+                            <label className="grid gap-1 text-[13px] font-medium">
+                              Кто платил
+                              <input name="payer" defaultValue={p.payer ?? ""} placeholder="сам клиент" className={input} />
+                            </label>
+                            <label className="grid gap-1 text-[13px] font-medium">
+                              Комментарий
+                              <input name="note" defaultValue={p.note ?? ""} className={input} />
+                            </label>
+                            <div className="sm:col-span-3">
+                              <SubmitButton className="btn-primary min-h-9 px-4 text-[14px]" pendingText="Сохраняем…">
+                                Сохранить
+                              </SubmitButton>
+                            </div>
+                          </ActionForm>
+                        </details>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </section>
         </>
       )}

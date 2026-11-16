@@ -1,7 +1,7 @@
 import "server-only";
 import { writeClient, type Cabinet } from "@/lib/cabinet/server";
 import type { ServiceId } from "@/lib/cabinet/fields";
-import type { Payment } from "@/lib/cabinet/payments";
+import type { Payment, PlanItem } from "@/lib/cabinet/payments";
 
 /** Reads for the /admin pages. Everything goes through the server token; nothing is public. */
 
@@ -216,13 +216,13 @@ export async function deleteDoc(id: string) {
 export const cabinetName = (c: { firstName?: string; lastName?: string; clientName?: string; data?: Record<string, string | undefined> }) =>
   c.clientName?.trim() || [c.firstName ?? c.data?.firstName, c.lastName ?? c.data?.lastName].filter(Boolean).join(" ") || "Без имени";
 
-export type FinanceRow = CabinetRow & { price?: number; payments?: Payment[]; manager?: string };
+export type FinanceRow = CabinetRow & { price?: number; discount?: number; plan?: PlanItem[]; payments?: Payment[]; manager?: string };
 
 export function getFinanceRows() {
   return writeClient().fetch<FinanceRow[]>(
     `*[_type == "cabinet" && ${notDraft}] | order(coalesce(number, 0) desc){
       _id, number, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName,
-      manager, managerName, price, payments
+      manager, managerName, price, discount, plan, payments
     }`
   );
 }
