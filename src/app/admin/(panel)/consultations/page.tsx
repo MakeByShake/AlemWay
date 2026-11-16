@@ -3,7 +3,7 @@ import { getConsultations, getManagerOptions } from "@/lib/admin/data";
 import { isFullRole, requireAdminUser } from "@/lib/admin/session";
 import { CONSULTATION_PRICE, CONSULTATION_STATUSES, almatyNow, formatDayRu } from "@/lib/consultation";
 import { deleteConsultationAction, updateConsultationAction } from "../../actions";
-import { Badge, Empty, FilterTabs, PageTitle, waLink } from "@/components/admin/bits";
+import { Badge, Empty, FilterTabs, PageTitle, waLink, WA_TARGET } from "@/components/admin/bits";
 import { AutoSelect, NoteForm, QuickButton } from "@/components/admin/ui";
 
 export const metadata = { title: "Консультации" };
@@ -127,7 +127,7 @@ export default async function ConsultationsPage({ searchParams }: { searchParams
                           </>
                         )}
                         {wa && (
-                          <a href={wa} target="_blank" rel="noopener noreferrer" className="btn-whatsapp min-h-8 px-3 text-[13px]">
+                          <a href={wa} target={WA_TARGET} rel="noopener noreferrer" className="btn-whatsapp min-h-8 px-3 text-[13px]">
                             WhatsApp
                           </a>
                         )}

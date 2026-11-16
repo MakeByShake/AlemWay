@@ -177,7 +177,7 @@ export function LinkBox({ link, phone, name, curator, service, title = "Ссыл
         <CopyButton text={link} label="Скопировать ссылку" />
         <CopyButton text={text} label="Скопировать шаблон" />
         {digits.length >= 11 && (
-          <a className="btn-whatsapp min-h-9 px-3 text-[13px]" href={`https://wa.me/${digits}?text=${encodeURIComponent(text)}`} target="_blank" rel="noopener noreferrer">
+          <a className="btn-whatsapp min-h-9 px-3 text-[13px]" href={`https://web.whatsapp.com/send?phone=${digits}&text=${encodeURIComponent(text)}`} target="alemway-whatsapp" rel="noopener noreferrer">
             Отправить шаблон в WhatsApp
           </a>
         )}

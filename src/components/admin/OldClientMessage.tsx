@@ -225,8 +225,8 @@ export function OldClientMessage({
             {digits.length >= 11 && (
               <a
                 className="btn-whatsapp min-h-9 px-3 text-[13px]"
-                href={`https://wa.me/${digits}?text=${encodeURIComponent(text)}`}
-                target="_blank"
+                href={`https://web.whatsapp.com/send?phone=${digits}&text=${encodeURIComponent(text)}`}
+                target="alemway-whatsapp"
                 rel="noopener noreferrer"
               >
                 Отправить в WhatsApp

@@ -73,10 +73,16 @@ export function fmtDate(iso?: string | null, withTime = true) {
   }).format(d);
 }
 
-export function waLink(phone?: string) {
+/**
+ * WhatsApp chat with a number, in WhatsApp Web (the team works there, WhatsApp Business in the browser).
+ * Optional text is pre-filled. Links open in one reused tab (target WA_TARGET), not a new tab each time.
+ */
+export function waLink(phone?: string, text?: string) {
   const d = (phone ?? "").replace(/\D/g, "").replace(/^8(\d{10})$/, "7$1");
-  return d.length >= 11 ? `https://wa.me/${d}` : null;
+  if (d.length < 11) return null;
+  return `https://web.whatsapp.com/send?phone=${d}${text ? `&text=${encodeURIComponent(text)}` : ""}`;
 }
+export const WA_TARGET = "alemway-whatsapp";
 
 /** Where the client is in the process — the same steps the client sees in the cabinet. */
 export function clientProgress(service: string | undefined, status: string | undefined) {

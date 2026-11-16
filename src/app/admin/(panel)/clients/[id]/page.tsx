@@ -55,7 +55,7 @@ import {
   PageTitle,
   Progress,
   fmtDate,
-  waLink,
+  waLink, WA_TARGET,
 } from "@/components/admin/bits";
 import { Pipeline } from "@/components/Pipeline";
 import { ActivityFeed } from "@/components/admin/ActivityFeed";
@@ -262,7 +262,7 @@ export default async function ClientPage({
     state: !cab.deadline ? "none" : !["waiting_data", "declaration_ready"].includes(cab.status ?? "waiting_data") ? "done" : cab.deadline < todayKz ? "overdue" : "open",
     days: cab.deadline ? Math.round((Date.parse(cab.deadline) - Date.parse(todayKz)) / 86_400_000) : 0,
   };
-  const reminderLink = wa ? `${wa}?text=${encodeURIComponent(reminderText)}` : null;
+  const reminderLink = waLink(cab.clientPhone || cab.data?.phone, reminderText);
   const fileCount = Object.values(cab.files ?? {}).filter(
     (f) => f?.path,
   ).length;
@@ -295,7 +295,7 @@ export default async function ClientPage({
           {wa && (
             <a
               href={wa}
-              target="_blank"
+              target={WA_TARGET}
               rel="noopener noreferrer"
               className="btn-whatsapp min-h-10 px-4 text-[14px]"
             >
@@ -483,7 +483,7 @@ export default async function ClientPage({
                       </span>
                       <span className="flex items-center gap-2">
                         {w && (
-                          <a href={w} target="_blank" rel="noopener noreferrer" className="btn-whatsapp min-h-8 px-2.5 text-[13px]">
+                          <a href={w} target={WA_TARGET} rel="noopener noreferrer" className="btn-whatsapp min-h-8 px-2.5 text-[13px]">
                             WhatsApp
                           </a>
                         )}
@@ -1109,7 +1109,7 @@ export default async function ClientPage({
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {money.remaining > 0 && reminderLink && (
-                  <a href={reminderLink} target="_blank" rel="noopener noreferrer" className="btn-whatsapp min-h-9 px-3 text-[13px]">
+                  <a href={reminderLink} target={WA_TARGET} rel="noopener noreferrer" className="btn-whatsapp min-h-9 px-3 text-[13px]">
                     Напомнить об оплате
                   </a>
                 )}

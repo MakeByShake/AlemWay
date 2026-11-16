@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getLeads, getManagerOptions, LEAD_STATUSES } from "@/lib/admin/data";
 import { isFullRole, requireAdminUser } from "@/lib/admin/session";
 import { createCabinetAction, deleteLeadAction, updateLeadAction } from "../../actions";
-import { Badge, Empty, FilterTabs, PageTitle, fmtDate, waLink } from "@/components/admin/bits";
+import { Badge, Empty, FilterTabs, PageTitle, fmtDate, waLink, WA_TARGET } from "@/components/admin/bits";
 import { ActionForm, AutoSelect, ConfirmForm, NoteForm, SubmitButton } from "@/components/admin/ui";
 
 export const metadata = { title: "Заявки" };
@@ -49,7 +49,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                     </a>
                   )}
                   {wa && (
-                    <a href={wa} target="_blank" rel="noopener noreferrer" className="btn-whatsapp min-h-8 px-3 text-[13px]">
+                    <a href={wa} target={WA_TARGET} rel="noopener noreferrer" className="btn-whatsapp min-h-8 px-3 text-[13px]">
                       WhatsApp
                     </a>
                   )}

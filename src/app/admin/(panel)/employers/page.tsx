@@ -4,7 +4,7 @@ import { RememberListQuery } from "@/components/admin/ListMemory";
 import { isFullRole, requireAdminUser } from "@/lib/admin/session";
 import { EMPLOYER_INDUSTRIES, EMPLOYER_STATUSES, HOUSING_OPTIONS, employerStatus, getEmployers, optionTitle } from "@/lib/admin/employers";
 import { createEmployerAction } from "../../employer-actions";
-import { Badge, Empty, PageTitle, fmtDate, waLink } from "@/components/admin/bits";
+import { Badge, Empty, PageTitle, fmtDate, waLink, WA_TARGET } from "@/components/admin/bits";
 import { ActionForm, CloseDetailsButton, SubmitButton } from "@/components/admin/ui";
 
 export const metadata = { title: "Работодатели" };
@@ -119,7 +119,7 @@ export default async function EmployersPage({ searchParams }: { searchParams: Pr
                   <Badge tone={st.tone}>{st.title}</Badge>
                   {e.contactName && <span className="text-[13px] text-muted">📞 {e.contactName}</span>}
                   {wa && (
-                    <a href={wa} target="_blank" rel="noopener noreferrer" className="text-[13px] font-semibold text-accent hover:underline">
+                    <a href={wa} target={WA_TARGET} rel="noopener noreferrer" className="text-[13px] font-semibold text-accent hover:underline">
                       WhatsApp
                     </a>
                   )}

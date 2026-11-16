@@ -4,7 +4,7 @@ import { RememberListQuery } from "@/components/admin/ListMemory";
 import { getCabinets, cabinetName, getManagerOptions } from "@/lib/admin/data";
 import { isFullRole, requireAdminUser } from "@/lib/admin/session";
 import { CABINET_STATUSES } from "@/lib/cabinet/fields";
-import { Badge, DeanBadge, Empty, PageTitle, Progress, SERVICE_SHORT, fmtDate, waLink } from "@/components/admin/bits";
+import { Badge, DeanBadge, Empty, PageTitle, Progress, SERVICE_SHORT, fmtDate, waLink, WA_TARGET } from "@/components/admin/bits";
 import { NewClientForm } from "@/components/admin/NewClientForm";
 
 export const metadata = { title: "Клиенты" };
@@ -174,7 +174,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
                   <Badge tone={c.managerName ? "gray" : "amber"}>👤 {c.managerName || "Без ведущего"}</Badge>
                   <Progress service={c.service} status={c.status} />
                   {wa && (
-                    <a href={wa} target="_blank" rel="noopener noreferrer" className="text-[13px] font-semibold text-accent hover:underline">
+                    <a href={wa} target={WA_TARGET} rel="noopener noreferrer" className="text-[13px] font-semibold text-accent hover:underline">
                       WhatsApp
                     </a>
                   )}

@@ -22,7 +22,7 @@ import {
   removeEmployerClientAction,
   updateEmployerAction,
 } from "../../../employer-actions";
-import { Badge, Empty, PageTitle, Progress, fmtDate, waLink } from "@/components/admin/bits";
+import { Badge, Empty, PageTitle, Progress, fmtDate, waLink, WA_TARGET } from "@/components/admin/bits";
 import { ActionForm, ConfirmForm, QuickButton, SubmitButton } from "@/components/admin/ui";
 import { EmployerFileUpload } from "@/components/admin/EmployerFileUpload";
 
@@ -147,7 +147,7 @@ export default async function EmployerPage({ params, searchParams }: { params: P
             </a>
           )}
           {wa && (
-            <a href={wa} target="_blank" rel="noopener noreferrer" className="btn-whatsapp min-h-10 px-4 text-[14px]">
+            <a href={wa} target={WA_TARGET} rel="noopener noreferrer" className="btn-whatsapp min-h-10 px-4 text-[14px]">
               WhatsApp
             </a>
           )}
