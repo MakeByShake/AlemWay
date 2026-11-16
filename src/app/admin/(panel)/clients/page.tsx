@@ -4,9 +4,8 @@ import { RememberListQuery } from "@/components/admin/ListMemory";
 import { getCabinets, cabinetName, getManagerOptions } from "@/lib/admin/data";
 import { isFullRole, requireAdminUser } from "@/lib/admin/session";
 import { CABINET_STATUSES } from "@/lib/cabinet/fields";
-import { createCabinetAction } from "../../actions";
 import { Badge, DeanBadge, Empty, PageTitle, Progress, SERVICE_SHORT, fmtDate, waLink } from "@/components/admin/bits";
-import { ActionForm, CloseDetailsButton, SubmitButton } from "@/components/admin/ui";
+import { NewClientForm } from "@/components/admin/NewClientForm";
 
 export const metadata = { title: "Клиенты" };
 
@@ -68,57 +67,11 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
         ))}
       </nav>
 
-      {owner && (
       <details className="card mb-6 p-4 sm:p-5">
-        <summary className="cursor-pointer text-[16px] font-bold text-brand">+ Новый клиент (без заявки с сайта)</summary>
-        <p className="mt-2 text-[14px] text-muted">Создайте кабинет, когда клиент оплатил. Клиент войдёт по ссылке без пароля.</p>
-        <ActionForm action={createCabinetAction} className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end" resetOnSuccess>
-          <label className="grid gap-1 text-[14px] font-medium">
-            Имя клиента
-            <input name="clientName" required minLength={2} className="field" placeholder="Айгерим Нурланова" />
-          </label>
-          <label className="grid gap-1 text-[14px] font-medium">
-            Телефон
-            <input name="clientPhone" className="field" placeholder="+7 777 123 45 67" />
-          </label>
-          <label className="grid gap-1 text-[14px] font-medium">
-            Услуга
-            <select name="service" className="field">
-              <option value="ferienjob">🇩🇪 Германия (Ferienjob)</option>
-              <option value="keta">🇰🇷 K-ETA</option>
-            </select>
-          </label>
-          <label className="grid gap-1 text-[14px] font-medium sm:col-span-2">
-            🤝 Кто продал
-            <select name="seller" defaultValue="" className="field">
-              <option value="">— не указано —</option>
-              {managers.map((m) => (
-                <option key={m.login} value={m.login}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          {owner && (
-            <label className="grid gap-1 text-[14px] font-medium sm:col-span-2">
-              👤 Кто ведёт документы
-              <select name="manager" defaultValue={me.login} className="field">
-                <option value="">— не назначен —</option>
-                {managers.map((m) => (
-                  <option key={m.login} value={m.login}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-          <div className="flex gap-2">
-            <SubmitButton pendingText="Создаём…">Создать</SubmitButton>
-            <CloseDetailsButton />
-          </div>
-        </ActionForm>
+        <summary className="cursor-pointer text-[16px] font-bold text-brand">+ Новый клиент</summary>
+        <p className="mt-2 text-[14px] text-muted">Создайте кабинет, когда клиент оплатил: сразу можно приложить договор и чеки. Клиент войдёт по ссылке без пароля.</p>
+        <NewClientForm full={owner} isOwner={owner} me={me.login} members={managers} />
       </details>
-      )}
 
       <form className="mb-5 flex flex-wrap gap-2" action="/admin/clients">
         {group && <input type="hidden" name="group" value={group} />}

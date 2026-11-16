@@ -166,12 +166,12 @@ export function CopyButton({ text, label = "Скопировать" }: { text: s
 }
 
 /** Shows a fresh client login link with copy + «send to WhatsApp». */
-export function LinkBox({ link, phone, name, curator, service }: { link: string; phone?: string; name?: string; curator?: string; service?: string }) {
+export function LinkBox({ link, phone, name, curator, service, title = "Ссылка для клиента (видна только сейчас — скопируйте):" }: { link: string; phone?: string; name?: string; curator?: string; service?: string; title?: string }) {
   const digits = (phone ?? "").replace(/\D/g, "").replace(/^8(\d{10})$/, "7$1");
   const text = welcomeMessage({ name, link, curator, service });
   return (
     <div className="rounded-xl border border-accent/40 bg-accent-soft p-4">
-      <p className="text-[14px] font-semibold">Ссылка для клиента (видна только сейчас — скопируйте):</p>
+      <p className="text-[14px] font-semibold">{title}</p>
       <p className="mt-2 break-all rounded-lg bg-white px-3 py-2 font-mono text-[13px]">{link}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <CopyButton text={link} label="Скопировать ссылку" />
@@ -181,6 +181,9 @@ export function LinkBox({ link, phone, name, curator, service }: { link: string;
             Отправить шаблон в WhatsApp
           </a>
         )}
+        <a className="btn-ghost min-h-9 px-3 text-[13px]" href={link} target="_blank" rel="noopener noreferrer">
+          Открыть кабинет
+        </a>
       </div>
     </div>
   );

@@ -12,7 +12,20 @@ export const CABINET_COOKIE = "aw_cabinet";
 export { CABINET_SUPPORT_WHATSAPP } from "./fields";
 export const CABINET_COOKIE_MAX_AGE = 60 * 60 * 24 * 180; // 180 days
 
-export type DeanIssue = { uni: string; faculty: string; group: string; reason: string; phone?: string; at: string; resolvedAt?: string; resolvedBy?: string };
+export type DeanIssue = {
+  uni: string;
+  faculty: string;
+  group: string;
+  reason: string;
+  phone?: string;
+  /** Name of the dean / the person at the dean's office. */
+  deanName?: string;
+  at: string;
+  /** Team member who typed it in (when the client sent it in WhatsApp); empty = the client wrote it in the cabinet. */
+  addedBy?: string;
+  resolvedAt?: string;
+  resolvedBy?: string;
+};
 
 export type StoredFile = { path: string; name: string; contentType: string; size: number; uploadedAt: string };
 

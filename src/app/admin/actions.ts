@@ -20,7 +20,8 @@ import {
 } from "@/lib/admin/session";
 import { deleteDoc, patchDoc } from "@/lib/admin/data";
 import { AdminOpError, createCabinet, deleteCabinetCompletely } from "@/lib/cabinet/admin-ops";
-import { freshLink, getCabinet, patchCabinet, writeClient } from "@/lib/cabinet/server";
+import { cabinetAdminUrl, freshLink, getCabinet, patchCabinet, writeClient } from "@/lib/cabinet/server";
+import { escapeHtml, sendTelegram } from "@/lib/telegram";
 import { checkAndBuildDeclaration } from "@/lib/cabinet/ai-flow";
 import { aiReady } from "@/lib/ai/declaration";
 import { CABINET_STATUSES, FERIENJOB_FULL_SECTIONS, FILE_KINDS, FILE_LABELS, KETA_FIELDS, serviceOf, type FileKind } from "@/lib/cabinet/fields";
@@ -136,22 +137,40 @@ async function memberFor(login: string) {
 }
 
 export async function createCabinetAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  const me = await requireAdminUser({ full: true });
+  const me = await requireAdminUser();
+  const full = isFullRole(me.role);
   try {
-    const leadId = s(fd, "leadId", 100);
+    const leadId = full ? s(fd, "leadId", 100) : "";
     const service = s(fd, "service", 20);
+    const clientName = s(fd, "clientName", 80);
+    const clientPhone = s(fd, "clientPhone", 30);
     const res = await createCabinet({
-      clientName: s(fd, "clientName", 80),
-      clientPhone: s(fd, "clientPhone", 30),
+      clientName,
+      clientPhone,
       service: service || undefined,
       leadId,
-      manager: await managerFor(me, fd.has("manager") ? s(fd, "manager", 40) : null),
-      seller: fd.has("seller") ? await memberFor(s(fd, "seller", 40)) : null,
+      // «Отдел продаж»: the client is theirs (sold), the team picks who leads the documents.
+      manager: full ? await managerFor(me, fd.has("manager") ? s(fd, "manager", 40) : null) : null,
+      seller: full ? (fd.has("seller") ? await memberFor(s(fd, "seller", 40)) : null) : { login: me.login, name: me.name },
     });
-    await logActivity(me, "client_created", `создал(а) клиента ${s(fd, "clientName", 80)}`, { _id: res.id, clientName: s(fd, "clientName", 80) });
+    const price = parseAmount(s(fd, "price", 30));
+    if (price) await patchCabinet(res.id, { price });
+    await logActivity(me, "client_created", `создал(а) клиента ${clientName}`, { _id: res.id, clientName });
     if (leadId) await patchDoc(leadId, { status: "paid" }).catch(() => {});
+    if (!full)
+      await sendTelegram([
+        "<b>🆕 Отдел продаж добавил клиента — свяжитесь с ним</b>",
+        "",
+        `<b>Клиент:</b> ${escapeHtml(clientName)}`,
+        clientPhone && `<b>Телефон:</b> ${escapeHtml(clientPhone)}`,
+        `<b>Продал:</b> ${escapeHtml(me.name)}`,
+        price ? `<b>Сумма договора:</b> ${formatTenge(price)}` : "",
+        "Назначьте ведущего и напишите клиенту.",
+        "",
+        `📋 <a href="${cabinetAdminUrl(res.id)}">Открыть клиента в админке</a>`,
+      ]).catch(() => null);
     revalidatePath("/admin", "layout");
-    return { ok: true, ...res, clientName: s(fd, "clientName", 80), phone: s(fd, "clientPhone", 30), curator: me.role === "owner" ? undefined : me.name, service: service || undefined };
+    return { ok: true, ...res, clientName, phone: clientPhone, curator: full && me.role !== "owner" ? me.name : undefined, service: service || undefined };
   } catch (err) {
     return fail(err);
   }
@@ -311,6 +330,40 @@ export async function resolveDeanIssueAction(fd: FormData) {
   await patchCabinet(id, { "deanIssue.resolvedAt": new Date().toISOString(), "deanIssue.resolvedBy": me.name });
   await logActivity(me, "contacts", "отметил(а): вопрос с деканатом решён", cab);
   revalidatePath("/admin", "layout");
+}
+
+/** The team types in the dean's office details the client sent in WhatsApp (or corrects them). */
+export async function saveDeanIssueAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const me = await requireAdminUser();
+  const id = s(fd, "id", 100);
+  const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
+  if (!cab) return { error: "Клиент не найден" };
+  if (!ownsClient(me, cab)) return { error: "Этот клиент закреплён за другим сотрудником" };
+  const issue = {
+    uni: s(fd, "uni", 200),
+    faculty: s(fd, "faculty", 200),
+    group: s(fd, "group", 60),
+    deanName: s(fd, "deanName", 120),
+    phone: s(fd, "phone", 60),
+    reason: s(fd, "reason", 1500),
+  };
+  if (!issue.deanName && !issue.phone && !issue.faculty) return { error: "Впишите хотя бы имя декана, телефон или факультет" };
+  const before = cab.deanIssue;
+  const set: Record<string, unknown> = {
+    deanIssue: {
+      ...Object.fromEntries(Object.entries(issue).filter(([, v]) => v)),
+      uni: issue.uni || before?.uni || cab.data?.uniName || "",
+      faculty: issue.faculty,
+      group: issue.group,
+      reason: issue.reason,
+      at: before && !before.resolvedAt ? before.at : new Date().toISOString(),
+      addedBy: before && !before.resolvedAt && !before.addedBy ? undefined : me.name,
+    },
+  };
+  await patchCabinet(id, JSON.parse(JSON.stringify(set)));
+  await logActivity(me, "contacts", before && !before.resolvedAt ? "исправил(а) данные деканата" : "добавил(а) данные деканата (деканат не ставит печать)", cab);
+  revalidatePath("/admin", "layout");
+  return { ok: true, message: "Сохранено — клиент отмечен оранжевым «Деканат не ставит печать»" };
 }
 
 // ---------- Companions («едут вместе») ----------

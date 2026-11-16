@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ListLink } from "@/components/admin/ListMemory";
+import type { DeanIssue } from "@/lib/cabinet/server";
 import { notFound } from "next/navigation";
 import {
   getCabinetFull,
@@ -23,6 +24,7 @@ import {
 import {
   addCompanionAction,
   resolveDeanIssueAction,
+  saveDeanIssueAction,
   removeCompanionAction,
   declarationAction,
   deleteCabinetAction,
@@ -65,6 +67,7 @@ import {
   ConfirmForm,
   CopyButton,
   FileUpload,
+  LinkBox,
   QuickButton,
   SubmitButton,
 } from "@/components/admin/ui";
@@ -170,6 +173,44 @@ const TABS = [
   { id: "files", label: "Файлы" },
   { id: "payment", label: "Оплата" },
 ] as const;
+
+function DeanForm({ id, issue, uniName }: { id: string; issue?: DeanIssue | null; uniName?: string }) {
+  const open = issue && !issue.resolvedAt ? issue : null;
+  return (
+    <ActionForm action={saveDeanIssueAction} className="mt-3 grid gap-2 sm:grid-cols-2">
+      <input type="hidden" name="id" value={id} />
+      <label className="grid gap-1 text-[13px] font-medium">
+        Университет
+        <input name="uni" defaultValue={open?.uni ?? uniName ?? ""} className={input} />
+      </label>
+      <label className="grid gap-1 text-[13px] font-medium">
+        Факультет
+        <input name="faculty" defaultValue={open?.faculty ?? ""} placeholder="Например: Информационных технологий" className={input} />
+      </label>
+      <label className="grid gap-1 text-[13px] font-medium">
+        Группа / курс
+        <input name="group" defaultValue={open?.group ?? ""} placeholder="ИС-23-1" className={input} />
+      </label>
+      <label className="grid gap-1 text-[13px] font-medium">
+        Имя декана / сотрудника
+        <input name="deanName" defaultValue={open?.deanName ?? ""} placeholder="Ахметов Ерлан Сапарович" className={input} />
+      </label>
+      <label className="grid gap-1 text-[13px] font-medium">
+        Телефон деканата / декана
+        <input name="phone" defaultValue={open?.phone ?? ""} placeholder="+7 727 000 00 00" className={input} />
+      </label>
+      <label className="grid gap-1 text-[13px] font-medium">
+        Почему не ставят (если известно)
+        <input name="reason" defaultValue={open?.reason ?? ""} placeholder="Говорят, не ставят печать на чужие бланки" className={input} />
+      </label>
+      <div className="sm:col-span-2">
+        <SubmitButton className="btn-primary min-h-9 px-4 text-[14px]" pendingText="Сохраняем…">
+          Сохранить
+        </SubmitButton>
+      </div>
+    </ActionForm>
+  );
+}
 
 export default async function ClientPage({
   params,
@@ -343,21 +384,18 @@ export default async function ClientPage({
             </section>
           )}
 
-          <section className="card mb-5 p-4 sm:p-6">
-            <h2 className="mb-2 text-[18px] font-bold">🔗 Ссылка на кабинет клиента</h2>
+          <section className="mb-5">
             {cab.loginLink ? (
-              <>
-                <p className="mb-3 break-all rounded-lg bg-surface px-3 py-2 font-mono text-[13px]">{cab.loginLink}</p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <CopyButton text={cab.loginLink} label="Скопировать ссылку" />
-                  <a href={cab.loginLink} target="_blank" rel="noopener noreferrer" className="btn-ghost min-h-10 px-4 text-[14px]">
-                    Открыть кабинет
-                  </a>
-                  <span className="text-[13px] text-muted">создана {fmtDate(cab.linkCreatedAt)}</span>
-                </div>
-              </>
+              <LinkBox
+                title="🔗 Ссылка и приветствие для клиента"
+                link={cab.loginLink}
+                phone={cab.clientPhone || cab.data?.phone}
+                name={cab.data?.firstName || cab.clientName}
+                curator={cab.managerName && cab.managerName !== "AlemWay" ? cab.managerName : undefined}
+                service={cab.service}
+              />
             ) : (
-              <p className="text-[14px] text-muted">Ссылки ещё нет — создайте её внизу страницы: «Новая ссылка для клиента».</p>
+              <p className="card p-4 text-[14px] text-muted">Ссылки ещё нет — создайте её внизу страницы: «Новая ссылка для клиента».</p>
             )}
           </section>
 
@@ -371,7 +409,9 @@ export default async function ClientPage({
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h2 className="text-[18px] font-bold text-orange-900">🟠 Деканат не ставит подпись и печать — клиент ждёт нашего действия</h2>
-                  <p className="mt-1 text-[13px] text-muted">Клиент написал {fmtDate(cab.deanIssue.at)}</p>
+                  <p className="mt-1 text-[13px] text-muted">
+                    {cab.deanIssue.addedBy ? `Добавил(а) ${cab.deanIssue.addedBy}` : "Клиент написал"} {fmtDate(cab.deanIssue.at)}
+                  </p>
                 </div>
                 {owner && (
                   <QuickButton action={resolveDeanIssueAction} hidden={{ id }} className="btn-ghost min-h-9 bg-white px-3 text-[13px]">
@@ -386,6 +426,12 @@ export default async function ClientPage({
                 <dd className="font-medium">{cab.deanIssue.faculty}</dd>
                 <dt className="text-muted">Группа</dt>
                 <dd className="font-medium">{cab.deanIssue.group}</dd>
+                {cab.deanIssue.deanName && (
+                  <>
+                    <dt className="text-muted">Декан / сотрудник</dt>
+                    <dd className="font-medium">{cab.deanIssue.deanName}</dd>
+                  </>
+                )}
                 <dt className="text-muted">Номер деканата</dt>
                 <dd className="font-medium">
                   {cab.deanIssue.phone ? (
@@ -397,9 +443,19 @@ export default async function ClientPage({
                   )}
                 </dd>
                 <dt className="text-muted">Почему</dt>
-                <dd className="whitespace-pre-line font-medium">{cab.deanIssue.reason}</dd>
+                <dd className="whitespace-pre-line font-medium">{cab.deanIssue.reason || "—"}</dd>
               </dl>
+              <details className="mt-3">
+                <summary className="cursor-pointer text-[14px] font-semibold text-brand">Изменить / дописать</summary>
+                <DeanForm id={id} issue={cab.deanIssue} uniName={cab.data?.uniName} />
+              </details>
             </section>
+          )}
+          {!keta && (!cab.deanIssue || cab.deanIssue.resolvedAt) && (
+            <details className="card mb-5 p-4 sm:p-5">
+              <summary className="cursor-pointer text-[15px] font-semibold text-brand">+ Деканат не ставит печать — добавить данные (если клиент прислал в WhatsApp)</summary>
+              <DeanForm id={id} issue={null} uniName={cab.data?.uniName} />
+            </details>
           )}
           {cab.deanIssue?.resolvedAt && (
             <p className="mb-5 text-[13px] text-muted">
