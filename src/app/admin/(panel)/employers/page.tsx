@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { RememberListQuery } from "@/components/admin/ListMemory";
 import { isFullRole, requireAdminUser } from "@/lib/admin/session";
 import { EMPLOYER_INDUSTRIES, EMPLOYER_STATUSES, HOUSING_OPTIONS, employerStatus, getEmployers, optionTitle } from "@/lib/admin/employers";
 import { createEmployerAction } from "../../employer-actions";
@@ -19,6 +21,9 @@ export default async function EmployersPage({ searchParams }: { searchParams: Pr
 
   return (
     <>
+      <Suspense>
+        <RememberListQuery path="/admin/employers" />
+      </Suspense>
       <PageTitle title="Работодатели">
         <p className="text-[14px] text-muted">
           {rows.length} работодател{rows.length % 10 === 1 && rows.length % 100 !== 11 ? "ь" : "ей"} · закреплено клиентов: {totalClients}

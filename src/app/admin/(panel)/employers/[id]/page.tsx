@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ListLink } from "@/components/admin/ListMemory";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { cabinetName, getClientOptions } from "@/lib/admin/data";
@@ -130,9 +131,9 @@ export default async function EmployerPage({ params, searchParams }: { params: P
 
   return (
     <>
-      <Link prefetch={false} href="/admin/employers" className="text-[14px] text-muted hover:text-brand">
+      <ListLink path="/admin/employers" className="text-[14px] text-muted hover:text-brand">
         ← Все работодатели
-      </Link>
+      </ListLink>
       <PageTitle title={e.number ? `№${e.number} · ${e.name ?? "Без названия"}` : (e.name ?? "Без названия")}>
         <div className="flex flex-wrap items-center gap-3">
           {e.website && (

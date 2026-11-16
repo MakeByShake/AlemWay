@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { RememberListQuery } from "@/components/admin/ListMemory";
 import { getCabinets, cabinetName, getManagerOptions } from "@/lib/admin/data";
 import { isFullRole, requireAdminUser } from "@/lib/admin/session";
 import { CABINET_STATUSES } from "@/lib/cabinet/fields";
@@ -44,6 +46,9 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
 
   return (
     <>
+      <Suspense>
+        <RememberListQuery path="/admin/clients" />
+      </Suspense>
       <PageTitle title={owner ? "Клиенты (личные кабинеты)" : "Мои клиенты"} />
 
       <nav className="mb-5 flex gap-1 overflow-x-auto border-b border-line" aria-label="Группы клиентов">

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useListQuery } from "./ListMemory";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { Activity, Building2, CalendarClock, Home, Inbox, MessageSquare, PenSquare, Users, UserCog, Wallet } from "lucide-react";
@@ -19,6 +20,8 @@ const ITEMS = [
 
 export function AdminNav({ owner, full }: { owner: boolean; full: boolean }) {
   const path = usePathname();
+  // Lists open with the filters they had last time (from a card or another section).
+  const remembered: Record<string, string> = { "/admin/clients": useListQuery("/admin/clients"), "/admin/employers": useListQuery("/admin/employers") };
   return (
     <nav className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:px-3 lg:pb-0">
       {ITEMS.filter((i) => (owner || !("ownerOnly" in i)) && (full || !("fullOnly" in i))).map(({ href, label, icon: Icon }) => {
@@ -26,7 +29,7 @@ export function AdminNav({ owner, full }: { owner: boolean; full: boolean }) {
         return (
           <Link prefetch={false}
             key={href}
-            href={href}
+            href={path !== href && remembered[href] ? `${href}${remembered[href]}` : href}
             className={clsx(
               "flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 text-[15px] font-medium",
               active ? "bg-brand-soft text-brand" : "text-ink hover:bg-surface"

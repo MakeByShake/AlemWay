@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ListLink } from "@/components/admin/ListMemory";
 import { notFound } from "next/navigation";
 import {
   getCabinetFull,
@@ -215,12 +216,9 @@ export default async function ClientPage({
 
   return (
     <>
-      <Link prefetch={false}
-        href="/admin/clients"
-        className="text-[14px] text-muted hover:text-brand"
-      >
+      <ListLink path="/admin/clients" className="text-[14px] text-muted hover:text-brand">
         ← Все клиенты
-      </Link>
+      </ListLink>
       <PageTitle title={cab.number ? `№${cab.number} · ${name}` : name}>
         <div className="flex flex-wrap items-center gap-3">
           <a
