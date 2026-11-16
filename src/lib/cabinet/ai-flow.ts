@@ -41,7 +41,8 @@ export async function checkAndBuildDeclaration(cabId: string, by: "client" | "ma
       Object.assign(ai.fields, over);
       ai.checks = [...ai.checks, `Взято из анкеты, исправленной командой: ${changed.map(([, v]) => v).join(", ")}`];
     }
-    const cut = clampHolidays(ai.fields);
+    // A holiday end the team typed in by hand is kept as is.
+    const cut = cab.teamEdited?.includes("breakTo") ? null : clampHolidays(ai.fields);
     if (cut) ai.checks = [...ai.checks, cut];
   }
   await patchCabinet(cab._id, { aiCheck: ai });
