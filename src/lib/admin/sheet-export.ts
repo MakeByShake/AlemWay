@@ -139,3 +139,89 @@ export async function sheetRows(base = "https://alemway.kz"): Promise<SheetRow[]
   return out;
 }
 
+
+// ---------- Team sheet «wt 2027 AlemWay» → tab «Клиенты» (simple colour view) ----------
+
+const TEAM_STAGE: Record<string, [string, string, string]> = {
+  waiting_data: ["1. Анкета и документы", "клиент", "#F2F2F2"],
+  declaration_ready: ["2. Подпись декана", "клиент", "#FFF4CC"],
+  signed_uploaded: ["3. Проверить и отдать партнёру", "МЫ", "#D6E8FF"],
+  sent_partner: ["4. У партнёра, ждём ZAV", "партнёр", "#E8DDFB"],
+  zav_received: ["5. ZAV получен", "МЫ", "#D9F2E1"],
+  visa_applying: ["6. Подача на визу", "МЫ", "#D9F2E1"],
+  visa_received: ["7. Виза есть", "—", "#C6EBD2"],
+  done: ["8. Улетел", "—", "#C6EBD2"],
+};
+const UNI: [RegExp, string][] = [
+  [/al-?farabi|аль-?фараби|казну\b/i, "КазНУ"], [/abai|абай|педагогическ/i, "КазНПУ им. Абая"], [/information technolog|iitu|информационных технолог/i, "МУИТ (IITU)"],
+  [/narxoz/i, "Narxoz"], [/\bsdu\b/i, "SDU"], [/saginov|сагинов|караганд.*технич/i, "КарТУ им. Сагинова"], [/civil aviation|гражданской авиац/i, "Академия ГА"],
+  [/gumilyov|гумил/i, "ЕНУ им. Гумилёва"], [/international business|сагадиев|международного бизнеса/i, "УМБ"], [/aktobe regional|zhubanov|жубанов/i, "АРУ им. Жубанова"],
+  [/south kazakhstan medical|юкма|южно.?казахстанская медицинская/i, "ЮКМА"], [/technology and business|технологий и бизнеса|кулажанов/i, "КазУТБ"], [/ауэс|энергетики/i, "АУЭС"],
+  [/мирас|miras/i, "Мирас"], [/satbayev|сатпаев/i, "Satbayev University"], [/поспелов|медицин.*караганд|қарағанды медицин/i, "КМУ (Караганда)"],
+  [/казнму|асфендиярова/i, "КазНМУ"], [/astana international/i, "AIU (Астана)"], [/атырау|досмухамедов/i, "АУ им. Досмухамедова"], [/almaty technological|алматинский технологич|\bату\b/i, "АТУ"],
+];
+const shortUni = (v?: string) => {
+  for (const [re, s] of UNI) if (re.test(v ?? "")) return s;
+  return (v ?? "").replace(/(Non-Profit )?JSC|НАО|АО|["«»]/g, "").trim().slice(0, 28);
+};
+const shortBreak = (a?: string, b?: string) => {
+  if (!a || !b) return "";
+  const x = de(a), y = de(b);
+  return x.endsWith(".2027") && y.endsWith(".2027") ? `${x.slice(0, 5)} – ${y.slice(0, 5)}` : `${x} – ${y}`;
+};
+
+type TeamRow = Row & { party?: string; aiStatus?: string; missing?: string[] };
+
+export async function teamSheetRows(base = "https://alemway.kz"): Promise<SheetRow[]> {
+  const list = await writeClient().fetch<TeamRow[]>(
+    `*[_type == "cabinet" && !(_id in path("drafts.**")) && coalesce(service, "ferienjob") == "ferienjob"] | order(coalesce(number, 0) asc){
+      _id, number, status, clientName, clientPhone, data, archivedData, files, party,
+      "dean": defined(deanIssue) && !defined(deanIssue.resolvedAt), "aiStatus": aiCheck.status, "missing": aiCheck.missing
+    }`
+  );
+  const nameOf = (c: TeamRow) => {
+    const n = (c.clientName ?? "").replace(/\s+/g, " ").trim();
+    const full = [c.data?.lastName, c.data?.firstName].filter(Boolean).join(" ").trim();
+    return n.split(" ").length >= 2 || !full ? n : full;
+  };
+  const out: SheetRow[] = [];
+  for (const c of list) {
+    const name = nameOf(c);
+    if (/^(бла|тест|test)(\s|$)/i.test(name)) continue;
+    const d = { ...Object.fromEntries(Object.entries(c.archivedData ?? {}).filter(([, v]) => v)), ...Object.fromEntries(Object.entries(c.data ?? {}).filter(([, v]) => v)) };
+    const key = digits(c.clientPhone || d.phone);
+    if (key.length < 10) continue;
+    const st = c.status ?? "waiting_data";
+    const [title, who, color] = TEAM_STAGE[st] ?? [st, "", "#FFFFFF"];
+    const step = Math.max(ORDER.indexOf(st), 0);
+    const bg = c.dean ? "#FFD8B0" : color;
+    const dean = c.dean ? "❗ не ставит" : step >= 2 ? "✓ есть" : c.files?.declaration?.path ? "ждём" : "—";
+    const mates = list.filter((x) => c.party && x.party === c.party && x._id !== c._id).map((x) => (x.data?.firstName || nameOf(x).split(" ").pop() || "").trim());
+    let lic = (d.driverLicense ?? "").trim();
+    lic = /^[BbВв]$/.test(lic) ? "B" : /^(нет|-|i)$/i.test(lic) ? "" : lic;
+    if (d.licenseStatus === "soon" && !c.files?.license?.path) lic = "получает";
+    const note = c.aiStatus === "НЕ ГОТОВО" && c.missing?.length ? `Нет: ${c.missing[0].split(/[:—(.]/)[0].trim().slice(0, 40)}` : "";
+    const city = (d.city ?? "").replace(/^Г\.\s*/i, "").replace("Almaty", "Алматы").replace("Astana", "Астана").trim();
+    const cell = (v: string, extra: Partial<SheetCell> = {}): SheetCell => ({ v, bg, ...extra });
+    out.push({
+      key,
+      cells: {
+        "№": cell(String(c.number ?? "")),
+        "ФИО": cell(name, { bold: true }),
+        "Телефон": cell(d.phone || c.clientPhone ? `8 ${key.slice(0, 3)} ${key.slice(3, 6)} ${key.slice(6, 8)} ${key.slice(8)}` : ""),
+        "Этап": cell(title),
+        "Чья очередь": cell(who, who === "МЫ" ? { bold: true, color: "#1F4FD1" } : {}),
+        "Декан": cell(dean, c.dean ? { bold: true, color: "#B54708" } : {}),
+        "Каникулы 2027": cell(shortBreak(d.breakFrom, d.breakTo)),
+        "Вуз": cell(shortUni(d.uniName)),
+        "Город": cell(city),
+        "Дата рожд.": cell(de(d.birthDate)),
+        "Права": cell(lic),
+        "Едет с": cell(mates.join(", ")),
+        "Заметка": cell(note),
+        "CRM": cell("открыть", { link: `${base}/admin/clients/${c._id}` }),
+      },
+    });
+  }
+  return out;
+}
