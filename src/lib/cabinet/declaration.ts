@@ -130,12 +130,23 @@ export function anketaFromDeclaration(fields: Partial<DeclarationFields>): Recor
   return out;
 }
 
+/** Study and holiday answers: what the client typed always goes into the declaration (documents only get a note). */
+export const CLIENT_WINS = ["studyYears", "enrolledSince", "studyEnd", "breakFrom", "breakTo", "continueStudies"] as const;
+
+/** The client's own answers for CLIENT_WINS fields, as declaration fields. */
+export function clientOverrides(cab: Pick<Cabinet, "data">): Partial<DeclarationFields> {
+  return overridesFor(cab, new Set<string>(CLIENT_WINS));
+}
+
 /**
  * Questionnaire values the team corrected in the admin, as declaration fields (dates DD.MM.YYYY).
  * They replace what the AI read from the documents: the manager has checked them by hand.
  */
 export function teamOverrides(cab: Pick<Cabinet, "data" | "teamEdited">): Partial<DeclarationFields> {
-  const edited = new Set(cab.teamEdited ?? []);
+  return overridesFor(cab, new Set(cab.teamEdited ?? []));
+}
+
+function overridesFor(cab: Pick<Cabinet, "data">, edited: Set<string>): Partial<DeclarationFields> {
   const out: Partial<DeclarationFields> = {};
   for (const f of FERIENJOB_FULL_SECTIONS.flatMap((s) => s.fields)) {
     if (!f.pdf || !edited.has(f.key)) continue;
@@ -195,9 +206,11 @@ export async function saveAiDeclaration(cab: Cabinet, ai: AiCheck): Promise<Stor
   const nextStatus = !cab.status || cab.status === "waiting_data" ? "declaration_ready" : cab.status;
   // Fields the team corrected stay exactly as the team wrote them.
   const edited = new Set(cab.teamEdited ?? []);
+  // The client's own study/holiday answers are never overwritten (only filled in when empty).
+  const own = new Set<string>(CLIENT_WINS.filter((k) => (cab.data?.[k] ?? "").trim()));
   const anketa = Object.fromEntries(
     Object.entries(anketaFromDeclaration(fields))
-      .filter(([k]) => !edited.has(k))
+      .filter(([k]) => !edited.has(k) && !own.has(k))
       .map(([k, v]) => [`data.${k}`, v])
   );
   await patchCabinet(cab._id, { ...anketa, "files.declaration": file, declarationDate: dateIso, status: nextStatus });
