@@ -24,6 +24,8 @@ import {
 import {
   addCompanionAction,
   resolveDeanIssueAction,
+  addContactAction,
+  removeContactAction,
   saveDeanIssueAction,
   removeCompanionAction,
   declarationAction,
@@ -463,6 +465,58 @@ export default async function ClientPage({
               {cab.deanIssue.resolvedBy ? ` (${cab.deanIssue.resolvedBy})` : ""}: {cab.deanIssue.uni}, {cab.deanIssue.faculty}, группа {cab.deanIssue.group}.
             </p>
           )}
+
+          <section className="card mb-5 p-4 sm:p-6">
+            <h2 className="text-[18px] font-bold">📞 Контакты</h2>
+            <ul className="mt-3 divide-y divide-line rounded-xl border border-line">
+              {[{ _key: "main", label: "Клиент (основной)", phone: cab.clientPhone || cab.data?.phone || "" }, ...(cab.contacts ?? [])]
+                .filter((c) => c.phone)
+                .map((c) => {
+                  const w = waLink(c.phone);
+                  return (
+                    <li key={c._key} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5">
+                      <span className="min-w-0">
+                        <span className="block text-[13px] text-muted">{c.label}</span>
+                        <a href={`tel:${c.phone.replace(/[^\d+]/g, "")}`} className="font-semibold tabular-nums hover:text-brand">
+                          {c.phone}
+                        </a>
+                      </span>
+                      <span className="flex items-center gap-2">
+                        {w && (
+                          <a href={w} target="_blank" rel="noopener noreferrer" className="btn-whatsapp min-h-8 px-2.5 text-[13px]">
+                            WhatsApp
+                          </a>
+                        )}
+                        {c._key !== "main" && (
+                          <QuickButton
+                            action={removeContactAction}
+                            hidden={{ id, key: c._key }}
+                            confirmText={`Удалить контакт ${c.label}?`}
+                            className="min-h-8 px-2 text-[13px] text-red-600 hover:underline"
+                          >
+                            Удалить
+                          </QuickButton>
+                        )}
+                      </span>
+                    </li>
+                  );
+                })}
+            </ul>
+            <ActionForm action={addContactAction} resetOnSuccess className="mt-3 grid gap-2 sm:grid-cols-[1fr_1.2fr_auto] sm:items-end">
+              <input type="hidden" name="id" value={id} />
+              <label className="grid gap-1 text-[13px] font-medium">
+                Кто это
+                <input name="label" placeholder="Мама, папа, 2-й номер" className={input} />
+              </label>
+              <label className="grid gap-1 text-[13px] font-medium">
+                Телефон
+                <input name="phone" required placeholder="+7 777 123 45 67" className={input} />
+              </label>
+              <SubmitButton className="btn-ghost min-h-10 px-4 text-[14px]" pendingText="Добавляем…">
+                + Добавить контакт
+              </SubmitButton>
+            </ActionForm>
+          </section>
 
           <section className="card mb-5 p-4 sm:p-6">
             <h2 className="text-[18px] font-bold">👥 Едет вместе с</h2>

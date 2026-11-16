@@ -154,7 +154,8 @@ export async function createCabinetAction(_prev: ActionState, fd: FormData): Pro
       seller: full ? (fd.has("seller") ? await memberFor(s(fd, "seller", 40)) : null) : { login: me.login, name: me.name },
     });
     const price = parseAmount(s(fd, "price", 30));
-    if (price) await patchCabinet(res.id, { price });
+    const contacts = readContacts(fd);
+    if (price || contacts.length) await patchCabinet(res.id, { ...(price ? { price } : {}), ...(contacts.length ? { contacts } : {}) });
     await logActivity(me, "client_created", `создал(а) клиента ${clientName}`, { _id: res.id, clientName });
     if (leadId) await patchDoc(leadId, { status: "paid" }).catch(() => {});
     if (!full)
@@ -364,6 +365,45 @@ export async function saveDeanIssueAction(_prev: ActionState, fd: FormData): Pro
   await logActivity(me, "contacts", before && !before.resolvedAt ? "исправил(а) данные деканата" : "добавил(а) данные деканата (деканат не ставит печать)", cab);
   revalidatePath("/admin", "layout");
   return { ok: true, message: "Сохранено — клиент отмечен оранжевым «Деканат не ставит печать»" };
+}
+
+// ---------- Extra contacts (parents, second number) ----------
+
+/** Rows «contact_label_N» + «contact_phone_N» of a form (rows without a phone are skipped). */
+function readContacts(fd: FormData) {
+  const out: { _key: string; label: string; phone: string }[] = [];
+  for (let i = 0; i < 10; i++) {
+    const phone = s(fd, `contact_phone_${i}`, 30);
+    if (!phone.replace(/\D/g, "")) continue;
+    out.push({ _key: randomUUID().replace(/-/g, "").slice(0, 12), label: s(fd, `contact_label_${i}`, 60) || "Доп. контакт", phone });
+  }
+  return out;
+}
+
+export async function addContactAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const me = await requireAdminUser();
+  const id = s(fd, "id", 100);
+  const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
+  if (!cab) return { error: "Клиент не найден" };
+  if (!ownsClient(me, cab)) return { error: "Этот клиент закреплён за другим сотрудником" };
+  const phone = s(fd, "phone", 30);
+  if (phone.replace(/\D/g, "").length < 7) return { error: "Впишите номер телефона" };
+  const label = s(fd, "label", 60) || "Доп. контакт";
+  const contact = { _key: randomUUID().replace(/-/g, "").slice(0, 12), label, phone };
+  await writeClient().patch(id).setIfMissing({ contacts: [] }).append("contacts", [contact]).commit({ visibility: "sync" });
+  await logActivity(me, "contacts", `добавил(а) контакт: ${label} ${phone}`, cab, 15);
+  revalidatePath(`/admin/clients/${id}`);
+  return { ok: true, message: "Контакт добавлен" };
+}
+
+export async function removeContactAction(fd: FormData) {
+  const me = await requireAdminUser();
+  const id = s(fd, "id", 100);
+  const key = s(fd, "key", 20);
+  const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
+  if (!cab || !ownsClient(me, cab) || !/^[a-z0-9]{6,20}$/.test(key)) return;
+  await writeClient().patch(id).unset([`contacts[_key=="${key}"]`]).commit({ visibility: "sync" });
+  revalidatePath(`/admin/clients/${id}`);
 }
 
 // ---------- Companions («едут вместе») ----------

@@ -104,7 +104,7 @@ export async function getCabinets(filter: { service?: string; status?: string; q
        && (!defined($seller) || ($seller == "-" && !defined(seller)) || seller == $seller)
        && (!defined($mine) || manager == $mine || seller == $mine)
        && (!$dean || (defined(deanIssue) && !defined(deanIssue.resolvedAt)))
-       && (!defined($q) || string(number) == $num || clientName match $q || clientPhone match $q || data.firstName match $q || data.lastName match $q)
+       && (!defined($q) || string(number) == $num || clientName match $q || clientPhone match $q || contacts[].phone match $q || data.firstName match $q || data.lastName match $q)
      ] | order(coalesce(number, 0) desc, _createdAt desc)[0...300]{
       _id, number, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName, managerName, sellerName, party,
       "dean": ${deanOpen}, deadline, "employerName": select(defined(employer) => employerName)

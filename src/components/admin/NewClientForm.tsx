@@ -66,6 +66,7 @@ export function NewClientForm({ full, isOwner, me, members }: { full: boolean; i
   const [done, setDone] = useState<ActionState>(null);
   const [contract, setContract] = useState<File[]>([]);
   const [receipts, setReceipts] = useState<File[]>([]);
+  const [contacts, setContacts] = useState(0);
 
   const post = async (url: string, fd: FormData) => {
     const res = await fetch(url, { method: "POST", body: fd });
@@ -94,6 +95,7 @@ export function NewClientForm({ full, isOwner, me, members }: { full: boolean; i
               setDone(null);
               setContract([]);
               setReceipts([]);
+              setContacts(0);
             }}
           >
             + Ещё клиент
@@ -156,6 +158,17 @@ export function NewClientForm({ full, isOwner, me, members }: { full: boolean; i
         Телефон (WhatsApp)
         <input name="clientPhone" required className="field" placeholder="+7 777 123 45 67" />
       </label>
+      {Array.from({ length: contacts }, (_, i) => (
+        <div key={i} className="grid grid-cols-[1fr_1.3fr] gap-2 sm:col-span-2">
+          <input name={`contact_label_${i}`} className="field" placeholder="Кто: мама, папа, 2-й номер" aria-label="Кто это" />
+          <input name={`contact_phone_${i}`} className="field" placeholder="+7 777 123 45 67" aria-label="Телефон" />
+        </div>
+      ))}
+      {contacts < 10 && (
+        <button type="button" onClick={() => setContacts((n) => n + 1)} className="justify-self-start text-[14px] font-semibold text-brand hover:underline sm:col-span-2">
+          + ещё контакт (мама, папа, второй номер)
+        </button>
+      )}
       <label className="grid gap-1 text-[14px] font-medium">
         Услуга
         <select name="service" className="field">

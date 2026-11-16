@@ -27,6 +27,9 @@ export type DeanIssue = {
   resolvedBy?: string;
 };
 
+/** Extra contact of a client: mother, father, a second number… */
+export type ExtraContact = { _key: string; label: string; phone: string };
+
 export type StoredFile = { path: string; name: string; contentType: string; size: number; uploadedAt: string };
 
 export type Cabinet = {
@@ -75,6 +78,8 @@ export type Cabinet = {
   deanIssue?: DeanIssue;
   /** Date (YYYY-MM-DD) by which the client must hand in the documents and the signed declaration; ends at 23:59 Almaty. */
   deadline?: string;
+  /** More phone numbers besides the main one (parents, a second number). */
+  contacts?: ExtraContact[];
   reform?: boolean;
   reformAt?: string;
   /** Files set aside when the questionnaire was reset (kept, not deleted). */
@@ -82,7 +87,7 @@ export type Cabinet = {
 };
 
 const PROJECTION = `{_id, number, group, _rev, service, status, clientName, clientPhone, data, files, declarationDate, submittedAt, signedAt,
-  zavReceivedAt, employer, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil, manager, managerName, seller, sellerName, party, teamEdited, deanIssue, reform, reformAt, archivedFiles, deadline, price, discount, discountNote, plan, payments, aiCheck}`;
+  zavReceivedAt, employer, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil, manager, managerName, seller, sellerName, party, teamEdited, deanIssue, reform, reformAt, archivedFiles, deadline, contacts, price, discount, discountNote, plan, payments, aiCheck}`;
 
 export function writeClient(): SanityClient {
   const c = getWriteClient();
