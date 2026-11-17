@@ -140,10 +140,10 @@ export function Progress({ service, status }: { service?: string; status?: strin
           <span key={i} className={clsx("h-1.5 w-3.5 rounded-full sm:w-5", i < p.step ? (p.tone === "green" ? "bg-accent" : p.tone === "red" ? "bg-red-500" : "bg-brand") : "bg-line")} />
         ))}
       </div>
-      <Badge tone={p.tone} className="max-w-full !whitespace-normal">
+      <Badge tone={p.tone} className="max-w-full !whitespace-normal sm:min-w-[210px]">
         {p.step}/{p.total} · {p.label}
       </Badge>
-      {p.next && <span className="hidden text-[12.5px] text-muted xl:inline">→ {p.next}</span>}
+      {p.next && <span className="hidden text-[12.5px] text-muted 2xl:inline">→ {p.next}</span>}
     </div>
   );
 }

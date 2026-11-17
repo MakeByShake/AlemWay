@@ -151,8 +151,8 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
             const wa = waLink(c.clientPhone);
             const tone = rowTone(c.status, c.dean);
             return (
-              <li key={c._id} title={tone.title} className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 ${tone.cls}`}>
-                <Link prefetch={false} href={`/admin/clients/${c._id}`} className="min-w-[240px] flex-1 hover:text-brand">
+              <li key={c._id} title={tone.title} className={`grid gap-2 px-4 py-3 lg:grid-cols-[minmax(0,360px)_1fr] lg:items-center lg:gap-4 ${tone.cls}`}>
+                <Link prefetch={false} href={`/admin/clients/${c._id}`} className="min-w-0 hover:text-brand">
                   <span className="block font-semibold">
                     {c.number && <span className="mr-1.5 text-muted tabular-nums">№{c.number}</span>}
                     {cabinetName(c)}
@@ -161,7 +161,8 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
                     {SERVICE_SHORT[c.service ?? "ferienjob"]} · {c.clientPhone || "без телефона"} · создан {fmtDate(c._createdAt, false)}
                   </span>
                 </Link>
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Progress service={c.service} status={c.status} />
                   {c.deadline && ["waiting_data", "declaration_ready"].includes(c.status ?? "waiting_data") && (() => {
                     const days = Math.round((Date.parse(c.deadline) - Date.parse(today)) / 86_400_000);
                     return (
@@ -174,9 +175,8 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
                   {c.employerName && <Badge tone="blue">🏢 {c.employerName}</Badge>}
                   {c.sellerName && <Badge tone="green">🤝 {c.sellerName}</Badge>}
                   <Badge tone={c.managerName ? "gray" : "amber"}>👤 {c.managerName || "Без ведущего"}</Badge>
-                  <Progress service={c.service} status={c.status} />
                   {wa && (
-                    <a href={wa} target={WA_TARGET} rel="noopener noreferrer" className="text-[13px] font-semibold text-accent hover:underline">
+                    <a href={wa} target={WA_TARGET} rel="noopener noreferrer" className="ml-auto text-[13px] font-semibold text-accent hover:underline">
                       WhatsApp
                     </a>
                   )}
