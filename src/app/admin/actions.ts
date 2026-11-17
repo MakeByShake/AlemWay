@@ -767,6 +767,35 @@ export async function setRoleAction(fd: FormData) {
   revalidatePath("/admin/team");
 }
 
+/** Owner renames a team member; the name is also updated on every client, lead and consultation they lead or sold. */
+export async function renameMemberAction(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  await requireAdminUser({ owner: true });
+  const login = s(fd, "login", 40);
+  const name = s(fd, "name", 60);
+  if (name.length < 2) return { error: "Имя — минимум 2 буквы" };
+  const user = LOGIN_RE.test(login) ? await getAdminUserByLogin(login) : null;
+  if (!user) return { error: "Пользователь не найден" };
+  if (user.name === name) return { ok: true, message: "Имя не изменилось" };
+  const client = writeClient();
+  await client.patch(user._id).set({ name }).commit();
+  const docs = await client.fetch<{ _id: string; manager?: string; seller?: string }[]>(
+    `*[_id != $uid && (manager == $login || seller == $login)]{_id, manager, seller}`,
+    { login, uid: user._id }
+  );
+  for (let i = 0; i < docs.length; i += 50) {
+    const tx = client.transaction();
+    for (const d of docs.slice(i, i + 50)) {
+      const set: Record<string, string> = {};
+      if (d.manager === login) set.managerName = name;
+      if (d.seller === login) set.sellerName = name;
+      tx.patch(d._id, (p) => p.set(set));
+    }
+    await tx.commit();
+  }
+  revalidatePath("/admin", "layout");
+  return { ok: true, message: `Имя изменено${docs.length ? ` (обновлено у ${docs.length} записей)` : ""}` };
+}
+
 /** Manager deletes one file of a client (from storage too). */
 export async function deleteClientFileAction(fd: FormData) {
   const me = await requireAdminUser({ full: true });

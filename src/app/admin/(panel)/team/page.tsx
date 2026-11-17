@@ -1,6 +1,6 @@
 import { getAdminUsers } from "@/lib/admin/data";
 import { ROLE_TITLES, requireAdminUser } from "@/lib/admin/session";
-import { addManagerAction, removeManagerAction, setConsultantAction, setPasswordAction, setRoleAction } from "../../actions";
+import { addManagerAction, removeManagerAction, renameMemberAction, setConsultantAction, setPasswordAction, setRoleAction } from "../../actions";
 import { Badge, PageTitle, fmtDate } from "@/components/admin/bits";
 import { ActionForm, AutoSelect, ConfirmForm, SubmitButton } from "@/components/admin/ui";
 
@@ -71,6 +71,13 @@ export default async function TeamPage() {
                     <Badge tone={u.role === "owner" ? "blue" : u.role === "sales" ? "amber" : "gray"}>{ROLE_TITLES[u.role] ?? "Менеджер"}</Badge>
                   </p>
                   <p className="text-[13px] text-muted">добавлен {fmtDate(u.createdAt, false)}</p>
+                  <ActionForm action={renameMemberAction} className="mt-1.5 flex flex-wrap items-center gap-2">
+                    <input type="hidden" name="login" value={u.login} />
+                    <input name="name" defaultValue={u.name} required minLength={2} maxLength={60} aria-label="Имя" className="field w-44 py-1.5 text-[14px]" />
+                    <SubmitButton className="btn-ghost min-h-9 px-3 text-[13px]" pendingText="Сохраняем…">
+                      Изменить имя
+                    </SubmitButton>
+                  </ActionForm>
                   <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[13px]">
                     <span className="text-muted">Консультации:</span>
                     <AutoSelect
