@@ -225,3 +225,36 @@ export async function teamSheetRows(base = "https://alemway.kz"): Promise<SheetR
   }
   return out;
 }
+
+// ---------- «Не ставят печать» tab: our clients whose dean's office won't sign ----------
+
+type DeanRow = { _id: string; number?: number; clientName?: string; clientPhone?: string; data?: Record<string, string>; deanIssue?: { uni?: string; faculty?: string; group?: string; reason?: string; phone?: string; deanName?: string; at?: string; resolvedAt?: string } };
+
+export async function deanSheetRows(): Promise<SheetRow[]> {
+  const list = await writeClient().fetch<DeanRow[]>(
+    `*[_type == "cabinet" && !(_id in path("drafts.**")) && defined(deanIssue)] | order(coalesce(number, 0) asc){_id, number, clientName, clientPhone, data, deanIssue}`
+  );
+  return list
+    .map((c) => {
+      const d = c.data ?? {};
+      const i = c.deanIssue ?? {};
+      const key = digits(c.clientPhone || d.phone);
+      const name = [d.lastName, d.firstName].filter(Boolean).join(" ") || (c.clientName ?? "");
+      const done = Boolean(i.resolvedAt);
+      const bg = done ? "#D9F2E1" : "#FFD8B0";
+      return {
+        key,
+        cells: {
+          "ФИО": { v: name, bold: true, bg },
+          "Номер клиента": { v: phone(c.clientPhone || d.phone), bg },
+          "Университет": { v: shortUni(i.uni || d.uniName) || (i.uni ?? ""), bg },
+          "Факультет / группа": { v: [i.faculty, i.group].filter(Boolean).join(", "), bg },
+          "Декан / телефон деканата": { v: [i.deanName, i.phone].filter(Boolean).join(", "), bg },
+          "Почему не ставят": { v: i.reason ?? "", bg },
+          "Чей клиент": { v: "AlemWay", bold: true, bg },
+          "Статус": { v: done ? `✓ решено ${de(i.resolvedAt)}` : `не решено (с ${de(i.at)})`, bg, bold: !done, color: done ? "#0A7A42" : "#B54708" },
+        },
+      };
+    })
+    .filter((r) => r.key.length === 10);
+}
