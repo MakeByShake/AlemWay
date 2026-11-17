@@ -185,6 +185,16 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
                       </Badge>
                     );
                   })()}
+                  {c.license === "yes" && (
+                    <Badge tone="green" title="Есть водительские права">
+                      🚗 ВП{c.licenseCat ? ` ${c.licenseCat}` : ""}
+                    </Badge>
+                  )}
+                  {c.license === "soon" && (
+                    <Badge tone="amber" title="Права будут позже">
+                      🚗 ВП позже{c.licenseReady ? ` · ${c.licenseReady}` : ""}
+                    </Badge>
+                  )}
                   {c.party && (partySize.get(c.party) ?? 0) > 1 && <Badge tone="blue">👥 вместе: {partySize.get(c.party)}</Badge>}
                   {c.employerName && <Badge tone="blue">🏢 {c.employerName}</Badge>}
                   {c.sellerName && <Badge tone="green">🤝 {c.sellerName}</Badge>}

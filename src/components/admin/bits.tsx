@@ -14,8 +14,8 @@ const TONES = {
 } as const;
 export type Tone = keyof typeof TONES;
 
-export function Badge({ tone = "gray", children, className }: { tone?: Tone; children: ReactNode; className?: string }) {
-  return <span className={clsx("inline-flex items-center rounded-full px-2.5 py-0.5 text-[12.5px] font-semibold whitespace-nowrap", TONES[tone], className)}>{children}</span>;
+export function Badge({ tone = "gray", children, className, title }: { tone?: Tone; children: ReactNode; className?: string; title?: string }) {
+  return <span title={title} className={clsx("inline-flex items-center rounded-full px-2.5 py-0.5 text-[12.5px] font-semibold whitespace-nowrap", TONES[tone], className)}>{children}</span>;
 }
 
 /** «Деканат не ставит печать» — the client waits for us. */
