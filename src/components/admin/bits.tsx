@@ -19,6 +19,35 @@ export function Badge({ tone = "gray", children, className }: { tone?: Tone; chi
 }
 
 /** «Деканат не ставит печать» — the client waits for us. */
+/** Row colour in client lists: orange — dean won't stamp, blue — waiting for the dean, green — signed, white — nothing yet. */
+export function rowTone(status?: string | null, dean?: boolean): { cls: string; title: string } {
+  if (dean) return { cls: "border-l-4 border-l-orange-500 bg-orange-50", title: "Деканат не ставит печать — ждут нашего действия" };
+  const st = status ?? "waiting_data";
+  if (st === "waiting_data") return { cls: "border-l-4 border-l-transparent", title: "Документы и анкета" };
+  if (st === "declaration_ready") return { cls: "border-l-4 border-l-blue-500 bg-blue-50", title: "Ждут подпись и печать декана" };
+  return { cls: "border-l-4 border-l-emerald-500 bg-emerald-50", title: "Подпись и печать есть" };
+}
+
+/** Colour legend above client lists. */
+export function RowLegend() {
+  const items = [
+    ["bg-orange-500", "декан не ставит печать — ждут нас"],
+    ["bg-blue-500", "ждут печать декана"],
+    ["bg-emerald-500", "подпись и печать есть"],
+    ["border border-line bg-white", "документы и анкета"],
+  ];
+  return (
+    <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-muted">
+      {items.map(([c, t]) => (
+        <span key={t} className="inline-flex items-center gap-1.5">
+          <span className={`h-2.5 w-2.5 rounded-full ${c}`} />
+          {t}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function DeanBadge() {
   return (
     <span

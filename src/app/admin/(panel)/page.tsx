@@ -4,7 +4,7 @@ import { almatyNow } from "@/lib/consultation";
 import { isFullRole, requireAdminUser } from "@/lib/admin/session";
 import { getAiStats } from "@/lib/ai/usage";
 import { AiBalance } from "@/components/admin/AiBalance";
-import { Badge, DeanBadge, Empty, PageTitle, Progress, SERVICE_SHORT, fmtDate } from "@/components/admin/bits";
+import { Badge, Empty, rowTone, PageTitle, Progress, SERVICE_SHORT, fmtDate } from "@/components/admin/bits";
 
 export const metadata = { title: "Главная" };
 
@@ -46,14 +46,13 @@ export default async function AdminHome() {
           ) : (
             <ul className="card divide-y divide-line">
               {d.actionClients.map((c) => (
-                <li key={c._id} className={c.dean ? "border-l-[3px] border-l-orange-400 bg-orange-50/40" : ""}>
+                <li key={c._id} title={rowTone(c.status, c.dean).title} className={rowTone(c.status, c.dean).cls}>
                   <Link prefetch={false} href={`/admin/clients/${c._id}`} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 hover:bg-surface">
                     <span className="font-semibold">
                       {c.number ? `№${c.number} · ` : ""}
                       {cabinetName(c)} <span className="ml-1 text-[13px] font-normal text-muted">{SERVICE_SHORT[c.service ?? "ferienjob"]}</span>
                     </span>
                     <span className="flex flex-wrap items-center gap-2">
-                      {c.dean && <DeanBadge />}
                       <Progress service={c.service} status={c.status} />
                     </span>
                   </Link>

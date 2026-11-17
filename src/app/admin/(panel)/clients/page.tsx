@@ -4,7 +4,7 @@ import { RememberListQuery } from "@/components/admin/ListMemory";
 import { getCabinets, cabinetName, getManagerOptions } from "@/lib/admin/data";
 import { isFullRole, requireAdminUser } from "@/lib/admin/session";
 import { CABINET_STATUSES } from "@/lib/cabinet/fields";
-import { Badge, DeanBadge, Empty, PageTitle, Progress, SERVICE_SHORT, fmtDate, waLink, WA_TARGET } from "@/components/admin/bits";
+import { Badge, Empty, RowLegend, rowTone, PageTitle, Progress, SERVICE_SHORT, fmtDate, waLink, WA_TARGET } from "@/components/admin/bits";
 import { NewClientForm } from "@/components/admin/NewClientForm";
 
 export const metadata = { title: "Клиенты" };
@@ -144,11 +144,14 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
       {rows.length === 0 ? (
         <Empty>Клиентов не найдено</Empty>
       ) : (
-        <ul className="card divide-y divide-line">
+        <>
+          <RowLegend />
+          <ul className="card divide-y divide-line">
           {rows.map((c) => {
             const wa = waLink(c.clientPhone);
+            const tone = rowTone(c.status, c.dean);
             return (
-              <li key={c._id} className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 ${c.dean ? "border-l-[3px] border-l-orange-400 bg-orange-50/40" : ""}`}>
+              <li key={c._id} title={tone.title} className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 ${tone.cls}`}>
                 <Link prefetch={false} href={`/admin/clients/${c._id}`} className="min-w-[240px] flex-1 hover:text-brand">
                   <span className="block font-semibold">
                     {c.number && <span className="mr-1.5 text-muted tabular-nums">№{c.number}</span>}
@@ -159,7 +162,6 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
                   </span>
                 </Link>
                 <div className="flex flex-wrap items-center gap-3">
-                  {c.dean && <DeanBadge />}
                   {c.deadline && ["waiting_data", "declaration_ready"].includes(c.status ?? "waiting_data") && (() => {
                     const days = Math.round((Date.parse(c.deadline) - Date.parse(today)) / 86_400_000);
                     return (
@@ -182,7 +184,8 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
               </li>
             );
           })}
-        </ul>
+          </ul>
+        </>
       )}
     </>
   );
