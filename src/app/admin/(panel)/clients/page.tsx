@@ -148,8 +148,8 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
           {rows.map((c) => {
             const wa = waLink(c.clientPhone);
             return (
-              <li key={c._id} className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 ${c.dean ? "border-l-4 border-l-orange-500 bg-orange-50" : ""}`}>
-                <Link prefetch={false} href={`/admin/clients/${c._id}`} className="min-w-0 flex-1 hover:text-brand">
+              <li key={c._id} className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 ${c.dean ? "border-l-[3px] border-l-orange-400 bg-orange-50/40" : ""}`}>
+                <Link prefetch={false} href={`/admin/clients/${c._id}`} className="min-w-[240px] flex-1 hover:text-brand">
                   <span className="block font-semibold">
                     {c.number && <span className="mr-1.5 text-muted tabular-nums">№{c.number}</span>}
                     {cabinetName(c)}

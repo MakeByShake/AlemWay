@@ -21,9 +21,13 @@ export function Badge({ tone = "gray", children, className }: { tone?: Tone; chi
 /** «Деканат не ставит печать» — the client waits for us. */
 export function DeanBadge() {
   return (
-    <Badge tone="orange" className="!whitespace-normal">
-      🟠 Деканат не ставит печать — ждут нас
-    </Badge>
+    <span
+      title="Деканат не ставит печать — клиент ждёт нашего действия"
+      className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-orange-300 bg-orange-50 px-2 py-0.5 text-[12px] font-semibold text-orange-700"
+    >
+      <span className="h-2 w-2 rounded-full bg-orange-500" />
+      Нет печати
+    </span>
   );
 }
 

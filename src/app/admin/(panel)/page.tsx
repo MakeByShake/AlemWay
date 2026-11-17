@@ -46,7 +46,7 @@ export default async function AdminHome() {
           ) : (
             <ul className="card divide-y divide-line">
               {d.actionClients.map((c) => (
-                <li key={c._id} className={c.dean ? "border-l-4 border-l-orange-500 bg-orange-50" : ""}>
+                <li key={c._id} className={c.dean ? "border-l-[3px] border-l-orange-400 bg-orange-50/40" : ""}>
                   <Link prefetch={false} href={`/admin/clients/${c._id}`} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 hover:bg-surface">
                     <span className="font-semibold">
                       {c.number ? `№${c.number} · ` : ""}
