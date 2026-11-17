@@ -249,7 +249,8 @@ export async function deanSheetRows(): Promise<SheetRow[]> {
           "Номер клиента": { v: phone(c.clientPhone || d.phone), bg },
           "Университет": { v: shortUni(i.uni || d.uniName) || (i.uni ?? ""), bg },
           "Факультет / группа": { v: [i.faculty, i.group].filter(Boolean).join(", "), bg },
-          "Декан / телефон деканата": { v: [i.deanName, i.phone].filter(Boolean).join(", "), bg },
+          // A cell starting with «+» would become a formula (#ERROR!) in Google Sheets.
+          "Декан / телефон деканата": { v: [i.deanName, i.phone && `тел. ${i.phone}`].filter(Boolean).join(", "), bg },
           "Почему не ставят": { v: i.reason ?? "", bg },
           "Чей клиент": { v: "AlemWay", bold: true, bg },
           "Статус": { v: done ? `✓ решено ${de(i.resolvedAt)}` : `не решено (с ${de(i.at)})`, bg, bold: !done, color: done ? "#0A7A42" : "#B54708" },
