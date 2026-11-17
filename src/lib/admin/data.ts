@@ -64,6 +64,7 @@ export type CabinetRow = {
   party?: string;
   /** Open «деканат не ставит печать» report. */
   dean?: boolean;
+  noManager?: boolean;
   employerName?: string;
 };
 
@@ -100,14 +101,14 @@ export async function getCabinets(filter: { service?: string; status?: string; q
        && (!defined($service) || coalesce(service, "ferienjob") == $service)
        && (!defined($status) || coalesce(status, "waiting_data") == $status)
        && (!defined($group) || coalesce(group, "new") == $group)
-       && (!defined($manager) || ($manager == "-" && !defined(manager)) || manager == $manager)
+       && (!defined($manager) || !defined(manager) || manager == $manager)
        && (!defined($seller) || ($seller == "-" && !defined(seller)) || seller == $seller)
        && (!defined($mine) || manager == $mine || seller == $mine)
        && (!$dean || (defined(deanIssue) && !defined(deanIssue.resolvedAt)))
        && (!defined($q) || string(number) == $num || clientName match $q || clientPhone match $q || contacts[].phone match $q || data.firstName match $q || data.lastName match $q)
      ] | order(coalesce(number, 0) desc, _createdAt desc)[0...300]{
       _id, number, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName, managerName, sellerName, party,
-      "dean": ${deanOpen}, deadline, "employerName": select(defined(employer) => employerName)
+      "dean": ${deanOpen}, "noManager": !defined(manager), deadline, "employerName": select(defined(employer) => employerName)
     }`,
     {
       service: filter.service || null,
@@ -121,8 +122,10 @@ export async function getCabinets(filter: { service?: string; status?: string; q
       dean: Boolean(filter.dean),
     }
   );
-  // Clients whose dean's office won't sign wait for us: they go first.
-  return rows.sort((a, b) => Number(Boolean(b.dean)) - Number(Boolean(a.dean)));
+  // Clients waiting for us go first: dean's office won't sign, then new ones without a manager
+  // (those are always shown, whatever «Кто ведёт» filter is on — someone has to take them).
+  const rank = (r: CabinetRow) => (r.dean ? 2 : r.noManager ? 1 : 0);
+  return rows.sort((a, b) => rank(b) - rank(a));
 }
 
 /** Other clients in the same «едут вместе» group. */

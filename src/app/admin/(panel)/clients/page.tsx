@@ -31,6 +31,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
   const dean = sp.dean === "1";
   const rows = await getCabinets({ service, status, q, manager, seller, group, dean, mine: owner ? undefined : me.login });
   const deanCount = rows.filter((r) => r.dean).length;
+  const freeCount = owner ? rows.filter((r) => r.noManager).length : 0;
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Almaty" }).format(new Date());
   // «Едут вместе»: how many from each group are in this list.
   const partySize = new Map<string, number>();
@@ -139,6 +140,19 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
             <span className="font-semibold text-brand">Показать →</span>
           </Link>
         )
+      )}
+
+      {freeCount > 0 && manager !== "-" && (
+        <Link
+          prefetch={false}
+          href="/admin/clients?manager=-"
+          className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-[14.5px] hover:bg-amber-100"
+        >
+          <span className="font-semibold text-amber-900">
+            🆕 Без ведущего: {freeCount} — отдел продаж добавил, назначьте ведущего и напишите клиенту
+          </span>
+          <span className="font-semibold text-brand">Показать →</span>
+        </Link>
       )}
 
       {rows.length === 0 ? (
