@@ -31,6 +31,7 @@ import {
   declarationAction,
   deleteCabinetAction,
   deleteClientFileAction,
+  setEnrollmentAnyLangAction,
   updateAnketaAction,
   deletePaymentAction,
   deleteReceiptAction,
@@ -941,6 +942,18 @@ export default async function ClientPage({
                             ? `${f.name} · ${fmtDate(f.uploadedAt)}`
                             : "Не загружено"}
                         </p>
+                        {kind === "enrollment" && owner && (
+                          <div className="mt-1 flex flex-wrap items-center gap-2 text-[13px]">
+                            {cab.enrollmentAnyLang && <span className="font-semibold text-amber-700">✓ Принимаем на русском/казахском — английская будет позже</span>}
+                            <QuickButton
+                              action={setEnrollmentAnyLangAction}
+                              hidden={{ id, on: cab.enrollmentAnyLang ? "no" : "yes" }}
+                              className="font-semibold text-brand hover:underline"
+                            >
+                              {cab.enrollmentAnyLang ? "Снова требовать английскую" : "Принять справку на русском (английская позже)"}
+                            </QuickButton>
+                          </div>
+                        )}
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         {f && (

@@ -796,6 +796,19 @@ export async function renameMemberAction(_prev: ActionState, fd: FormData): Prom
   return { ok: true, message: `Имя изменено${docs.length ? ` (обновлено у ${docs.length} записей)` : ""}` };
 }
 
+/** Team allows (or stops allowing) a Russian/Kazakh enrollment certificate for the AI declaration. */
+export async function setEnrollmentAnyLangAction(fd: FormData) {
+  const me = await requireAdminUser({ full: true });
+  const id = s(fd, "id", 100);
+  const on = s(fd, "on", 5) === "yes";
+  const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
+  if (!cab) return;
+  if (on) await patchCabinet(id, { enrollmentAnyLang: true });
+  else await patchCabinet(id, {}, ["enrollmentAnyLang"]);
+  await logActivity(me, "file_upload", on ? "разрешил(а) справку на русском/казахском для декларации" : "снова требует справку на английском", cab);
+  revalidatePath(`/admin/clients/${id}`);
+}
+
 /** Manager deletes one file of a client (from storage too). */
 export async function deleteClientFileAction(fd: FormData) {
   const me = await requireAdminUser({ full: true });
