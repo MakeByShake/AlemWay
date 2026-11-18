@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { routing } from "@/i18n/routing";
+import { HREFLANG } from "@/lib/seo";
 import { getServices } from "@/lib/data";
 import { siteUrl } from "@/lib/i18n-content";
 
@@ -25,7 +26,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       priority,
       alternates: {
-        languages: Object.fromEntries(routing.locales.map((l) => [l === "kk" ? "kk-KZ" : "ru-KZ", `${base}/${l}${path}`])),
+        languages: Object.fromEntries(routing.locales.map((l) => [HREFLANG[l] ?? l, `${base}/${l}${path}`])),
       },
     }))
   );

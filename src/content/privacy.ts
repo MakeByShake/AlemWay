@@ -133,4 +133,68 @@ export const privacy: Record<string, { updated: string; intro: string; sections:
       },
     ],
   },
+  de: {
+    updated: "Fassung vom 4. November 2026",
+    intro:
+      "Diese Erklärung beschreibt, welche personenbezogenen Daten die Visaagentur AlemWay Visa (Almaty, im Folgenden „wir“, „Betreiber“) über diese Website erhebt, wozu, wie wir sie speichern und schützen. Sie wurde gemäß dem Gesetz der Republik Kasachstan „Über personenbezogene Daten und deren Schutz“ vom 21. Mai 2013 Nr. 94-V erstellt.",
+    sections: [
+      {
+        title: "1. Welche Daten wir erheben",
+        body: [
+          "Über das Anfrageformular: Name, Telefonnummer, gewählte Leistung, Kommentar (falls angegeben).",
+          "Technische Daten: Seite, von der die Anfrage gesendet wurde, Sprache der Website, UTM-Parameter des Werbelinks. Diese Daten lassen keine Rückschlüsse auf Ihre Person zu.",
+          "Unterlagen für Visa und Genehmigungen (Pass, Foto usw.) erhalten wir nur im separaten Austausch über WhatsApp oder im Büro — über die Website werden sie nicht erhoben.",
+        ],
+      },
+      {
+        title: "2. Wozu wir die Daten verarbeiten",
+        body: [
+          "Um Sie zu Ihrer Anfrage zu kontaktieren, zu beraten und die gewählte Leistung zu erbringen.",
+          "Um Anfragen zu erfassen und die Website zu verbessern (anonymisierte Statistik).",
+          "Wir nutzen Ihre Daten ohne gesonderte Einwilligung nicht für Newsletter und verkaufen sie nicht an Dritte.",
+        ],
+      },
+      {
+        title: "3. Einwilligung",
+        body: [
+          "Mit dem Setzen des Häkchens und dem Absenden des Formulars willigen Sie in die Erhebung und Verarbeitung Ihrer personenbezogenen Daten zu den oben genannten Zwecken ein (Art. 7–8 des Gesetzes).",
+          "Sie können die Einwilligung jederzeit per E-Mail oder WhatsApp widerrufen — außer wenn dies dem Recht der Republik Kasachstan oder einem noch nicht erfüllten Vertrag widerspricht.",
+        ],
+      },
+      {
+        title: "4. Wo und wie lange die Daten gespeichert werden",
+        body: [
+          "Anfragen werden in einem geschützten Content-Management-System (Sanity) gespeichert und in einen geschlossenen Arbeitschat der Mitarbeiter in Telegram übertragen. Zugriff haben nur Mitarbeiter, die mit Anfragen arbeiten.",
+          "Die Daten werden so lange gespeichert, wie es für die Leistung und die Buchführung nötig ist, höchstens jedoch 3 Jahre ab dem letzten Kontakt, danach werden sie gelöscht.",
+          "Die Speicherdienste können sich außerhalb Kasachstans befinden. Mit dem Absenden der Anfrage stimmen Sie dieser grenzüberschreitenden Übermittlung zu (Art. 16 des Gesetzes). Wir wählen Dienste, die den Schutz der Daten gewährleisten.",
+        ],
+      },
+      {
+        title: "5. Wie wir die Daten schützen",
+        body: [
+          "Die Übertragung erfolgt über das geschützte Protokoll HTTPS.",
+          "Zugangsschlüssel liegen nur auf dem Server, der Zugriff auf Anfragen erfolgt über persönliche Konten der Mitarbeiter.",
+          "Das Formular ist vor automatischem Spam geschützt.",
+        ],
+      },
+      {
+        title: "6. Analyse und Cookies",
+        body: [
+          "Wir nutzen Vercel Web Analytics — es zählt Besuche ohne Cookies und ohne personenbezogene Daten.",
+          "Ist Yandex Metrica aktiviert, verwendet es Cookies für anonymisierte Besuchsstatistiken. Sie können Cookies in den Browsereinstellungen blockieren.",
+        ],
+      },
+      {
+        title: "7. Ihre Rechte",
+        body: [
+          "Sie haben das Recht zu erfahren, ob wir Daten über Sie haben, eine Kopie zu erhalten, deren Berichtigung, Sperrung oder Löschung zu verlangen und Ihre Einwilligung zu widerrufen (Art. 24 des Gesetzes).",
+          "Schreiben Sie uns dazu — wir antworten innerhalb von 10 Werktagen.",
+        ],
+      },
+      {
+        title: "8. Kontakt des Betreibers",
+        body: ["AlemWay Visa, Almaty, Republik Kasachstan.", "E-Mail: alemway.kz@gmail.com", "Telefon / WhatsApp: +7 708 070 18 77"],
+      },
+    ],
+  },
 };

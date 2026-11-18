@@ -1,0 +1,236 @@
+{
+  "meta": {
+    "siteName": "AlemWay Visa",
+    "homeTitle": "AlemWay Visa — Ferienjob in Deutschland, K-ETA und Visa aus Almaty",
+    "homeDescription": "Ferienjob in Deutschland für Studierende aus Kasachstan, K-ETA für Südkorea und Visum für Australien. Seit 2018, über 1000 Kunden.",
+    "servicesTitle": "Alle Leistungen",
+    "servicesDescription": "Arbeit im Ausland, Einreisegenehmigungen und Visa — Preise, Fristen und Unterlagen.",
+    "aboutTitle": "Über uns",
+    "aboutDescription": "Visaagentur AlemWay Visa in Almaty. Seit 2018 für Sie da.",
+    "contactsTitle": "Kontakt",
+    "contactsDescription": "Telefon, WhatsApp, E-Mail und Adresse von AlemWay Visa in Almaty.",
+    "privacyTitle": "Datenschutzerklärung",
+    "privacyDescription": "Wie AlemWay Visa personenbezogene Daten erhebt, speichert und schützt.",
+    "feedbackTitle": "Feedback zur Website und zu unserer Arbeit",
+    "feedbackDescription": "Bewerten Sie die Website und die Arbeit von AlemWay Visa. Unser Team liest jedes Feedback — ob gut oder schlecht."
+  },
+  "nav": {
+    "services": "Leistungen",
+    "allServices": "Alle Leistungen",
+    "about": "Über uns",
+    "contacts": "Kontakt",
+    "whatsapp": "Auf WhatsApp schreiben",
+    "whatsappShort": "WhatsApp",
+    "menu": "Menü",
+    "close": "Schließen",
+    "language": "Sprache",
+    "skip": "Zum Inhalt springen",
+    "home": "Startseite",
+    "feedback": "Feedback",
+    "consultation": "Beratung"
+  },
+  "hero": {
+    "eyebrow": "Visaagentur · Almaty",
+    "chooseService": "Leistung wählen",
+    "photoPlaceholder": "Foto des Büros",
+    "badge": "Antwort auf WhatsApp in 15 Minuten",
+    "trust": [
+      "Ferienjob in Deutschland — unser Hauptbereich",
+      "Antrag am Tag der Zahlung",
+      "Beratung auf Russisch und Kasachisch"
+    ],
+    "trustPeople": "Über <b>1000 Kunden</b> vertrauen uns seit 2018",
+    "popular": "Beliebt",
+    "main": "Hauptbereich",
+    "cardCta": "Beantragen",
+    "details": "Mehr erfahren",
+    "carouselRegion": "Unsere Leistungen",
+    "carouselSlide": "Leistung",
+    "carouselPrev": "Vorherige Leistung",
+    "carouselNext": "Nächste Leistung"
+  },
+  "home": {
+    "servicesTitle": "Leistungen",
+    "servicesSubtitle": "Wählen Sie eine Richtung — dort finden Sie Preis, Dauer und die Liste der Unterlagen.",
+    "howTitle": "So arbeiten wir",
+    "how": [
+      {
+        "title": "Sie schreiben uns",
+        "text": "Per WhatsApp oder über das Formular. Während der Geschäftszeiten antworten wir innerhalb von 15 Minuten."
+      },
+      {
+        "title": "Wir prüfen Ihren Fall",
+        "text": "Wir sagen Ihnen, welche Unterlagen nötig sind, was es kostet und wie lange es dauert."
+      },
+      {
+        "title": "Wir bereiten vor und reichen ein",
+        "text": "Wir füllen den Antrag aus, prüfen die Unterlagen und reichen fehlerfrei ein."
+      },
+      {
+        "title": "Ergebnis",
+        "text": "Wir schicken Ihnen die fertige Genehmigung oder das Visum und erklären die nächsten Schritte."
+      }
+    ],
+    "reviewsTitle": "Kundenbewertungen",
+    "faqTitle": "Häufige Fragen",
+    "leadTitle": "Anfrage senden",
+    "leadSubtitle": "Wir rufen zurück oder schreiben auf WhatsApp, beantworten Ihre Fragen und nennen den genauen Preis.",
+    "orWhatsapp": "Oder schreiben Sie uns direkt",
+    "noServices": "Die Leistungen erscheinen bald. Schreiben Sie uns auf WhatsApp — wir helfen gern.",
+    "ticker": [
+      "Ferienjob — Sommerarbeit in Deutschland",
+      "K-ETA für Korea",
+      "Staatsgebühr inklusive",
+      "Visum für Australien",
+      "Antwort in 15 Minuten",
+      "Seit 2018"
+    ],
+    "statsEyebrow": "Zahlen",
+    "servicesEyebrow": "Richtungen",
+    "servicesAccent": "und Preise",
+    "howEyebrow": "Ablauf",
+    "faqEyebrow": "Fragen",
+    "responseValue": "15 Min.",
+    "responseLabel": "durchschnittliche Antwortzeit auf WhatsApp",
+    "whyEyebrow": "Warum wir",
+    "whyTitle": "Fehlerfreie Unterlagen",
+    "whyAccent": "beim ersten Mal",
+    "whyText": "Die meisten Ablehnungen entstehen durch Kleinigkeiten: Spiegelung auf dem Passfoto, ein Tippfehler in der Adresse, falsche Daten. Wir prüfen alles vor der Einreichung.",
+    "why": [
+      "Wir prüfen Foto und Pass vor der Einreichung",
+      "Wir füllen den Antrag selbst aus — Sie schicken nur die Daten",
+      "Wir sagen ehrlich, wenn wir ein Ablehnungsrisiko sehen",
+      "Wir bleiben bis zum Ergebnis in Kontakt"
+    ]
+  },
+  "service": {
+    "priceOnRequest": "Preis auf Anfrage",
+    "price": "Preis",
+    "duration": "Dauer",
+    "leaveRequest": "Anfrage senden",
+    "whatsapp": "WhatsApp",
+    "related": "Ähnliche Leistungen",
+    "back": "Alle Leistungen",
+    "popular": "Beliebt",
+    "more": "Mehr erfahren",
+    "requestTitle": "Anfrage für diese Leistung",
+    "requestSubtitle": "Hinterlassen Sie Ihre Kontaktdaten — wir klären die Details und sagen Ihnen, wie es weitergeht.",
+    "all": "Alle",
+    "empty": "In dieser Kategorie gibt es noch keine Leistungen."
+  },
+  "form": {
+    "name": "Name",
+    "namePlaceholder": "Wie dürfen wir Sie ansprechen",
+    "phone": "Telefon",
+    "service": "Leistung",
+    "selectService": "Leistung wählen",
+    "otherService": "Sonstiges / weiß nicht",
+    "comment": "Kommentar",
+    "commentPlaceholder": "Zum Beispiel: Ferienjob ab Juni 2027",
+    "optional": "optional",
+    "consentBefore": "Ich stimme der Verarbeitung meiner personenbezogenen Daten gemäß der",
+    "consentLink": "Datenschutzerklärung zu",
+    "submit": "Anfrage senden",
+    "sending": "Wird gesendet…",
+    "successTitle": "Danke! Ihre Anfrage ist eingegangen",
+    "successText": "Während der Geschäftszeiten antworten wir innerhalb von 15 Minuten auf WhatsApp.",
+    "successAgain": "Weitere Anfrage senden",
+    "error": "Die Anfrage konnte nicht gesendet werden. Schreiben Sie uns auf WhatsApp — dort antworten wir schneller.",
+    "tooMany": "Zu viele Anfragen hintereinander. Versuchen Sie es in einer Minute erneut oder schreiben Sie auf WhatsApp.",
+    "errName": "Bitte Namen angeben",
+    "errPhone": "Bitte die vollständige Nummer eingeben",
+    "errConsent": "Die Einwilligung zur Datenverarbeitung ist erforderlich"
+  },
+  "footer": {
+    "tagline": "Arbeit im Ausland, Einreisegenehmigungen und Visa. Almaty, seit 2018.",
+    "services": "Leistungen",
+    "company": "Unternehmen",
+    "contacts": "Kontakt",
+    "privacy": "Datenschutzerklärung",
+    "rights": "Alle Rechte vorbehalten."
+  },
+  "about": {
+    "title": "Über uns",
+    "lead": "AlemWay Visa ist eine Visaagentur aus Almaty. Seit 2018 helfen wir Menschen aus Kasachstan, Visa und Einreisegenehmigungen zu erhalten und zum Arbeiten ins Ausland zu gehen.",
+    "valuesTitle": "So arbeiten wir",
+    "values": [
+      {
+        "title": "Ehrlich über die Chancen",
+        "text": "Wenn wir ein Ablehnungsrisiko sehen, sagen wir es vor der Zahlung."
+      },
+      {
+        "title": "Fester Preis",
+        "text": "Wir nennen den Preis im Voraus. Keine Zuzahlungen „unterwegs“."
+      },
+      {
+        "title": "Immer erreichbar",
+        "text": "Wir antworten auf WhatsApp und halten Sie bei jedem Schritt auf dem Laufenden."
+      }
+    ],
+    "photo": "Foto des Teams"
+  },
+  "contacts": {
+    "title": "Kontakt",
+    "lead": "Am schnellsten geht es per WhatsApp. Während der Geschäftszeiten antworten wir innerhalb von 15 Minuten.",
+    "phone": "Telefon und WhatsApp",
+    "email": "E-Mail",
+    "address": "Adresse",
+    "instagram": "Instagram",
+    "hours": "Öffnungszeiten",
+    "map": "Karte"
+  },
+  "cookie": {
+    "text": "Wir nutzen Yandex Metrica, um zu verstehen, welche Seiten hilfreich sind. Wenn Sie fortfahren, stimmen Sie unserer",
+    "link": "Datenschutzerklärung zu",
+    "ok": "Verstanden"
+  },
+  "notFound": {
+    "title": "Seite nicht gefunden",
+    "text": "Vielleicht ist der Link veraltet. Sehen Sie sich alle Leistungen an oder schreiben Sie uns.",
+    "back": "Zur Startseite"
+  },
+  "feedback": {
+    "eyebrow": "Feedback",
+    "title": "Wie gefällt Ihnen unsere Website",
+    "accent": "und unsere Arbeit?",
+    "lead": "Jedes Feedback ist uns wichtig — ob gut oder schlecht. Das ganze Team liest es, und wir verbessern damit Website und Service.",
+    "points": [
+      "Beantwortet sie Ihre Fragen?",
+      "Finden Sie Leistung und Preis leicht?",
+      "Was war unklar oder umständlich?"
+    ],
+    "ratingLabel": "Ihre Bewertung",
+    "ratingHint": [
+      "Sehr schlecht",
+      "Schlecht",
+      "In Ordnung",
+      "Gut",
+      "Ausgezeichnet"
+    ],
+    "topicLabel": "Worum geht es",
+    "topics": {
+      "site": "Website",
+      "service": "Unsere Arbeit",
+      "other": "Sonstiges"
+    },
+    "likedLabel": "Was hat Ihnen gefallen",
+    "likedPlaceholder": "Zum Beispiel: Ich habe die Liste der Unterlagen schnell gefunden",
+    "improveLabel": "Was können wir verbessern",
+    "improvePlaceholder": "Zum Beispiel: Ich habe nicht gefunden, was Ferienjob kostet",
+    "nameLabel": "Name",
+    "contactLabel": "Telefon oder E-Mail",
+    "contactHint": "Falls Sie eine Antwort möchten",
+    "optional": "optional",
+    "submit": "Feedback senden",
+    "sending": "Wird gesendet…",
+    "errRating": "Bitte bewerten Sie von 1 bis 5",
+    "successTitle": "Danke für Ihr Feedback!",
+    "successText": "Wir lesen es noch heute. Wenn Sie einen Kontakt hinterlassen haben, antworten wir Ihnen.",
+    "again": "Noch etwas schreiben",
+    "error": "Senden fehlgeschlagen. Versuchen Sie es erneut oder schreiben Sie uns auf WhatsApp.",
+    "tooMany": "Zu viele Bewertungen hintereinander. Versuchen Sie es in ein paar Minuten erneut.",
+    "homeTitle": "Wie gefällt Ihnen unsere Website?",
+    "homeText": "Bewerten Sie uns in 30 Sekunden — gutes und schlechtes Feedback helfen uns gleichermaßen, besser zu werden.",
+    "homeCta": "Feedback geben"
+  }
+}

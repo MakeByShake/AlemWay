@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
   const topicRaw = str(body.topic, 20);
   const topic = CONSULTATION_TOPICS.find((t) => t.value === topicRaw) ?? CONSULTATION_TOPICS[3];
   const comment = str(body.comment, 1000);
-  const locale = body.locale === "kk" ? "kk" : "ru";
+  const locale = (["kk", "de"] as const).find((x) => x === body.locale) ?? "ru";
   if (name.length < 2 || !phone || body.consent !== true) return NextResponse.json({ ok: false, error: "invalid" }, { status: 400 });
   if (!slotValid(date, time)) return NextResponse.json({ ok: false, error: "bad_slot" }, { status: 400 });
 

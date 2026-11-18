@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
   const improve = str(body.improve, 1500);
   const name = str(body.name, 80);
   const contact = str(body.contact, 80);
-  const locale = str(body.locale, 5) === "kk" ? "kk" : "ru";
+  const locale = (["kk", "de"] as const).find((x) => x === str(body.locale, 5)) ?? "ru";
   const pageRaw = str(body.page, 300);
   const page = /^\/[\w\-/%.]*$/.test(pageRaw) ? pageRaw : "";
 

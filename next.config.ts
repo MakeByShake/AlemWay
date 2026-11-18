@@ -62,7 +62,7 @@ const nextConfig: NextConfig = {
     }));
     return [
       ...toMain,
-      { source: "/:locale(ru|kk)/studio/:path*", destination: "/studio/:path*", permanent: false },
+      { source: "/:locale(ru|kk|de)/studio/:path*", destination: "/studio/:path*", permanent: false },
       // Pizza Pitch deck (static files in public/pitch).
       { source: "/pitch", destination: "/pitch/index.html", permanent: false },
     ];

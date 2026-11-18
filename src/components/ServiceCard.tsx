@@ -1,7 +1,7 @@
 import { ArrowUpRight, Clock } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { formatPrice, l } from "@/lib/i18n-content";
+import { MAIN_SERVICE_SLUG, formatPrice, l } from "@/lib/i18n-content";
 import { SHOW_PRICES } from "@/lib/prices";
 import type { Service } from "@/lib/types";
 import { hasImage } from "@/sanity/image";
@@ -9,9 +9,10 @@ import { Flag } from "./Flag";
 import { Media } from "./Media";
 
 export async function ServiceCard({ service, locale, showCategory = false }: { service: Service; locale: string; showCategory?: boolean }) {
-  const t = await getTranslations("service");
+  const [t, th] = await Promise.all([getTranslations("service"), getTranslations("hero")]);
+  const main = service.slug.current === MAIN_SERVICE_SLUG;
   const title = l(service.title, locale);
-  const badge = l(service.badge, locale);
+  const badge = l(service.badge, locale) || (main ? `★ ${th("main")}` : "");
   const duration = l(service.duration, locale);
   const hasPrice = !service.priceOnRequest && typeof service.price === "number";
   const withCover = hasImage(service.coverImage);
@@ -19,7 +20,7 @@ export async function ServiceCard({ service, locale, showCategory = false }: { s
   return (
     <Link
       href={`/services/${service.slug.current}`}
-      className="group card flex h-full flex-col overflow-hidden transition-[box-shadow,border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-ink/15 hover:shadow-[0_16px_40px_-18px_rgba(11,15,36,0.3)]"
+      className={`group card flex h-full flex-col overflow-hidden ${main ? "ring-2 ring-brand" : ""} transition-[box-shadow,border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-ink/15 hover:shadow-[0_16px_40px_-18px_rgba(11,15,36,0.3)]`}
     >
       {withCover ? (
         <div className="relative">

@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { AlertTriangle, Check, FileCheck2, Info } from "lucide-react";
-import { formatPrice, l } from "@/lib/i18n-content";
+import { formatPrice, l, statValue } from "@/lib/i18n-content";
 import { SHOW_PRICES } from "@/lib/prices";
 import type { PageBlock } from "@/lib/types";
 import { hasImage } from "@/sanity/image";
@@ -215,7 +215,7 @@ async function Block({ block, ctx }: { block: PageBlock; ctx: Ctx }) {
             {block.items.map((s) => (
               <div key={s._key} className="bg-white p-5 sm:p-6">
                 <dt className="sr-only">{l(s.label, locale)}</dt>
-                <dd className="text-[36px] leading-none font-bold tracking-[-0.04em] text-brand">{s.value}</dd>
+                <dd className="text-[36px] leading-none font-bold tracking-[-0.04em] text-brand">{statValue(s.value, locale)}</dd>
                 <dd className="mt-2 text-[15px] text-muted">{l(s.label, locale)}</dd>
               </div>
             ))}

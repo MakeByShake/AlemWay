@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getSettings } from "@/lib/data";
-import { l } from "@/lib/i18n-content";
+import { l, statValue } from "@/lib/i18n-content";
 import { pageMetadata } from "@/lib/seo";
 import { Media } from "@/components/Media";
 import { LeadSection, Prose } from "@/components/Sections";
@@ -43,7 +43,7 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
             {settings.stats.map((s) => (
               <div key={s._key} className="py-8 sm:px-8 sm:first:pl-0">
                 <dt className="sr-only">{l(s.label, locale)}</dt>
-                <dd className="text-[44px] leading-none font-bold tracking-[-0.045em] text-brand">{s.value}</dd>
+                <dd className="text-[44px] leading-none font-bold tracking-[-0.045em] text-brand">{statValue(s.value, locale)}</dd>
                 <dd className="mt-2 text-[15px] text-muted">{l(s.label, locale)}</dd>
               </div>
             ))}

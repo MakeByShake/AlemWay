@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
   const serviceSlug = str(body.service, 100);
   const serviceTitle = str(body.serviceTitle, 200) || (serviceSlug === "other" ? "Другое / не знаю" : "");
   const comment = str(body.comment, 1000);
-  const locale = str(body.locale, 5) === "kk" ? "kk" : "ru";
+  const locale = (["kk", "de"] as const).find((x) => x === str(body.locale, 5)) ?? "ru";
   // Only a site path like "/ru/services/k-eta" — never a full URL.
   const pageRaw = str(body.page, 300);
   const page = /^\/[\w\-/%.]*$/.test(pageRaw) ? pageRaw : "";

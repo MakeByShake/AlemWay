@@ -22,7 +22,7 @@ export function PhotoCredit({ credit, className = "" }: { credit?: string; class
   if (!credit) return null;
   return (
     <span className={`pointer-events-none absolute right-2 bottom-2 z-10 max-w-[80%] truncate rounded-md bg-black/45 px-1.5 py-0.5 text-[10px] leading-tight text-white/85 ${className}`}>
-      {credit}
+      {credit.replace(/^(Фото|Сурет)\s*:\s*/i, "© ")}
     </span>
   );
 }

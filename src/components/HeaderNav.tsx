@@ -16,7 +16,7 @@ export type NavGroup = {
   items: { title: string; slug: string; countryCode?: string; flagImage?: SanityImage }[];
 };
 
-const LOCALE_LABEL: Record<string, string> = { ru: "RU", kk: "KZ" };
+const LOCALE_LABEL: Record<string, string> = { ru: "RU", kk: "KZ", de: "DE" };
 
 function LanguageSwitcher({ className = "", light = false }: { className?: string; light?: boolean }) {
   const locale = useLocale();

@@ -1,7 +1,7 @@
 // Shapes of the content coming from Sanity (and from the local fallback in src/content/seed.ts).
 
-export type LocaleString = { ru?: string; kk?: string };
-export type LocaleText = { ru?: string; kk?: string };
+export type LocaleString = { ru?: string; kk?: string; de?: string };
+export type LocaleText = { ru?: string; kk?: string; de?: string };
 export type Keyed<T> = T & { _key: string };
 
 export type SanityImage = {

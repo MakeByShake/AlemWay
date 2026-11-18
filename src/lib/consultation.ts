@@ -11,10 +11,10 @@ export const SLOT_CAPACITY = 1;
 export const BOOKING_DAYS = 14;
 
 export const CONSULTATION_TOPICS = [
-  { value: "ferienjob", ru: "Работа в Германии (Ferienjob)", kk: "Германиядағы жұмыс (Ferienjob)" },
-  { value: "keta", ru: "K-ETA в Южную Корею", kk: "Оңтүстік Кореяға K-ETA" },
-  { value: "australia", ru: "Виза в Австралию", kk: "Австралияға виза" },
-  { value: "other", ru: "Другой вопрос", kk: "Басқа сұрақ" },
+  { value: "ferienjob", ru: "Работа в Германии (Ferienjob)", kk: "Германиядағы жұмыс (Ferienjob)", de: "Arbeit in Deutschland (Ferienjob)" },
+  { value: "keta", ru: "K-ETA в Южную Корею", kk: "Оңтүстік Кореяға K-ETA", de: "K-ETA für Südkorea" },
+  { value: "australia", ru: "Виза в Австралию", kk: "Австралияға виза", de: "Visum für Australien" },
+  { value: "other", ru: "Другой вопрос", kk: "Басқа сұрақ", de: "Andere Frage" },
 ] as const;
 
 export const CONSULTATION_STATUSES = [
@@ -82,8 +82,8 @@ export function normalizePhone(raw: string) {
   return /^7\d{10}$/.test(d) ? `+${d}` : null;
 }
 
-export function formatDayRu(iso: string, locale: "ru" | "kk" = "ru") {
-  return new Intl.DateTimeFormat(locale === "kk" ? "kk-KZ" : "ru-RU", { weekday: "short", day: "numeric", month: "long", timeZone: "UTC" }).format(
+export function formatDayRu(iso: string, locale: "ru" | "kk" | "de" = "ru") {
+  return new Intl.DateTimeFormat(locale === "kk" ? "kk-KZ" : locale === "de" ? "de-DE" : "ru-RU", { weekday: "short", day: "numeric", month: "long", timeZone: "UTC" }).format(
     new Date(`${iso}T12:00:00Z`)
   );
 }

@@ -50,9 +50,31 @@ const TEXT = {
     doneText: (d: string, t: string) => `Сізді ${d}, ${t}-да күтеміз. Менеджер WhatsApp-қа жазып, жазылуды растайды және 2 000 ₸ қалай төлеуді айтады.`,
     again: "Тағы жазылу",
   },
+  de: {
+    who: "Bei wem buchen",
+    anyone: "Beliebiger freier Berater",
+    day: "Tag wählen",
+    time: "Uhrzeit wählen",
+    loading: "Freie Zeiten werden geprüft…",
+    none: "An diesem Tag ist alles belegt — bitte einen anderen Tag wählen.",
+    name: "Ihr Name",
+    phone: "Telefon (WhatsApp)",
+    topic: "Thema",
+    comment: "Ihre Frage (optional)",
+    consent: "Ich stimme der Verarbeitung meiner personenbezogenen Daten zu",
+    submit: "Beratung buchen",
+    sending: "Wird gebucht…",
+    pickSlot: "Bitte Tag und Uhrzeit wählen.",
+    fill: "Bitte Namen und Telefon im Format +7 777 123 45 67 angeben und das Häkchen setzen.",
+    taken: "Diese Zeit wurde gerade vergeben. Bitte eine andere wählen.",
+    error: "Buchung fehlgeschlagen. Schreiben Sie uns auf WhatsApp.",
+    doneTitle: "Sie sind angemeldet! 🎉",
+    doneText: (d: string, t: string) => `Wir erwarten Sie am ${d} um ${t}. Ein Manager schreibt Ihnen auf WhatsApp, bestätigt den Termin und erklärt, wie Sie 2 000 ₸ bezahlen.`,
+    again: "Erneut buchen",
+  },
 };
 
-export function ConsultationForm({ days, locale, consultants = [] }: { days: string[]; locale: "ru" | "kk"; consultants?: { key: string; name: string }[] }) {
+export function ConsultationForm({ days, locale, consultants = [] }: { days: string[]; locale: "ru" | "kk" | "de"; consultants?: { key: string; name: string }[] }) {
   const t = TEXT[locale];
   const [who, setWho] = useState("");
   const [date, setDate] = useState(days[0] ?? "");

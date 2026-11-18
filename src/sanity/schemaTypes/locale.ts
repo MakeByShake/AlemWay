@@ -1,22 +1,24 @@
 import { defineField, defineType } from "sanity";
 
 const KK_HINT = "Казахский. Проверить носителем языка.";
+const DE_HINT = "Немецкий. Если пусто — на немецкой версии сайта будет русский текст.";
 
 export const localeString = defineType({
   name: "localeString",
-  title: "Текст (RU / KZ)",
+  title: "Текст (RU / KZ / DE)",
   type: "object",
   options: { columns: 2 },
   fields: [
     defineField({ name: "ru", title: "Русский", type: "string" }),
     defineField({ name: "kk", title: "Қазақша", type: "string", description: KK_HINT }),
+    defineField({ name: "de", title: "Deutsch", type: "string", description: DE_HINT }),
   ],
   preview: { select: { title: "ru", subtitle: "kk" } },
 });
 
 export const localeText = defineType({
   name: "localeText",
-  title: "Длинный текст (RU / KZ)",
+  title: "Длинный текст (RU / KZ / DE)",
   type: "object",
   fields: [
     defineField({
@@ -27,6 +29,7 @@ export const localeText = defineType({
       description: "Пустая строка между абзацами = новый абзац.",
     }),
     defineField({ name: "kk", title: "Қазақша", type: "text", rows: 4, description: KK_HINT }),
+    defineField({ name: "de", title: "Deutsch", type: "text", rows: 4, description: DE_HINT }),
   ],
   preview: { select: { title: "ru", subtitle: "kk" } },
 });

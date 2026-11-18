@@ -29,18 +29,28 @@ const TEXT = {
     meta: "AlemWay Visa кеңесіне жазылыңыз: Германиядағы Work&Travel, K-ETA, визалар. 2 000 ₸, жұмыс күндері 10:00–19:00.",
     points: ["Құны — 2 000 ₸", "Жұмыс күндері, 10:00–19:00 (Алматы уақыты)", "Шамамен бір сағат: кеңседе немесе WhatsApp қоңырауы арқылы", "Менеджер жазылуды растап, төлем жібереді"],
   },
+  de: {
+    title: "Beratung",
+    eyebrow: "Online-Termin",
+    heading: "Beratung",
+    accent: "mit einem AlemWay-Experten",
+    lead: "Wir besprechen Ihre Situation: welches Programm passt, welche Unterlagen nötig sind, Fristen und Chancen.",
+    meta: "Beratungstermin bei AlemWay Visa: Ferienjob in Deutschland, K-ETA, Visa. 2 000 ₸, werktags 10:00–19:00.",
+    points: ["Preis — 2 000 ₸", "Werktags von 10:00 bis 19:00 (Zeit in Almaty)", "Etwa eine Stunde: im Büro oder per WhatsApp-Anruf", "Ein Manager bestätigt den Termin und schickt die Zahlungsdaten"],
+  },
 };
+const pickLoc = (l: string) => (l === "kk" || l === "de" ? l : "ru");
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
-  const t = TEXT[locale === "kk" ? "kk" : "ru"];
+  const t = TEXT[pickLoc(locale)];
   return pageMetadata({ locale, path: "/consultation", title: t.title, description: t.meta });
 }
 
 export default async function ConsultationPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const loc = locale === "kk" ? "kk" : "ru";
+  const loc = pickLoc(locale);
   const t = TEXT[loc];
   void CONSULTATION_PRICE;
   return (

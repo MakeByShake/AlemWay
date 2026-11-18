@@ -31,7 +31,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                     <p className="text-[17px] font-bold">{l.name || "Без имени"}</p>
                     <p className="mt-0.5 text-[14px] text-muted">
                       {l.serviceTitle || "Услуга не выбрана"} · {fmtDate(l.createdAt)}
-                      {l.locale === "kk" ? " · қазақша" : ""}
+                      {l.locale === "kk" ? " · қазақша" : l.locale === "de" ? " · немецкая версия" : ""}
                     </p>
                   </div>
                   {owner ? (

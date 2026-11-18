@@ -3,7 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import Image from "next/image";
 import { ArrowDown, Check, Star } from "lucide-react";
 import { getFaq, getReviews, getService, getServicesByCategory, getSettings } from "@/lib/data";
-import { l, siteUrl, whatsappLink } from "@/lib/i18n-content";
+import { MAIN_SERVICE_SLUG, l, siteUrl, statValue, whatsappLink } from "@/lib/i18n-content";
 import { pageMetadata } from "@/lib/seo";
 import { Media, PhotoCredit } from "@/components/Media";
 import { HeroServices, type HeroServiceItem } from "@/components/HeroServices";
@@ -48,7 +48,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   ]);
   const how = t.raw("how") as HowStep[];
   // Hero carousel: every service with what's included, popular ones first.
-  const allServices = groups.flatMap((g) => g.services).sort((a, b) => Number(Boolean(b.popular)) - Number(Boolean(a.popular)));
+  // Germany (our main direction) always first, then the popular ones.
+  const rank = (s: { slug: { current: string }; popular?: boolean }) => (s.slug.current === MAIN_SERVICE_SLUG ? 2 : s.popular ? 1 : 0);
+  const allServices = groups.flatMap((g) => g.services).sort((a, b) => rank(b) - rank(a));
   const fullServices = await Promise.all(allServices.map((s) => getService(s.slug.current)));
   const heroItems: HeroServiceItem[] = allServices.map((s, i) => {
     const full = fullServices[i];
@@ -56,7 +58,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     return {
       slug: s.slug.current,
       title: l(s.title, locale),
-      label: s.popular ? th("popular") : l(s.category?.title, locale),
+      label: s.slug.current === MAIN_SERVICE_SLUG ? `★ ${th("main")}` : s.popular ? th("popular") : l(s.category?.title, locale),
       countryCode: s.countryCode,
       flagImage: s.flagImage,
       features: features.map((f) => l(f, locale)).filter(Boolean),
@@ -164,7 +166,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         <section className="border-b border-line bg-white">
           <dl className="container-x grid grid-cols-2 lg:grid-cols-4">
             {[
-              ...settings.stats.map((s) => ({ key: s._key, value: s.value, label: l(s.label, locale) })),
+              ...settings.stats.map((s) => ({ key: s._key, value: statValue(s.value, locale), label: l(s.label, locale) })),
               { key: "resp", value: t("responseValue"), label: t("responseLabel") },
             ].map((s, i) => (
               <div key={s.key} className={`px-2 py-7 text-center sm:py-9 ${i % 2 ? "border-l border-line" : ""} ${i > 1 ? "border-t border-line lg:border-t-0" : ""} ${i === 2 ? "lg:border-l" : ""}`}>
@@ -185,7 +187,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <p className="text-center text-muted">{t("noServices")}</p>
           ) : (
             <div className="reveal grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {groups.flatMap((g) => g.services).map((s) => (
+              {groups.flatMap((g) => g.services).sort((a, b) => Number(b.slug.current === MAIN_SERVICE_SLUG) - Number(a.slug.current === MAIN_SERVICE_SLUG)).map((s) => (
                 <ServiceCard key={s._id} service={s} locale={locale} showCategory />
               ))}
             </div>
