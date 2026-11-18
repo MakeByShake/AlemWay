@@ -128,7 +128,7 @@ export function HeaderNav({
     };
   }, [dropOpen]);
 
-  const linkCls = `rounded-lg px-3 py-2 text-[15px] font-medium transition-colors ${transparent ? "text-white/85 hover:text-white" : "text-ink/80 hover:text-ink"}`;
+  const linkCls = `whitespace-nowrap rounded-lg px-2 py-2 text-[15px] font-medium transition-colors xl:px-3 ${transparent ? "text-white/85 hover:text-white" : "text-ink/80 hover:text-ink"}`;
 
   return (
     <>
@@ -209,7 +209,7 @@ export function HeaderNav({
 
         <div className="hidden items-center gap-3 lg:flex">
           <LanguageSwitcher light={transparent} />
-          <WhatsAppLink href={whatsappHref} place="header" className="btn-whatsapp min-h-11 px-4 text-[14px]">
+          <WhatsAppLink href={whatsappHref} place="header" className="btn-whatsapp min-h-11 whitespace-nowrap px-4 text-[14px]">
             <WhatsAppIcon className="h-[18px] w-[18px]" />
             <span className="xl:hidden">{t("whatsappShort")}</span>
             <span className="hidden xl:inline">{t("whatsapp")}</span>
