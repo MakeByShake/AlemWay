@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { RememberListQuery } from "@/components/admin/ListMemory";
 import { getCabinets, cabinetName, getManagerOptions } from "@/lib/admin/data";
 import { isFullRole, requireAdminUser } from "@/lib/admin/session";
-import { CABINET_STATUSES } from "@/lib/cabinet/fields";
+import { CABINET_STATUSES, PIPELINES } from "@/lib/cabinet/fields";
 import { Badge, Empty, RowLegend, rowTone, PageTitle, Progress, SERVICE_SHORT, fmtDate, waLink, WA_TARGET } from "@/components/admin/bits";
 import { NewClientForm } from "@/components/admin/NewClientForm";
 
@@ -14,6 +14,11 @@ const SERVICE_FILTER = [
   { value: "ferienjob", title: "🇩🇪 Германия" },
   { value: "keta", title: "🇰🇷 K-ETA" },
 ];
+
+// Short stage names for the counters (from the client pipeline).
+const STAGE_SHORT: Record<string, string> = Object.fromEntries(
+  [...PIPELINES.keta, ...PIPELINES.ferienjob].map((st) => [st.status, st.status.startsWith("keta_") ? `K-ETA: ${st.title.ru}` : st.title.ru])
+);
 
 export default async function ClientsPage({ searchParams }: { searchParams: Promise<{ service?: string; status?: string; q?: string; manager?: string; seller?: string; group?: string; dean?: string }> }) {
   const sp = await searchParams;
@@ -29,7 +34,19 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
   const seller = owner ? pick(sp.seller) : "";
   const group = sp.group === "old" || sp.group === "new" ? sp.group : "";
   const dean = sp.dean === "1";
-  const rows = await getCabinets({ service, status, q, manager, seller, group, dean, mine: owner ? undefined : me.login });
+  const base = { service, q, manager, seller, group, dean, mine: owner ? undefined : me.login };
+  const [rows, allStages] = await Promise.all([getCabinets({ ...base, status }), status ? getCabinets(base) : null]);
+  // How many clients are on each stage (with all other filters applied), so nobody counts by hand.
+  const stageRows = allStages ?? rows;
+  const stageCount = new Map<string, number>();
+  for (const r of stageRows) stageCount.set(r.status ?? "waiting_data", (stageCount.get(r.status ?? "waiting_data") ?? 0) + 1);
+  const stageHref = (st: string) => {
+    const u = new URLSearchParams();
+    for (const [k, v] of Object.entries({ service, q, group, manager: sp.manager, seller: sp.seller, dean: dean ? "1" : "" })) if (v) u.set(k, v);
+    if (st) u.set("status", st);
+    const qs = u.toString();
+    return qs ? `/admin/clients?${qs}` : "/admin/clients";
+  };
   const deanCount = rows.filter((r) => r.dean).length;
   const freeCount = owner ? rows.filter((r) => r.noManager).length : 0;
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Almaty" }).format(new Date());
@@ -120,6 +137,27 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
         <button className="btn-ghost">Найти</button>
       </form>
 
+      <div className="mb-4 flex flex-wrap items-center gap-2 text-[13.5px]">
+        <Link
+          prefetch={false}
+          href={stageHref("")}
+          className={`rounded-full border px-3 py-1 font-semibold ${!status ? "border-brand bg-brand text-white" : "border-line bg-white hover:border-brand"}`}
+        >
+          Все: {stageRows.length}
+        </Link>
+        {CABINET_STATUSES.filter((st) => stageCount.get(st.value)).map((st) => (
+          <Link
+            prefetch={false}
+            key={st.value}
+            href={stageHref(st.value)}
+            title={st.title}
+            className={`rounded-full border px-3 py-1 ${status === st.value ? "border-brand bg-brand text-white" : "border-line bg-white hover:border-brand"}`}
+          >
+            {STAGE_SHORT[st.value] ?? st.title}: <b>{stageCount.get(st.value)}</b>
+          </Link>
+        ))}
+      </div>
+
       {dean ? (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-orange-300 bg-orange-50 px-4 py-3 text-[14.5px]">
           <span className="font-semibold text-orange-900">🟠 Показаны только клиенты, у которых деканат не ставит печать</span>
@@ -135,7 +173,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
             className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-orange-300 bg-orange-50 px-4 py-3 text-[14.5px] hover:bg-orange-100"
           >
             <span className="font-semibold text-orange-900">
-              🟠 Деканат не ставит печать: {deanCount} {deanCount % 10 === 1 && deanCount % 100 !== 11 ? "клиент ждёт" : "клиента ждут"} нашего действия
+              🟠 Деканат не ставит печать: {deanCount} {deanCount % 10 === 1 && deanCount % 100 !== 11 ? "клиент ждёт" : [2, 3, 4].includes(deanCount % 10) && ![12, 13, 14].includes(deanCount % 100) ? "клиента ждут" : "клиентов ждут"} нашего действия
             </span>
             <span className="font-semibold text-brand">Показать →</span>
           </Link>
