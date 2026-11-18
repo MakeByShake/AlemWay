@@ -32,7 +32,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
   const pick = (v?: string) => (v === "-" || managers.some((m) => m.login === v) ? v! : "");
   const manager = owner ? pick(sp.manager) : "";
   const seller = owner ? pick(sp.seller) : "";
-  const group = sp.group === "old" || sp.group === "new" ? sp.group : "";
+  const group = sp.group === "old" || sp.group === "new" || sp.group === "baybol" ? sp.group : "";
   const dean = sp.dean === "1";
   const base = { service, q, manager, seller, group, dean, mine: owner ? undefined : me.login };
   const [rows, allStages] = await Promise.all([getCabinets({ ...base, status }), status ? getCabinets(base) : null]);
@@ -74,6 +74,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
           { g: "", label: "Все" },
           { g: "new", label: "Новые — заполняют сами" },
           { g: "old", label: "Старые — данные заполняем мы" },
+          { g: "baybol", label: "🤝 Проданы для Baybol" },
         ].map((x) => (
           <Link prefetch={false}
             key={x.g || "all"}

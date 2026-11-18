@@ -103,7 +103,7 @@ export async function getCabinets(filter: { service?: string; status?: string; q
     `*[_type == "cabinet" && ${notDraft}
        && (!defined($service) || coalesce(service, "ferienjob") == $service)
        && (!defined($status) || coalesce(status, "waiting_data") == $status)
-       && (!defined($group) || coalesce(group, "new") == $group)
+       && select(defined($group) => coalesce(group, "new") == $group, coalesce(group, "new") != "baybol")
        && (!defined($manager) || !defined(manager) || manager == $manager)
        && (!defined($seller) || ($seller == "-" && !defined(seller)) || seller == $seller)
        && (!defined($mine) || manager == $mine || seller == $mine)
@@ -173,15 +173,15 @@ export async function getDashboard(login: string, onlyMine = false) {
     `{
       "newLeads": count(*[_type == "lead" && ${notDraft} && coalesce(status, "new") == "new"]),
       "leadsWeek": count(*[_type == "lead" && ${notDraft} && dateTime(_createdAt) > dateTime(now()) - 60*60*24*7]),
-      "activeClients": count(*[_type == "cabinet" && ${notDraft} && !(status in ["done", "keta_rejected"]) && (!$onlyMine || manager == $login || seller == $login)]),
-      "waitingAction": count(*[_type == "cabinet" && ${notDraft} && (status in ["signed_uploaded", "keta_applying"] || ${deanOpen}) && (!$onlyMine || manager == $login || seller == $login)]),
-      "deanIssues": count(*[_type == "cabinet" && ${notDraft} && ${deanOpen} && (!$onlyMine || manager == $login || seller == $login)]),
-      "myClients": count(*[_type == "cabinet" && ${notDraft} && (manager == $login || seller == $login) && !(status in ["done", "keta_rejected"])]),
+      "activeClients": count(*[_type == "cabinet" && ${notDraft} && coalesce(group, "new") != "baybol" && !(status in ["done", "keta_rejected"]) && (!$onlyMine || manager == $login || seller == $login)]),
+      "waitingAction": count(*[_type == "cabinet" && ${notDraft} && coalesce(group, "new") != "baybol" && (status in ["signed_uploaded", "keta_applying"] || ${deanOpen}) && (!$onlyMine || manager == $login || seller == $login)]),
+      "deanIssues": count(*[_type == "cabinet" && ${notDraft} && coalesce(group, "new") != "baybol" && ${deanOpen} && (!$onlyMine || manager == $login || seller == $login)]),
+      "myClients": count(*[_type == "cabinet" && ${notDraft} && coalesce(group, "new") != "baybol" && (manager == $login || seller == $login) && !(status in ["done", "keta_rejected"])]),
       "newFeedback": count(*[_type == "feedback" && ${notDraft} && coalesce(status, "new") == "new"]),
       "latestLeads": *[_type == "lead" && ${notDraft}] | order(coalesce(createdAt, _createdAt) desc)[0...5]{
         _id, status, name, phone, serviceTitle, "createdAt": coalesce(createdAt, _createdAt)
       },
-      "actionClients": *[_type == "cabinet" && ${notDraft} && (status in ["signed_uploaded", "keta_applying"] || ${deanOpen}) && (!$onlyMine || manager == $login || seller == $login)] | order(_updatedAt desc)[0...12]{
+      "actionClients": *[_type == "cabinet" && ${notDraft} && coalesce(group, "new") != "baybol" && (status in ["signed_uploaded", "keta_applying"] || ${deanOpen}) && (!$onlyMine || manager == $login || seller == $login)] | order(_updatedAt desc)[0...12]{
         _id, number, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName, "dean": ${deanOpen}
       }
     }`,
@@ -229,7 +229,7 @@ export type FinanceRow = CabinetRow & { price?: number; discount?: number; plan?
 
 export function getFinanceRows() {
   return writeClient().fetch<FinanceRow[]>(
-    `*[_type == "cabinet" && ${notDraft}] | order(coalesce(number, 0) desc){
+    `*[_type == "cabinet" && ${notDraft} && coalesce(group, "new") != "baybol"] | order(coalesce(number, 0) desc){
       _id, number, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName,
       manager, managerName, price, discount, plan, payments
     }`

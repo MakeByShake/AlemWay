@@ -35,7 +35,8 @@ export type StoredFile = { path: string; name: string; contentType: string; size
 export type Cabinet = {
   _id: string;
   number?: number;
-  group?: "old" | "new";
+  /** baybol — sold by our team but works under Baybol: kept apart (no number, not in our finance/sheets). */
+  group?: "old" | "new" | "baybol";
   _rev?: string;
   status?: CabinetStatus;
   clientName?: string;

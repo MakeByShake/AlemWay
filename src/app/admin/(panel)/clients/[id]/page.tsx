@@ -601,6 +601,7 @@ export default async function ClientPage({
                     >
                       <option value="new">Новый — заполняет анкету сам</option>
                       <option value="old">Старый — данные заполняем мы</option>
+                      <option value="baybol">🤝 Продан для Baybol — отдельно от наших</option>
                     </select>
                   </label>
                   {owner ? (

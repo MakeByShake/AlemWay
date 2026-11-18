@@ -19,7 +19,7 @@ import {
   sessionValue,
 } from "@/lib/admin/session";
 import { deleteDoc, patchDoc } from "@/lib/admin/data";
-import { AdminOpError, createCabinet, deleteCabinetCompletely } from "@/lib/cabinet/admin-ops";
+import { AdminOpError, createCabinet, deleteCabinetCompletely, renumberCabinets } from "@/lib/cabinet/admin-ops";
 import { cabinetAdminUrl, freshLink, getCabinet, patchCabinet, writeClient } from "@/lib/cabinet/server";
 import { escapeHtml, sendTelegram } from "@/lib/telegram";
 import { checkAndBuildDeclaration } from "@/lib/cabinet/ai-flow";
@@ -188,8 +188,16 @@ export async function updateCabinetAction(_prev: ActionState, fd: FormData): Pro
   const unset: string[] = [];
   const status = s(fd, "status", 40);
   if (CABINET_STATUSES.some((x) => x.value === status)) set.status = status;
-  const group = s(fd, "group", 5);
-  if (group === "old" || group === "new") set.group = group;
+  const group = s(fd, "group", 10);
+  if (group === "old" || group === "new" || group === "baybol") set.group = group;
+  // «Продан для Baybol»: not our client — no number (ours stay 1…N); back to ours — the next number.
+  const toBaybol = group === "baybol" && cab.group !== "baybol";
+  const fromBaybol = cab.group === "baybol" && (group === "old" || group === "new");
+  if (toBaybol) unset.push("number");
+  if (fromBaybol) {
+    const last = await writeClient().fetch<number | null>(`*[_type == "cabinet" && defined(number)] | order(number desc)[0].number`);
+    set.number = (last ?? 0) + 1;
+  }
   for (const key of ["clientName", "clientPhone", "managerNote", "employerName", "workCity", "workPosition", "clientMessage"]) {
     if (fd.has(key)) set[key] = s(fd, key, key === "clientMessage" || key === "managerNote" ? 3000 : 200);
   }
@@ -213,6 +221,11 @@ export async function updateCabinetAction(_prev: ActionState, fd: FormData): Pro
   }
   try {
     await patchCabinet(id, set, unset);
+    if (toBaybol) {
+      await renumberCabinets();
+      await logActivity(me, "contacts", "отметил(а): продан для Baybol (отдельно от наших клиентов)", cab);
+    }
+    if (fromBaybol) await logActivity(me, "contacts", "вернул(а) в наши клиенты", cab);
     if (set.status && set.status !== (cab.status ?? "waiting_data"))
       await logActivity(me, "status", `перевёл(а) на этап «${statusTitle(set.status as string)}»`, cab);
     if (fd.has("seller") && (set.seller ?? "") !== (cab.seller ?? ""))

@@ -63,7 +63,7 @@ type Row = {
 
 export async function sheetRows(base = "https://alemway.kz"): Promise<SheetRow[]> {
   const list = await writeClient().fetch<Row[]>(
-    `*[_type == "cabinet" && !(_id in path("drafts.**")) && coalesce(service, "ferienjob") == "ferienjob"] | order(coalesce(number, 0) asc){
+    `*[_type == "cabinet" && !(_id in path("drafts.**")) && coalesce(group, "new") != "baybol" && coalesce(service, "ferienjob") == "ferienjob"] | order(coalesce(number, 0) asc){
       _id, number, status, clientName, clientPhone, employerName, zavReceivedAt, data, archivedData, files,
       "dean": defined(deanIssue) && !defined(deanIssue.resolvedAt), "checks": aiCheck.checks,
       "ai": aiCheck.fields{txtfPersonVorname, txtfPersonNachname}
@@ -174,7 +174,7 @@ type TeamRow = Row & { party?: string; aiStatus?: string; missing?: string[] };
 
 export async function teamSheetRows(base = "https://alemway.kz"): Promise<SheetRow[]> {
   const list = await writeClient().fetch<TeamRow[]>(
-    `*[_type == "cabinet" && !(_id in path("drafts.**")) && coalesce(service, "ferienjob") == "ferienjob"] | order(coalesce(number, 0) asc){
+    `*[_type == "cabinet" && !(_id in path("drafts.**")) && coalesce(group, "new") != "baybol" && coalesce(service, "ferienjob") == "ferienjob"] | order(coalesce(number, 0) asc){
       _id, number, status, clientName, clientPhone, data, archivedData, files, party,
       "dean": defined(deanIssue) && !defined(deanIssue.resolvedAt), "aiStatus": aiCheck.status, "missing": aiCheck.missing
     }`
@@ -232,7 +232,7 @@ type DeanRow = { _id: string; number?: number; clientName?: string; clientPhone?
 
 export async function deanSheetRows(): Promise<SheetRow[]> {
   const list = await writeClient().fetch<DeanRow[]>(
-    `*[_type == "cabinet" && !(_id in path("drafts.**")) && defined(deanIssue)] | order(coalesce(number, 0) asc){_id, number, clientName, clientPhone, data, deanIssue}`
+    `*[_type == "cabinet" && !(_id in path("drafts.**")) && coalesce(group, "new") != "baybol" && defined(deanIssue)] | order(coalesce(number, 0) asc){_id, number, clientName, clientPhone, data, deanIssue}`
   );
   return list
     .map((c) => {
