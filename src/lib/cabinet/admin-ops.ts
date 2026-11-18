@@ -2,7 +2,7 @@ import "server-only";
 import { getCabinet, newCabinetId, newLoginToken, writeClient } from "./server";
 import { deleteFile } from "./storage";
 import { serviceOf, type ServiceId } from "./fields";
-import { DEFAULT_PRICE } from "./payments";
+import { DEFAULT_PRICE, receiptsOf } from "./payments";
 
 /** Manager operations on cabinets, shared by the Studio API routes and the /admin pages. */
 
@@ -35,7 +35,7 @@ export async function createCabinet(input: { clientName: string; clientPhone: st
 
   const id = newCabinetId();
   const { hash, link } = newLoginToken();
-  // Client number: the next after the largest one (never reused).
+  // Client number: the next after the largest one (numbers stay 1…N without gaps, see renumberCabinets).
   const last = await client.fetch<number | null>(`*[_type == "cabinet" && defined(number)] | order(number desc)[0].number`);
   await client.create({
     _id: id,
@@ -71,7 +71,7 @@ export async function deleteCabinetCompletely(rawId: string) {
   const paths = new Set<string>();
   for (const cab of [published, draft]) {
     for (const f of Object.values(cab?.files ?? {})) if (f?.path) paths.add(f.path);
-    for (const p of cab?.payments ?? []) if (p.receipt?.path) paths.add(p.receipt.path);
+    for (const p of cab?.payments ?? []) for (const r of receiptsOf(p)) if (r.path) paths.add(r.path);
   }
   let failed = 0;
   for (const p of paths) {
@@ -83,5 +83,25 @@ export async function deleteCabinetCompletely(rawId: string) {
     }
   }
   await writeClient().transaction().delete(id).delete(`drafts.${id}`).commit();
+  await renumberCabinets();
   return { deletedFiles: paths.size - failed, failedFiles: failed };
+}
+
+/** Client numbers go 1, 2, 3… without gaps: after a deletion everyone after it moves up by one. */
+export async function renumberCabinets() {
+  const client = writeClient();
+  const rows = await client.fetch<{ _id: string; number?: number }[]>(
+    `*[_type == "cabinet" && !(_id in path("drafts.**")) && defined(number)] | order(number asc, _createdAt asc){_id, number}`
+  );
+  const drafts = new Set(await client.fetch<string[]>(`*[_type == "cabinet" && _id in path("drafts.**")]._id`));
+  const tx = client.transaction();
+  let changed = 0;
+  rows.forEach((r, i) => {
+    if (r.number === i + 1) return;
+    tx.patch(r._id, (p) => p.set({ number: i + 1 }));
+    if (drafts.has(`drafts.${r._id}`)) tx.patch(`drafts.${r._id}`, (p) => p.set({ number: i + 1 }));
+    changed++;
+  });
+  if (changed) await tx.commit();
+  return changed;
 }

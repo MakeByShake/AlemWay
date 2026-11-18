@@ -830,7 +830,7 @@ export default async function ClientPage({
               <ConfirmForm
                 action={deleteCabinetAction}
                 hidden={{ id }}
-                confirmText={`Удалить клиента «${name}» полностью? Удалятся кабинет и все файлы (паспорт, декларация…). Это нельзя отменить.`}
+                confirmText={`Удалить клиента «${name}» полностью? Удалятся кабинет и все файлы (паспорт, декларация…), а номера клиентов после него сдвинутся на один. Это нельзя отменить.`}
                 className="rounded-lg border border-red-200 px-4 py-2 text-[14px] font-semibold text-red-600 hover:bg-red-50"
               >
                 Удалить клиента полностью
