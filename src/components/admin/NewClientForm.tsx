@@ -151,8 +151,17 @@ export function NewClientForm({ full, isOwner, me, members }: { full: boolean; i
       }}
     >
       <label className="grid gap-1 text-[14px] font-medium">
-        Имя клиента
-        <input name="clientName" required minLength={2} className="field" placeholder="Айгерим Нурланова" />
+        Фамилия и имя — латиницей, как в загранпаспорте
+        <input
+          name="clientName"
+          required
+          minLength={2}
+          pattern="[A-Za-z][A-Za-z' \-]*[A-Za-z]"
+          title="Только латиница: Nurlanova Aigerim (без отчества)"
+          className="field"
+          placeholder="Nurlanova Aigerim"
+          autoCapitalize="words"
+        />
       </label>
       <label className="grid gap-1 text-[14px] font-medium">
         Телефон (WhatsApp)

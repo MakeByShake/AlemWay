@@ -973,6 +973,17 @@ export default async function ClientPage({
                             >
                               Скачать
                             </a>
+                            {kind === "declaration" && f.contentType === "application/pdf" && (
+                              <a
+                                href={`/api/admin/cabinet/file?id=${encodeURIComponent(id)}&kind=declaration&onepage=1&view=1`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn-ghost min-h-9 px-3 text-[13px]"
+                                title="Декларация на одном листе"
+                              >
+                                На 1 листе
+                              </a>
+                            )}
                           </>
                         )}
                         {(owner || kind === "contract") && (

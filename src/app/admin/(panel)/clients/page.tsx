@@ -6,6 +6,7 @@ import { isFullRole, requireAdminUser } from "@/lib/admin/session";
 import { CABINET_STATUSES, PIPELINES } from "@/lib/cabinet/fields";
 import { Badge, Empty, RowLegend, rowTone, PageTitle, Progress, SERVICE_SHORT, fmtDate, waLink, WA_TARGET } from "@/components/admin/bits";
 import { NewClientForm } from "@/components/admin/NewClientForm";
+import { ReadinessMark } from "@/components/admin/ReadinessMark";
 
 export const metadata = { title: "Клиенты" };
 
@@ -199,6 +200,15 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
       ) : (
         <>
           <RowLegend />
+          {owner && (
+            <p className="mb-3 text-[13px] text-muted">
+              Отметки по декларации:{" "}
+              <b className="text-emerald-600">+ {rows.filter((r) => r.readiness === "plus").length}</b> ·{" "}
+              <b className="text-amber-600">0 {rows.filter((r) => r.readiness === "zero").length}</b> ·{" "}
+              <b className="text-red-600">− {rows.filter((r) => r.readiness === "minus" || (!r.readiness && r.dean)).length}</b> · не отмечено{" "}
+              {rows.filter((r) => !r.readiness && !r.dean).length}
+            </p>
+          )}
           <ul className="card divide-y divide-line">
           {rows.map((c) => {
             const wa = waLink(c.clientPhone);
@@ -215,6 +225,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
                   </span>
                 </Link>
                 <div className="flex flex-wrap items-center gap-2">
+                  {owner && <ReadinessMark id={c._id} value={c.readiness} suggested={c.dean ? "minus" : undefined} />}
                   <Progress service={c.service} status={c.status} />
                   {c.deadline && ["waiting_data", "declaration_ready"].includes(c.status ?? "waiting_data") && (() => {
                     const days = Math.round((Date.parse(c.deadline) - Date.parse(today)) / 86_400_000);

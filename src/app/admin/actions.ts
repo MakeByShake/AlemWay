@@ -1,5 +1,6 @@
 "use server";
 
+import { latinName } from "@/lib/translit";
 import { randomUUID } from "node:crypto";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -142,7 +143,8 @@ export async function createCabinetAction(_prev: ActionState, fd: FormData): Pro
   try {
     const leadId = full ? s(fd, "leadId", 100) : "";
     const service = s(fd, "service", 20);
-    const clientName = s(fd, "clientName", 80);
+    // Names are kept in Latin (as in the passport), without the patronymic.
+    const clientName = latinName(s(fd, "clientName", 80));
     const clientPhone = s(fd, "clientPhone", 30);
     const res = await createCabinet({
       clientName,
@@ -200,6 +202,7 @@ export async function updateCabinetAction(_prev: ActionState, fd: FormData): Pro
   }
   for (const key of ["clientName", "clientPhone", "managerNote", "employerName", "workCity", "workPosition", "clientMessage"]) {
     if (fd.has(key)) set[key] = s(fd, key, key === "clientMessage" || key === "managerNote" ? 3000 : 200);
+    if (key === "clientName" && fd.has(key)) set[key] = latinName(set[key] as string);
   }
   // Only the owner assigns managers.
   if (fd.has("manager") && isFullRole(me.role)) {
@@ -820,6 +823,15 @@ export async function setEnrollmentAnyLangAction(fd: FormData) {
   else await patchCabinet(id, {}, ["enrollmentAnyLang"]);
   await logActivity(me, "file_upload", on ? "разрешил(а) справку на русском/казахском для декларации" : "снова требует справку на английском", cab);
   revalidatePath(`/admin/clients/${id}`);
+}
+
+/** Quick mark in the client list: «+» declaration is no problem, «0» doable (collect docs, stamp), «−» dean won't stamp. */
+export async function setReadinessAction(id: string, value: "plus" | "zero" | "minus" | "") {
+  await requireAdminUser({ full: true });
+  if (!id.startsWith("cabinets.")) return;
+  if (value === "plus" || value === "zero" || value === "minus") await patchCabinet(id, { readiness: value });
+  else await patchCabinet(id, {}, ["readiness"]);
+  revalidatePath("/admin/clients");
 }
 
 /** Manager deletes one file of a client (from storage too). */

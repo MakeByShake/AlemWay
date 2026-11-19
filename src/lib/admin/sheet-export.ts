@@ -1,4 +1,5 @@
 import "server-only";
+import { latinName } from "@/lib/translit";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { writeClient } from "@/lib/cabinet/server";
 import { shareUrl, type ShareKind } from "@/lib/cabinet/share";
@@ -80,6 +81,9 @@ export async function sheetRows(base = "https://alemway.kz"): Promise<SheetRow[]
       else first = parts[0] ?? "";
     }
     if (/^(бла|тест|test)?$/i.test(first) && /^(бла|тест|test)?$/i.test(last)) continue;
+    // Partners see names in Latin only.
+    first = latinName(first);
+    last = latinName(last);
     const key = digits(c.clientPhone || d.phone);
     if (key.length < 10) continue;
 
@@ -186,7 +190,7 @@ export async function teamSheetRows(base = "https://alemway.kz"): Promise<SheetR
   };
   const out: SheetRow[] = [];
   for (const c of list) {
-    const name = nameOf(c);
+    const name = latinName(nameOf(c));
     if (/^(бла|тест|test)(\s|$)/i.test(name)) continue;
     const d = { ...Object.fromEntries(Object.entries(c.archivedData ?? {}).filter(([, v]) => v)), ...Object.fromEntries(Object.entries(c.data ?? {}).filter(([, v]) => v)) };
     const key = digits(c.clientPhone || d.phone);
@@ -239,7 +243,7 @@ export async function deanSheetRows(): Promise<SheetRow[]> {
       const d = c.data ?? {};
       const i = c.deanIssue ?? {};
       const key = digits(c.clientPhone || d.phone);
-      const name = [d.lastName, d.firstName].filter(Boolean).join(" ") || (c.clientName ?? "");
+      const name = latinName([d.lastName, d.firstName].filter(Boolean).join(" ") || (c.clientName ?? ""));
       const done = Boolean(i.resolvedAt);
       const bg = done ? "#D9F2E1" : "#FFD8B0";
       return {

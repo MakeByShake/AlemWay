@@ -1,6 +1,7 @@
 import "server-only";
 import { aiReady, runDeclarationCheck, type AiCheck } from "@/lib/ai/declaration";
 import { escapeHtml, sendTelegram } from "@/lib/telegram";
+import { latinName } from "@/lib/translit";
 import { clientOverrides, saveAiDeclaration, teamOverrides, todayAlmaty } from "./declaration";
 import { cabinetAdminUrl, displayName, getCabinet, managerLine, patchCabinet, type Cabinet } from "./server";
 
@@ -31,7 +32,9 @@ export async function checkAndBuildDeclaration(cabId: string, by: "client" | "ma
       ai.checks = [...ai.checks, `Взято из анкеты, исправленной командой: ${changed.map(([, v]) => v).join(", ")}`];
     }
   }
-  await patchCabinet(cab._id, { aiCheck: ai });
+  // The name in the admin and the sheets: as in the passport (Latin, «Фамилия Имя», no patronymic).
+  const passportName = cab.files?.passport?.path && ai.fields.txtfPersonNachname && ai.fields.txtfPersonVorname ? latinName(`${ai.fields.txtfPersonNachname} ${ai.fields.txtfPersonVorname}`) : "";
+  await patchCabinet(cab._id, { aiCheck: ai, ...(passportName ? { clientName: passportName } : {}) });
 
   if (ready) await saveAiDeclaration({ ...cab, aiCheck: ai } as Cabinet, ai);
 

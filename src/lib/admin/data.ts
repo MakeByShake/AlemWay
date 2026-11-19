@@ -65,6 +65,7 @@ export type CabinetRow = {
   /** Open «деканат не ставит печать» report. */
   dean?: boolean;
   noManager?: boolean;
+  readiness?: "plus" | "zero" | "minus";
   license?: "yes" | "soon" | null;
   licenseCat?: string;
   licenseReady?: string;
@@ -111,7 +112,7 @@ export async function getCabinets(filter: { service?: string; status?: string; q
        && (!defined($q) || string(number) == $num || clientName match $q || clientPhone match $q || contacts[].phone match $q || data.firstName match $q || data.lastName match $q)
      ] | order(coalesce(number, 0) desc, _createdAt desc)[0...300]{
       _id, number, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName, managerName, sellerName, party,
-      "dean": ${deanOpen}, "noManager": !defined(manager), deadline,
+      "dean": ${deanOpen}, "noManager": !defined(manager), readiness, deadline,
       "license": select(defined(files.license) || data.licenseStatus == "yes" => "yes", data.licenseStatus == "soon" => "soon"),
       "licenseCat": data.driverLicense, "licenseReady": data.licenseReady, "employerName": select(defined(employer) => employerName)
     }`,

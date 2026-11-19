@@ -373,6 +373,9 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
             <a href="/api/cabinet/file/declaration" download className={clsx("mt-5", view.status === "declaration_ready" ? "btn-primary" : "btn-ghost")}>
               <Download className="h-4 w-4" /> {t.download}
             </a>
+            <a href="/api/cabinet/file/declaration?onepage=1" download className="mt-3 inline-flex items-center gap-1.5 text-[14px] font-semibold text-brand hover:underline">
+              <Download className="h-4 w-4" /> {t.downloadOnePage}
+            </a>
 
             {view.status === "declaration_ready" && (
               <div className="mt-6 border-t border-line pt-5">
