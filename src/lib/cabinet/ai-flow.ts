@@ -32,6 +32,8 @@ export async function checkAndBuildDeclaration(cabId: string, by: "client" | "ma
       ai.checks = [...ai.checks, `Взято из анкеты, исправленной командой: ${changed.map(([, v]) => v).join(", ")}`];
     }
   }
+  // «Will the studies continue after the semester break?» — always «Yes».
+  if (ready) ai.fields.rbtnStudiumFortsetzung = "Yes";
   // The name in the admin and the sheets: as in the passport (Latin, «Фамилия Имя», no patronymic).
   const passportName = cab.files?.passport?.path && ai.fields.txtfPersonNachname && ai.fields.txtfPersonVorname ? latinName(`${ai.fields.txtfPersonNachname} ${ai.fields.txtfPersonVorname}`) : "";
   await patchCabinet(cab._id, { aiCheck: ai, ...(passportName ? { clientName: passportName } : {}) });

@@ -64,8 +64,9 @@ export async function buildDeclarationPdf(fields: DeclarationFields): Promise<Ui
     const field = form.getField(key);
 
     if (key === "rbtnStudiumFortsetzung") {
-      // Widget states: /0 = Yes, /1 = No.
-      const on = /^(no|nein|нет)$/i.test(raw) ? "1" : "0";
+      // Widget states: /0 = Yes, /1 = No. Always «Yes»: Ferienjob is only for students who continue studying.
+      void raw;
+      const on = "0";
       field.acroField.dict.set(PDFName.of("V"), PDFName.of(on));
       for (const w of field.acroField.getWidgets()) {
         const states = w.dict.lookup(PDFName.of("AP"), PDFDict).lookup(PDFName.of("N"), PDFDict).keys().map((k) => k.decodeText());

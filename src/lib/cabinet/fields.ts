@@ -391,7 +391,7 @@ export const CABINET_SECTIONS: CabinetSection[] = [
         },
       },
       { ...FULL.breakTo, optional: true, optionalNote: NOTE_CERT },
-      FULL.continueStudies,
+      // «Продолжаете учёбу после каникул?» is not asked: the declaration always says «Yes».
     ],
   },
   {
