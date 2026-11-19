@@ -255,6 +255,27 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
     }
   }
 
+  async function removeFile(kind: UploadKind) {
+    if (!window.confirm(t.deleteConfirm)) return;
+    setNotice(null);
+    setBusy(kind);
+    try {
+      const res = await fetch(`/api/cabinet/upload?kind=${kind}`, { method: "DELETE" });
+      if (res.ok) {
+        setFiles((f) => {
+          const next = { ...f };
+          delete next[kind];
+          return next;
+        });
+        router.refresh();
+      } else setNotice({ tone: "err", text: t.errorGeneric });
+    } catch {
+      setNotice({ tone: "err", text: t.errorGeneric });
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function submitSigned() {
     setNotice(null);
     setBusy("submitSigned");
@@ -321,6 +342,7 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
                 t={t}
                 buttonText={files.license ? t.replace : t.upload}
                 onPick={(f) => upload("license", f)}
+                onDelete={() => removeFile("license")}
               />
             </div>
           </div>
@@ -390,6 +412,7 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
                       t={t}
                       buttonText={files[k] ? t.replace : t.signedUpload}
                       onPick={(f) => upload(k, f)}
+                      onDelete={view.status === "declaration_ready" ? () => removeFile(k) : undefined}
                     />
                   ))}
                 </div>
@@ -421,6 +444,7 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
                   t={t}
                   buttonText={t.upload}
                   onPick={(f) => upload("passport", f)}
+                  onDelete={() => removeFile("passport")}
                 />
               </div>
             )}
@@ -504,6 +528,7 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
                     t={t}
                     buttonText={files[kind] ? t.replace : t.upload}
                     onPick={(f) => upload(kind, f)}
+                    onDelete={() => removeFile(kind)}
                   />
                 ))}
               </div>
@@ -881,6 +906,7 @@ function FileRow({
   t,
   buttonText,
   onPick,
+  onDelete,
 }: {
   label: string;
   hint?: string;
@@ -889,6 +915,7 @@ function FileRow({
   t: T;
   buttonText: string;
   onPick: (f: File) => void;
+  onDelete?: () => void;
 }) {
   const input = useRef<HTMLInputElement>(null);
   return (
@@ -919,6 +946,11 @@ function FileRow({
           if (f) onPick(f);
         }}
       />
+      {meta && onDelete && !busy && (
+        <button type="button" className="min-h-11 px-2 text-[14px] font-medium text-red-600 hover:underline" onClick={onDelete}>
+          {t.delete}
+        </button>
+      )}
       <button type="button" className="btn-ghost min-h-11 px-4 text-[14px]" disabled={busy} onClick={() => input.current?.click()}>
         {busy ? (
           <>
