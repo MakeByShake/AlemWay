@@ -1,0 +1,14 @@
+{
+  "appId": "kz.alemway.app",
+  "appName": "AlemWay",
+  "webDir": "www",
+  "server": {
+    "url": "https://alemway.kz/admin",
+    "androidScheme": "https",
+    "allowNavigation": ["alemway.kz", "*.alemway.kz"],
+    "errorPath": "offline.html"
+  },
+  "android": {
+    "backgroundColor": "#0B0F24"
+  }
+}

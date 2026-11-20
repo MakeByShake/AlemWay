@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="site" android:enabled="true" android:icon="@mipmap/ic_launcher" android:shortcutShortLabel="@string/shortcut_site">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="kz.alemway.app" android:targetClass="kz.alemway.app.MainActivity" android:data="https://alemway.kz/" />
+    </shortcut>
+    <shortcut android:shortcutId="cabinet" android:enabled="true" android:icon="@mipmap/ic_launcher" android:shortcutShortLabel="@string/shortcut_cabinet">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="kz.alemway.app" android:targetClass="kz.alemway.app.MainActivity" android:data="https://alemway.kz/ru/cabinet" />
+    </shortcut>
+    <shortcut android:shortcutId="admin" android:enabled="true" android:icon="@mipmap/ic_launcher" android:shortcutShortLabel="@string/shortcut_admin">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="kz.alemway.app" android:targetClass="kz.alemway.app.MainActivity" android:data="https://alemway.kz/admin" />
+    </shortcut>
+</shortcuts>

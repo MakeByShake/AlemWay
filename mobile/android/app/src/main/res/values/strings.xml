@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">AlemWay</string>
+    <string name="title_activity_main">AlemWay</string>
+    <string name="package_name">kz.alemway.app</string>
+    <string name="custom_url_scheme">kz.alemway.app</string>
+    <string name="shortcut_site">Сайт</string>
+    <string name="shortcut_cabinet">Кабинет клиента</string>
+    <string name="shortcut_admin">Клиенты и документы</string>
+</resources>
