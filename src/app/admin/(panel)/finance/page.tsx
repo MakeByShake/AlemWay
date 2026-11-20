@@ -68,7 +68,11 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
 
   return (
     <>
-      <PageTitle title="Финансы" />
+      <PageTitle title="Финансы">
+        <a href="/admin/export/finance" download className="rounded-full border border-line bg-white px-3.5 py-1.5 text-[14px] font-medium hover:border-brand">
+          ⬇️ Скачать Excel
+        </a>
+      </PageTitle>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         {cards.map((c) => (
           <div key={c.label} className="card p-4">

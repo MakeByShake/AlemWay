@@ -4,35 +4,12 @@ import { ROLE_TITLES, requireAdminUser } from "@/lib/admin/session";
 import { getActivity, getTeamStatsData, teamStats, type MemberStats } from "@/lib/admin/activity";
 import { formatTenge } from "@/lib/cabinet/payments";
 import { almatyNow } from "@/lib/consultation";
+import { PERIODS, periodBounds, toPeriod } from "@/lib/admin/periods";
 import { Badge, PageTitle } from "@/components/admin/bits";
 import { ActivityFeed, avatarColor, initials, timeAgo } from "@/components/admin/ActivityFeed";
 
 export const metadata = { title: "Активность команды" };
 
-const PERIODS = [
-  { value: "today", title: "Сегодня" },
-  { value: "yesterday", title: "Вчера" },
-  { value: "week", title: "7 дней" },
-  { value: "month", title: "Этот месяц" },
-  { value: "prev", title: "Прошлый месяц" },
-  { value: "all", title: "Всё время" },
-] as const;
-type Period = (typeof PERIODS)[number]["value"];
-
-/** Period bounds as date strings (compare fine with both YYYY-MM-DD and ISO timestamps). */
-function bounds(p: Period, today: string): { from?: string; to?: string } {
-  const [y, m] = today.split("-").map(Number) as [number, number];
-  const first = (yy: number, mm: number) => `${mm < 1 ? yy - 1 : mm > 12 ? yy + 1 : yy}-${String(((mm + 11) % 12) + 1).padStart(2, "0")}-01`;
-  // Day starts at Almaty midnight (UTC+5) as a UTC ISO string, so it compares with timestamps;
-  // plain dates compare right too: «2026-11-19» < «2026-11-19T19:00Z» (start of the 20th).
-  const dayStart = (offset: number) => new Date(Date.parse(`${today}T00:00:00+05:00`) + offset * 864e5).toISOString();
-  if (p === "today") return { from: dayStart(0) };
-  if (p === "yesterday") return { from: dayStart(-1), to: dayStart(0) };
-  if (p === "week") return { from: new Date(Date.now() - 7 * 864e5).toISOString() };
-  if (p === "month") return { from: first(y, m) };
-  if (p === "prev") return { from: first(y, m - 1), to: first(y, m) };
-  return {};
-}
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
@@ -41,8 +18,8 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
   // Money (contract sums, payments) only for the owner, as on «Финансы».
   const money = me.role === "owner";
   const sp = await searchParams;
-  const period: Period = PERIODS.some((x) => x.value === sp.period) ? (sp.period as Period) : "month";
-  const { from, to } = bounds(period, almatyNow().date);
+  const period = toPeriod(sp.period);
+  const { from, to } = periodBounds(period, almatyNow().date);
 
   const [data, feed] = await Promise.all([getTeamStatsData(), getActivity({ since: from, limit: 80 })]);
   const stats = teamStats(data, from, to);
@@ -92,6 +69,13 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
             {p.title}
           </Link>
         ))}
+        <a
+          href={`/admin/export/activity?period=${period}`}
+          download
+          className="ml-auto rounded-full border border-line bg-white px-3.5 py-1.5 text-[14px] font-medium hover:border-brand"
+        >
+          ⬇️ Скачать Excel
+        </a>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
