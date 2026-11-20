@@ -5,7 +5,7 @@ import { cabinetName, getFinanceRows } from "@/lib/admin/data";
 import { PAYMENT_METHODS, PAYMENT_STATUS_TITLES, paymentTotals } from "@/lib/cabinet/payments";
 import { CABINET_STATUSES } from "@/lib/cabinet/fields";
 import { almatyNow } from "@/lib/consultation";
-import { PERIODS, periodBounds, toPeriod } from "@/lib/admin/periods";
+import { PERIODS, dayBounds, periodBounds, toDay, toPeriod } from "@/lib/admin/periods";
 import { buildXlsx, xlsxResponse, type Cell, type Sheet } from "@/lib/admin/xlsx";
 
 export const runtime = "nodejs";
@@ -103,8 +103,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ kind
     const me = await requireAdminUser({ full: true });
     const money = me.role === "owner";
     const period = toPeriod(req.nextUrl.searchParams.get("period"));
-    const { from, to } = periodBounds(period, today);
-    const [data, feed] = await Promise.all([getTeamStatsData(), getActivity({ since: from, limit: 5000 })]);
+    const day = toDay(req.nextUrl.searchParams.get("date"));
+    const { from, to } = day ? dayBounds(day) : periodBounds(period, today);
+    const [data, feed] = await Promise.all([getTeamStatsData(), getActivity({ since: from, until: to, limit: 5000 })]);
     const stats = teamStats(data, from, to);
     const names = Object.fromEntries(data.members.map((m) => [m.login, m.name]));
     const role = (r: string) => ROLE_TITLES[r] ?? r;
@@ -121,12 +122,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ kind
       ...feed.filter((a) => !to || a.at < to).map((a) => [fmt(a.at), a.name || names[a.login] || a.login, a.client ?? "", a.text]),
     ];
 
-    const title = PERIODS.find((p) => p.value === period)?.title ?? period;
+    const title = day ? day.split("-").reverse().join(".") : (PERIODS.find((p) => p.value === period)?.title ?? period);
     const sheets: Sheet[] = [
       { name: `Команда — ${title}`, rows: team },
       { name: "Действия", rows: actions, widths: [18, 20, 28, 70] },
     ];
-    return xlsxResponse(buildXlsx(sheets), `AlemWay-aktivnost-${period}-${today}.xlsx`);
+    return xlsxResponse(buildXlsx(sheets), `AlemWay-aktivnost-${day ?? `${period}-${today}`}.xlsx`);
   }
 
   return new Response("Not found", { status: 404 });

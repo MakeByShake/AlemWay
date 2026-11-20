@@ -11,6 +11,15 @@ export type Period = (typeof PERIODS)[number]["value"];
 
 export const toPeriod = (v?: string | null): Period => (PERIODS.some((x) => x.value === v) ? (v as Period) : "month");
 
+/** «2026-11-19» from the date picker, or undefined. */
+export const toDay = (v?: string | null) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v)) ? v : undefined);
+
+/** One Almaty day picked in the calendar: from its midnight to the next one. */
+export function dayBounds(day: string) {
+  const start = Date.parse(`${day}T00:00:00+05:00`);
+  return { from: new Date(start).toISOString(), to: new Date(start + 864e5).toISOString() };
+}
+
 /** Period bounds as strings (compare fine with both YYYY-MM-DD and ISO timestamps). `today` = Almaty date. */
 export function periodBounds(p: Period, today: string): { from?: string; to?: string } {
   const [y, m] = today.split("-").map(Number) as [number, number];

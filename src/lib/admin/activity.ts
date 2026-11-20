@@ -95,12 +95,12 @@ export async function logActivity(
   }
 }
 
-export function getActivity(opts: { since?: string; cabinet?: string; limit?: number } = {}) {
+export function getActivity(opts: { since?: string; until?: string; cabinet?: string; limit?: number } = {}) {
   return writeClient().fetch<Activity[]>(
-    `*[_type == "activity" && (!defined($since) || at >= $since) && (!defined($cabinet) || cabinet == $cabinet)] | order(at desc)[0...$limit]{
+    `*[_type == "activity" && (!defined($since) || at >= $since) && (!defined($until) || at < $until) && (!defined($cabinet) || cabinet == $cabinet)] | order(at desc)[0...$limit]{
       _id, at, login, name, kind, text, cabinet, client
     }`,
-    { since: opts.since ?? null, cabinet: opts.cabinet ?? null, limit: opts.limit ?? 60 }
+    { since: opts.since ?? null, until: opts.until ?? null, cabinet: opts.cabinet ?? null, limit: opts.limit ?? 60 }
   );
 }
 

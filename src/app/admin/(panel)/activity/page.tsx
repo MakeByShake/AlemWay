@@ -4,7 +4,7 @@ import { ROLE_TITLES, requireAdminUser } from "@/lib/admin/session";
 import { getActivity, getTeamStatsData, teamStats, type MemberStats } from "@/lib/admin/activity";
 import { formatTenge } from "@/lib/cabinet/payments";
 import { almatyNow } from "@/lib/consultation";
-import { PERIODS, periodBounds, toPeriod } from "@/lib/admin/periods";
+import { PERIODS, dayBounds, periodBounds, toDay, toPeriod } from "@/lib/admin/periods";
 import { Badge, PageTitle } from "@/components/admin/bits";
 import { ActivityFeed, avatarColor, initials, timeAgo } from "@/components/admin/ActivityFeed";
 
@@ -13,18 +13,21 @@ export const metadata = { title: "Активность команды" };
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
-export default async function ActivityPage({ searchParams }: { searchParams: Promise<{ period?: string }> }) {
+export default async function ActivityPage({ searchParams }: { searchParams: Promise<{ period?: string; date?: string }> }) {
   const me = await requireAdminUser({ full: true });
   // Money (contract sums, payments) only for the owner, as on «Финансы».
   const money = me.role === "owner";
   const sp = await searchParams;
+  const today = almatyNow().date;
+  // A day picked in the calendar wins over the period buttons.
+  const day = toDay(sp.date);
   const period = toPeriod(sp.period);
-  const { from, to } = periodBounds(period, almatyNow().date);
+  const { from, to } = day ? dayBounds(day) : periodBounds(period, today);
 
-  const [data, feed] = await Promise.all([getTeamStatsData(), getActivity({ since: from, limit: 80 })]);
+  const [data, feed] = await Promise.all([getTeamStatsData(), getActivity({ since: from, until: to, limit: day ? 300 : 80 })]);
   const stats = teamStats(data, from, to);
   const names = Object.fromEntries(data.members.map((m) => [m.login, m.name]));
-  const feedItems = to ? feed.filter((a) => a.at < to) : feed;
+  const feedItems = feed;
 
   const total = {
     sold: stats.reduce((s, m) => s + m.sold, 0),
@@ -54,7 +57,7 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <PageTitle title="Активность команды" />
+      <PageTitle title={day ? `Активность команды — ${day.split("-").reverse().join(".")}` : "Активность команды"} />
 
       <div className="mb-5 flex flex-wrap gap-2">
         {PERIODS.map((p) => (
@@ -63,14 +66,27 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
             href={p.value === "month" ? "/admin/activity" : `/admin/activity?period=${p.value}`}
             className={clsx(
               "rounded-full border px-3.5 py-1.5 text-[14px] font-medium",
-              period === p.value ? "border-brand bg-brand text-white" : "border-line bg-white hover:border-brand"
+              !day && period === p.value ? "border-brand bg-brand text-white" : "border-line bg-white hover:border-brand"
             )}
           >
             {p.title}
           </Link>
         ))}
+        <form action="/admin/activity" className="flex items-center gap-2">
+          <input
+            type="date"
+            name="date"
+            defaultValue={day}
+            max={today}
+            aria-label="Выбрать день"
+            className={clsx("rounded-full border px-3 py-1 text-[14px]", day ? "border-brand bg-brand-soft" : "border-line bg-white")}
+          />
+          <button type="submit" className="rounded-full border border-line bg-white px-3.5 py-1.5 text-[14px] font-medium hover:border-brand">
+            📅 Показать день
+          </button>
+        </form>
         <a
-          href={`/admin/export/activity?period=${period}`}
+          href={day ? `/admin/export/activity?date=${day}` : `/admin/export/activity?period=${period}`}
           download
           className="ml-auto rounded-full border border-line bg-white px-3.5 py-1.5 text-[14px] font-medium hover:border-brand"
         >
