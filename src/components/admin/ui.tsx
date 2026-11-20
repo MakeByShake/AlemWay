@@ -185,6 +185,11 @@ export function LinkBox({ link, phone, name, curator, service, title = "Ссыл
           Открыть кабинет
         </a>
       </div>
+      {digits.length < 11 && (
+        <p className="mt-2 text-[13px] text-red-700">
+          {phone ? `Кнопки WhatsApp нет: в номере «${phone}» не хватает цифр. Исправьте телефон в карточке клиента.` : "Кнопки WhatsApp нет: у клиента не указан телефон."}
+        </p>
+      )}
     </div>
   );
 }

@@ -146,6 +146,8 @@ export async function createCabinetAction(_prev: ActionState, fd: FormData): Pro
     // Names are kept in Latin (as in the passport), without the patronymic.
     const clientName = latinName(s(fd, "clientName", 80));
     const clientPhone = s(fd, "clientPhone", 30);
+    // A short number (a digit missing) hides the WhatsApp buttons — catch the typo right away.
+    if (clientPhone && clientPhone.replace(/\D/g, "").length < 11) return { error: "В номере телефона не хватает цифр. Пример: +7 777 123 45 67" };
     const res = await createCabinet({
       clientName,
       clientPhone,
