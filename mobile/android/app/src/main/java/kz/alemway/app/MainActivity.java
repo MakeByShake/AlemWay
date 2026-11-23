@@ -37,6 +37,10 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.biometric.BiometricPrompt;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.getcapacitor.BridgeActivity;
 import com.google.firebase.FirebaseApp;
@@ -63,6 +67,23 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         final WebView webView = getBridge().getWebView();
+
+        // Android 15 рисует страницу под строкой часов и под кнопками внизу. Отодвигаем её:
+        // сверху на высоту строки состояния (и выреза камеры), снизу на кнопки или клавиатуру,
+        // чтобы поле ввода в чате не пряталось. Полоса сверху белая, значки на ней тёмные.
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false); // одинаково на всех версиях Android
+        android.view.View root = findViewById(android.R.id.content);
+        root.setBackgroundColor(0xFFFFFFFF);
+        getWindow().getDecorView().setBackgroundColor(0xFFFFFFFF);
+        WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView()).setAppearanceLightStatusBars(true);
+        WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView()).setAppearanceLightNavigationBars(true);
+        ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+            v.setPadding(bars.left, bars.top, bars.right, Math.max(bars.bottom, ime.bottom));
+            return WindowInsetsCompat.CONSUMED;
+        });
+        ViewCompat.requestApplyInsets(root);
 
         // Вход в админку и кабинет держится на cookie — не теряем их между запусками.
         CookieManager.getInstance().setAcceptCookie(true);
