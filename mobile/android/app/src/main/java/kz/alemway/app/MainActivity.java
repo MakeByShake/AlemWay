@@ -19,6 +19,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
+
+import androidx.biometric.BiometricManager;
+import androidx.biometric.BiometricPrompt;
+import androidx.core.content.ContextCompat;
 
 import com.getcapacitor.BridgeActivity;
 
@@ -71,6 +76,8 @@ public class MainActivity extends BridgeActivity {
 
         // Страница /admin/share забирает файлы через window.AlemWayShare (только с нашего сайта).
         webView.addJavascriptInterface(new ShareBridge(), "AlemWayShare");
+        // Блокировка PIN/отпечатком на сайте спрашивает отпечаток через сам телефон (WebView не умеет WebAuthn).
+        webView.addJavascriptInterface(new BioBridge(), "AlemWayBio");
 
         openFromIntent(getIntent());
     }
@@ -89,6 +96,50 @@ public class MainActivity extends BridgeActivity {
             return json.append(']').toString();
           }
         }
+    }
+
+
+    private static final Pattern REQUEST_ID = Pattern.compile("[A-Za-z0-9-]{1,64}");
+    private static final int BIO_KINDS = BiometricManager.Authenticators.BIOMETRIC_WEAK;
+
+    /** Отпечаток пальца / лицо через системное окно Android; ответ уходит в window.__awBio(id, ok). */
+    private class BioBridge {
+        @JavascriptInterface
+        public boolean available() {
+            return BiometricManager.from(MainActivity.this).canAuthenticate(BIO_KINDS) == BiometricManager.BIOMETRIC_SUCCESS;
+        }
+
+        @JavascriptInterface
+        public void authenticate(final String id, final String title) {
+            if (id == null || !REQUEST_ID.matcher(id).matches()) return;
+            runOnUiThread(() -> {
+                try {
+                    BiometricPrompt prompt = new BiometricPrompt(MainActivity.this, ContextCompat.getMainExecutor(MainActivity.this), new BiometricPrompt.AuthenticationCallback() {
+                        @Override
+                        public void onAuthenticationSucceeded(BiometricPrompt.AuthenticationResult result) {
+                            answer(id, true);
+                        }
+
+                        @Override
+                        public void onAuthenticationError(int code, CharSequence message) {
+                            answer(id, false);
+                        }
+                    });
+                    BiometricPrompt.PromptInfo info = new BiometricPrompt.PromptInfo.Builder()
+                        .setTitle(title == null || title.isEmpty() ? "AlemWay" : title)
+                        .setNegativeButtonText("PIN")
+                        .setAllowedAuthenticators(BIO_KINDS)
+                        .build();
+                    prompt.authenticate(info);
+                } catch (Exception e) {
+                    answer(id, false);
+                }
+            });
+        }
+    }
+
+    private void answer(String id, boolean ok) {
+        runOnUiThread(() -> getBridge().getWebView().evaluateJavascript("window.__awBio && window.__awBio('" + id + "', " + ok + ")", null));
     }
 
     private static String quote(String s) {
