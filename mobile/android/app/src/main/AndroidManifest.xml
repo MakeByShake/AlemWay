@@ -43,6 +43,9 @@
 
         </activity>
 
+        <!-- Уведомления Firebase приходят в канал «Сообщения» (создаётся в MainActivity). -->
+        <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="messages" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -57,6 +60,8 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Уведомления о сообщениях и сроках (Android 13+ спрашивает разрешение). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Сканер документов: фото страниц камерой прямо из кабинета. -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />

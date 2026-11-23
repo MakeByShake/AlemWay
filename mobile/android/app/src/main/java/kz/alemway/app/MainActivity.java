@@ -1,10 +1,14 @@
 package kz.alemway.app;
 
+import android.Manifest;
 import android.app.DownloadManager;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.OpenableColumns;
@@ -22,10 +26,14 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import androidx.biometric.BiometricManager;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.biometric.BiometricPrompt;
 import androidx.core.content.ContextCompat;
 
 import com.getcapacitor.BridgeActivity;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 /**
  * Оболочка над живым сайтом alemway.kz. Весь интерфейс и все данные (клиенты, документы)
@@ -47,6 +55,13 @@ public class MainActivity extends BridgeActivity {
 
         // Вход в админку и кабинет держится на cookie — не теряем их между запусками.
         CookieManager.getInstance().setAcceptCookie(true);
+
+        // Канал уведомлений «Сообщения» (Android 8+): ответы куратора и сроки по делу.
+        if (Build.VERSION.SDK_INT >= 26) {
+            NotificationChannel channel = new NotificationChannel(PUSH_CHANNEL, "Сообщения", NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription("Ответы AlemWay и напоминания о сроках");
+            ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).createNotificationChannel(channel);
+        }
 
         // Файлы (PDF, Excel, ZIP), которые WebView не умеет показать, скачиваются в «Загрузки».
         webView.setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) -> {
@@ -90,6 +105,7 @@ public class MainActivity extends BridgeActivity {
         if (early != null) {
             early.addJavascriptInterface(new ShareBridge(), "AlemWayShare");
             early.addJavascriptInterface(new BioBridge(), "AlemWayBio");
+            early.addJavascriptInterface(new PushBridge(), "AlemWayPush");
         }
         super.load();
     }
@@ -152,6 +168,71 @@ public class MainActivity extends BridgeActivity {
 
     private void answer(String id, boolean ok) {
         runOnUiThread(() -> getBridge().getWebView().evaluateJavascript("window.__awBio && window.__awBio('" + id + "', " + ok + ")", null));
+    }
+
+
+    static final String PUSH_CHANNEL = "messages";
+    private static final int PUSH_PERMISSION = 7101;
+    private String pushWaiting;
+
+    /**
+     * Уведомления в приложении через Firebase: сайт спрашивает разрешение и получает токен телефона,
+     * потом сервер шлёт на этот токен. Ответ уходит в window.__awPush(id, token, state).
+     */
+    private class PushBridge {
+        /** "off" (Firebase не настроен), "granted", "default" (ещё не спрашивали или можно спросить), "denied". */
+        @JavascriptInterface
+        public String state() {
+            if (FirebaseApp.getApps(MainActivity.this).isEmpty()) return "off";
+            if (NotificationManagerCompat.from(MainActivity.this).areNotificationsEnabled()) return "granted";
+            if (Build.VERSION.SDK_INT >= 33 && !getSharedPreferences("aw", MODE_PRIVATE).getBoolean("push-asked", false)) return "default";
+            if (Build.VERSION.SDK_INT >= 33 && ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, Manifest.permission.POST_NOTIFICATIONS)) return "default";
+            return "denied";
+        }
+
+        @JavascriptInterface
+        public void request(final String id) {
+            if (id == null || !REQUEST_ID.matcher(id).matches()) return;
+            runOnUiThread(() -> {
+                if (FirebaseApp.getApps(MainActivity.this).isEmpty()) {
+                    pushAnswer(id, null, "off");
+                } else if (NotificationManagerCompat.from(MainActivity.this).areNotificationsEnabled()) {
+                    sendToken(id);
+                } else if (Build.VERSION.SDK_INT >= 33) {
+                    pushWaiting = id;
+                    getSharedPreferences("aw", MODE_PRIVATE).edit().putBoolean("push-asked", true).apply();
+                    ActivityCompat.requestPermissions(MainActivity.this, new String[] { Manifest.permission.POST_NOTIFICATIONS }, PUSH_PERMISSION);
+                } else {
+                    pushAnswer(id, null, "denied");
+                }
+            });
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != PUSH_PERMISSION || pushWaiting == null) return;
+        String id = pushWaiting;
+        pushWaiting = null;
+        if (grantResults.length > 0 && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) sendToken(id);
+        else pushAnswer(id, null, "denied");
+    }
+
+    private void sendToken(String id) {
+        try {
+            FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
+                if (task.isSuccessful() && task.getResult() != null) pushAnswer(id, task.getResult(), "granted");
+                else pushAnswer(id, null, "error");
+            });
+        } catch (Exception e) {
+            pushAnswer(id, null, "error");
+        }
+    }
+
+    private void pushAnswer(String id, String token, String state) {
+        String t = token == null ? "null" : quote(token);
+        runOnUiThread(() -> getBridge().getWebView().evaluateJavascript("window.__awPush && window.__awPush('" + id + "', " + t + ", '" + state + "')", null));
     }
 
     private static String quote(String s) {
@@ -225,6 +306,12 @@ public class MainActivity extends BridgeActivity {
     /** Ярлыки значка («Сайт», «Кабинет клиента») передают адрес страницы сайта. */
     private void openFromIntent(Intent intent) {
         if (receiveShare(intent)) return;
+        // Нажатие на уведомление: Firebase кладёт поле "url" (путь на сайте) в intent.
+        String path = intent == null ? null : intent.getStringExtra("url");
+        if (path != null && path.startsWith("/") && !path.startsWith("//")) {
+            getBridge().getWebView().loadUrl("https://" + HOST + path);
+            return;
+        }
         Uri data = intent == null ? null : intent.getData();
         if (data != null && "https".equals(data.getScheme()) && isOwnHost(data)) {
             getBridge().getWebView().loadUrl(data.toString());
