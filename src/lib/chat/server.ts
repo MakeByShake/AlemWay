@@ -1,7 +1,7 @@
 import "server-only";
 import { createHmac, randomBytes, randomUUID } from "node:crypto";
 import type { SanityClient } from "next-sanity";
-import { apiVersion, dataset, isSanityConfigured, projectId } from "@/sanity/env";
+import { isSanityConfigured } from "@/sanity/env";
 import { serviceOf, type FileKind } from "@/lib/cabinet/fields";
 import { writeClient, type Cabinet } from "@/lib/cabinet/server";
 import { deleteFile } from "@/lib/cabinet/storage";
@@ -51,11 +51,9 @@ function signalId(target: string): string | null {
 /** Address the browser listens to for changes of one chat (pass the cabinet id) or of the team's list (INBOX). */
 export function liveUrl(target: string): string | null {
   const id = signalId(target);
-  if (!id || !isSanityConfigured) return null;
-  // SANITY_API_HOST: local tests only (see src/sanity/client.ts).
-  const host = process.env.SANITY_API_HOST || `https://${projectId}.api.sanity.io`;
-  const q = new URLSearchParams({ query: "*[_id == $id]", $id: JSON.stringify(id), includeResult: "false", visibility: "query" });
-  return `${host}/v${apiVersion}/data/listen/${dataset}?${q.toString()}`;
+  if (!id || !isSanityConfigured || !process.env.SANITY_API_WRITE_TOKEN) return null;
+  // Through our own site (src/app/api/live): works for every address of the site and inside the app.
+  return `/api/live?id=${id}`;
 }
 
 function bump(tx: Tx, target: string) {
@@ -169,14 +167,15 @@ export async function postClientMessage(cab: Cabinet, text: string, key?: string
   if (key && chat?.messages.some((m) => m._key === key)) return { duplicate: true as const, ai: false, history: chat.messages };
   const ai = aiAvailable(cab) && (chat?.mode ?? "ai") === "ai";
   const message = newMessage({ from: "client", kind: "text", text, ...(key ? { _key: key } : {}) });
-  await writeChat(cab._id, { messages: [message], ...(ai ? {} : forPerson(chat, message.at)) });
+  // inbox: the team's list shows the new last line at once, also while the assistant answers.
+  await writeChat(cab._id, { messages: [message], ...(ai ? { inbox: true } : forPerson(chat, message.at)) });
   return { duplicate: false as const, ai, history: [...(chat?.messages ?? []), message] };
 }
 
 /** Stores the assistant's answer. `handoff` — the assistant passed the question to a person. */
 export async function postAiReply(cabinetId: string, text: string, handoff: boolean, key?: string) {
   const message = newMessage({ from: "ai", kind: "text", text, ...(key ? { _key: key } : {}) });
-  await writeChat(cabinetId, { messages: [message], ...(handoff ? forPerson(null, message.at) : {}) });
+  await writeChat(cabinetId, { messages: [message], ...(handoff ? forPerson(null, message.at) : { inbox: true }) });
 }
 
 /** A line from the site in the client's chat. For the client it counts as a new message. */
