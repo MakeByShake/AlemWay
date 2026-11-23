@@ -130,7 +130,8 @@ export async function getCabinets(filter: { service?: string; status?: string; q
   );
   // Clients waiting for us go first: dean's office won't sign, then new ones without a manager
   // (those are always shown, whatever «Кто ведёт» filter is on — someone has to take them).
-  const rank = (r: CabinetRow) => (r.dean ? 2 : r.noManager ? 1 : 0);
+  // Clients marked «−» (dean won't stamp) by hand go up together with the dean's-office ones.
+  const rank = (r: CabinetRow) => (r.dean || r.readiness === "minus" ? 2 : r.noManager ? 1 : 0);
   return rows.sort((a, b) => rank(b) - rank(a));
 }
 
