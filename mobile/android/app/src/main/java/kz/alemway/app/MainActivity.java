@@ -1,16 +1,16 @@
 package kz.alemway.app;
 
 import android.Manifest;
-import android.app.DownloadManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
+import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.util.Base64;
 import android.webkit.CookieManager;
@@ -20,7 +20,10 @@ import android.webkit.WebView;
 import android.widget.Toast;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -30,6 +33,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.biometric.BiometricPrompt;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 
 import com.getcapacitor.BridgeActivity;
 import com.google.firebase.FirebaseApp;
@@ -64,29 +68,28 @@ public class MainActivity extends BridgeActivity {
         }
 
         // Файлы (PDF, Excel, ZIP), которые WebView не умеет показать, скачиваются в «Загрузки».
+        // Файлы (декларация, PDF, Excel), которые WebView не умеет показать: страница сама скачивает их
+        // со своим входом (cookie), приложение кладёт файл в «Загрузки» и сразу открывает.
         webView.setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) -> {
-            try {
-                Uri uri = Uri.parse(url);
-                if (!"https".equals(uri.getScheme())) {
-                    return;
+            Uri uri = Uri.parse(url);
+            if (!"https".equals(uri.getScheme())) return;
+            if (!isOwnHost(uri)) {
+                // Чужой сайт: пусть откроет обычный браузер, наш вход туда не уходит.
+                try {
+                    startActivity(new Intent(Intent.ACTION_VIEW, uri));
+                } catch (Exception ignored) {
                 }
-                String name = URLUtil.guessFileName(url, contentDisposition, mimeType);
-                DownloadManager.Request request = new DownloadManager.Request(uri);
-                String cookies = CookieManager.getInstance().getCookie(url);
-                // Cookie входа отправляем только на свой сайт.
-                if (cookies != null && isOwnHost(uri)) {
-                    request.addRequestHeader("Cookie", cookies);
-                }
-                request.addRequestHeader("User-Agent", userAgent);
-                request.setMimeType(mimeType);
-                request.setTitle(name);
-                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, name);
-                ((DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE)).enqueue(request);
-                Toast.makeText(this, "Скачивается: " + name, Toast.LENGTH_SHORT).show();
-            } catch (Exception e) {
-                Toast.makeText(this, "Не удалось скачать файл", Toast.LENGTH_SHORT).show();
+                return;
             }
+            String name = URLUtil.guessFileName(url, contentDisposition, mimeType);
+            Toast.makeText(this, "Скачивается: " + name, Toast.LENGTH_SHORT).show();
+            webView.evaluateJavascript(
+                "(function(u,n,m){fetch(u,{credentials:'include'}).then(function(r){if(!r.ok)throw 0;return r.blob();})"
+                    + ".then(function(b){var f=new FileReader();f.onload=function(){var s=String(f.result);"
+                    + "AlemWaySave.save(n,m||b.type||'application/octet-stream',s.slice(s.indexOf(',')+1));};f.readAsDataURL(b);})"
+                    + ".catch(function(){AlemWaySave.fail();});})(" + quote(url) + "," + quote(name) + "," + quote(mimeType == null ? "" : mimeType) + ")",
+                null
+            );
         });
 
 
@@ -106,6 +109,7 @@ public class MainActivity extends BridgeActivity {
             early.addJavascriptInterface(new ShareBridge(), "AlemWayShare");
             early.addJavascriptInterface(new BioBridge(), "AlemWayBio");
             early.addJavascriptInterface(new PushBridge(), "AlemWayPush");
+            early.addJavascriptInterface(new SaveBridge(), "AlemWaySave");
         }
         super.load();
     }
@@ -233,6 +237,60 @@ public class MainActivity extends BridgeActivity {
     private void pushAnswer(String id, String token, String state) {
         String t = token == null ? "null" : quote(token);
         runOnUiThread(() -> getBridge().getWebView().evaluateJavascript("window.__awPush && window.__awPush('" + id + "', " + t + ", '" + state + "')", null));
+    }
+
+
+    /** Скачанный страницей файл: в «Загрузки» телефона и сразу открыть. */
+    private class SaveBridge {
+        @JavascriptInterface
+        public void save(String name, String mime, String base64) {
+            try {
+                byte[] bytes = Base64.decode(base64, Base64.DEFAULT);
+                String safe = name == null || name.isEmpty() ? "file" : name.replaceAll("[\\\\/:*?\"<>|\\p{Cntrl}]", "_");
+                String type = mime == null || mime.isEmpty() ? "application/octet-stream" : mime;
+                Uri saved;
+                if (Build.VERSION.SDK_INT >= 29) {
+                    ContentValues v = new ContentValues();
+                    v.put(MediaStore.Downloads.DISPLAY_NAME, safe);
+                    v.put(MediaStore.Downloads.MIME_TYPE, type);
+                    v.put(MediaStore.Downloads.IS_PENDING, 1);
+                    saved = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
+                    if (saved == null) throw new IllegalStateException("no uri");
+                    try (OutputStream out = getContentResolver().openOutputStream(saved)) {
+                        out.write(bytes);
+                    }
+                    v.clear();
+                    v.put(MediaStore.Downloads.IS_PENDING, 0);
+                    getContentResolver().update(saved, v, null, null);
+                } else {
+                    File dir = new File(getCacheDir(), "downloads");
+                    dir.mkdirs();
+                    File file = new File(dir, safe);
+                    try (FileOutputStream out = new FileOutputStream(file)) {
+                        out.write(bytes);
+                    }
+                    saved = FileProvider.getUriForFile(MainActivity.this, getPackageName() + ".fileprovider", file);
+                }
+                final Uri open = saved;
+                runOnUiThread(() -> {
+                    Intent view = new Intent(Intent.ACTION_VIEW);
+                    view.setDataAndType(open, type);
+                    view.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+                    try {
+                        startActivity(view);
+                    } catch (Exception e) {
+                        Toast.makeText(MainActivity.this, "Сохранено в «Загрузки»: " + safe, Toast.LENGTH_LONG).show();
+                    }
+                });
+            } catch (Exception e) {
+                fail();
+            }
+        }
+
+        @JavascriptInterface
+        public void fail() {
+            runOnUiThread(() -> Toast.makeText(MainActivity.this, "Не удалось скачать файл", Toast.LENGTH_SHORT).show());
+        }
     }
 
     private static String quote(String s) {
