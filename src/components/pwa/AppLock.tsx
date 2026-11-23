@@ -307,7 +307,12 @@ export function AppLock({
     setPin(v);
     setError("");
     if (v.length < 4 || !settings) return;
-    if ((await hashPin(v, settings.salt)) === settings.pin) return unlock();
+    if ((await hashPin(v, settings.salt)) === settings.pin) {
+      unlock();
+      // A PIN set before the app could ask for the finger: the phone asks once now and remembers it.
+      if (!settings.cred && nativeBio()?.available() && (await askNative(T.bioPrompt))) save(login, { ...settings, cred: "native" });
+      return;
+    }
     const left = MAX_TRIES - tries - 1;
     setTries((n) => n + 1);
     setPin("");
