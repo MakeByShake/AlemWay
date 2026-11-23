@@ -62,7 +62,16 @@ type Row = {
   ai?: { txtfPersonVorname?: string; txtfPersonNachname?: string };
 };
 
-export async function sheetRows(base = "https://alemway.kz"): Promise<SheetRow[]> {
+/**
+ * The partner takes only students whose holidays start no later than 4 June (their request, 23.11.2026).
+ * Compared by month and day, so a wrong year typed by the client doesn't matter. No date yet → not sent:
+ * the client appears in the sheet by itself once the questionnaire has a fitting date.
+ */
+export const PARTNER_LAST_BREAK_START = "06-04";
+const fitsPartner = (breakFrom?: string) => !!breakFrom && /^\d{4}-\d{2}-\d{2}$/.test(breakFrom) && breakFrom.slice(5) <= PARTNER_LAST_BREAK_START;
+
+/** Partner sheet: rows to show, and phone keys of our clients to take out of the sheet (holidays start too late). */
+export async function sheetRows(base = "https://alemway.kz"): Promise<{ rows: SheetRow[]; remove: string[] }> {
   const list = await writeClient().fetch<Row[]>(
     `*[_type == "cabinet" && !(_id in path("drafts.**")) && coalesce(group, "new") != "baybol" && coalesce(service, "ferienjob") == "ferienjob"] | order(coalesce(number, 0) asc){
       _id, number, status, clientName, clientPhone, employerName, zavReceivedAt, data, archivedData, files,
@@ -71,8 +80,14 @@ export async function sheetRows(base = "https://alemway.kz"): Promise<SheetRow[]
     }`
   );
   const out: SheetRow[] = [];
+  const remove: string[] = [];
   for (const c of list) {
     const d = { ...Object.fromEntries(Object.entries(c.archivedData ?? {}).filter(([, v]) => v)), ...Object.fromEntries(Object.entries(c.data ?? {}).filter(([, v]) => v)) };
+    if (!fitsPartner(d.breakFrom)) {
+      const k = digits(c.clientPhone || d.phone);
+      if (k.length >= 10) remove.push(k);
+      continue;
+    }
     let first = caps((c.ai?.txtfPersonVorname || d.firstName || "").trim());
     let last = caps((c.ai?.txtfPersonNachname || d.lastName || "").trim());
     if (!first && !last) {
@@ -140,7 +155,7 @@ export async function sheetRows(base = "https://alemway.kz"): Promise<SheetRow[]
     };
     out.push({ key, cells });
   }
-  return out;
+  return { rows: out, remove };
 }
 
 
