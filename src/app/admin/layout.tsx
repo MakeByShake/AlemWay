@@ -2,6 +2,7 @@ import "@fontsource-variable/inter/wght.css";
 import "../globals.css";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { ServiceWorker } from "@/components/pwa/ServiceWorker";
 
 export const metadata: Metadata = {
   title: { default: "Админка — AlemWay", template: "%s — Админка AlemWay" },
@@ -12,7 +13,10 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, them
 export default function AdminRootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ru">
-      <body className="min-h-dvh bg-surface antialiased">{children}</body>
+      <body className="min-h-dvh bg-surface antialiased">
+        {children}
+        <ServiceWorker />
+      </body>
     </html>
   );
 }

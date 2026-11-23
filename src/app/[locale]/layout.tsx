@@ -11,6 +11,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import { SiteScripts } from "@/components/SiteScripts";
+import { ServiceWorker } from "@/components/pwa/ServiceWorker";
 import { siteUrl } from "@/lib/i18n-content";
 
 export function generateStaticParams() {
@@ -25,6 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     title: { default: t("homeTitle"), template: "%s — AlemWay Visa" },
     description: t("homeDescription"),
     applicationName: "AlemWay Visa",
+    appleWebApp: { capable: true, title: "AlemWay", statusBarStyle: "default" },
     formatDetection: { telephone: false },
   };
 }
@@ -55,6 +57,7 @@ export default async function LocaleLayout({
           <Footer locale={locale} />
           <FloatingWhatsApp />
           <SiteScripts />
+          <ServiceWorker />
         </NextIntlClientProvider>
         <Analytics />
       </body>

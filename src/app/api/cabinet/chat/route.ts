@@ -1,3 +1,4 @@
+import { pushPublicKey } from "@/lib/push/server";
 import { NextResponse, type NextRequest } from "next/server";
 import { isSameOrigin, readJsonObject } from "@/lib/http";
 import { FILE_KINDS } from "@/lib/cabinet/fields";
@@ -39,6 +40,8 @@ function chatView(cab: Cabinet, chat: ChatDoc | null, after?: string | null) {
     uploads: openUploadKinds(cab),
     have: FILE_KINDS.filter((k) => cab.files?.[k]?.path),
     live: liveUrl(cab._id),
+    /** Key for turning on notifications on this device; null — notifications are off on the site. */
+    push: pushPublicKey(),
   };
 }
 

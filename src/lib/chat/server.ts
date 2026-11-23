@@ -5,6 +5,7 @@ import { apiVersion, dataset, isSanityConfigured, projectId } from "@/sanity/env
 import { serviceOf, type FileKind } from "@/lib/cabinet/fields";
 import { writeClient, type Cabinet } from "@/lib/cabinet/server";
 import { deleteFile } from "@/lib/cabinet/storage";
+import { notifyClients } from "@/lib/push/server";
 import { messageText, previewOf } from "./texts";
 import { chatIdOf, type ChatAttachment, type ChatEvent, type ChatFrom, type ChatMessage, type ChatMessageView, type ChatState } from "./types";
 
@@ -192,6 +193,8 @@ export async function postEvent(
     messages: [message],
     inc: { ...(silent ? {} : { unreadClient: 1 }), ...change?.inc },
   });
+  // News for the client: their phone shows it too.
+  if (!silent) notifyClients([cabinetId], { body: message.text });
 }
 
 /** Same as postEvent, but never throws: an event in the chat must not break the action that caused it. */
@@ -267,6 +270,7 @@ export async function postStaffMessage(cabinetId: string, who: Staff, input: { t
     inc: { unreadClient: 1 },
     inbox: true,
   });
+  notifyClients([cabinetId], { body: `${who.name}: ${message.kind === "file" ? `📎 ${input.file?.name ?? "файл"}${input.text ? ` ${input.text}` : ""}` : input.text}` });
   return message;
 }
 
@@ -310,6 +314,7 @@ export async function sendBroadcast(who: Staff, cabinetIds: string[], text: stri
     if (i + 40 >= cabinetIds.length) bump(tx, INBOX);
     await tx.commit();
   }
+  notifyClients(cabinetIds, { body: `${who.name}: ${text}` });
   return id;
 }
 
