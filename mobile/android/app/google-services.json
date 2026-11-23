@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "418089286964",
+    "project_id": "alemway-push-chgf",
+    "storage_bucket": "alemway-push-chgf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:418089286964:android:31f03778b3ff6b74f6b961",
+        "android_client_info": {
+          "package_name": "kz.alemway.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1yXcpVewMdMV756LeMShSmoBXydlTSpY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:418089286964:android:a45119be78fb7b24f6b961",
+        "android_client_info": {
+          "package_name": "kz.alemway.app.test"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1yXcpVewMdMV756LeMShSmoBXydlTSpY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
