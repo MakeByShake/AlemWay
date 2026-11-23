@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { isFullRole, requireAdminUser } from "@/lib/admin/session";
 import { logoutAction } from "../actions";
 import { AdminNav } from "@/components/admin/AdminNav";
-import { LockToggle, StaffLock } from "@/components/admin/StaffLock";
+import { StaffLock, StaffLockToggle } from "@/components/admin/StaffLock";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +18,7 @@ export default async function PanelLayout({ children }: { children: ReactNode })
             <span className="block text-[18px] font-bold leading-tight">Админка</span>
           </Link>
           <div className="flex items-center gap-1 lg:hidden">
-            <LockToggle login={me.login} compact />
+            <StaffLockToggle login={me.login} compact />
             <form action={logoutAction}>
               <button className="min-h-10 px-2 text-[14px] text-muted hover:text-ink">Выйти</button>
             </form>
@@ -33,7 +33,7 @@ export default async function PanelLayout({ children }: { children: ReactNode })
             <button className="font-medium text-brand hover:underline">Выйти</button>
           </form>
           <p className="mt-3">
-            <LockToggle login={me.login} />
+            <StaffLockToggle login={me.login} />
           </p>
         </div>
       </aside>

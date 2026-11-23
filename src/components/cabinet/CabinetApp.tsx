@@ -42,6 +42,7 @@ import { CABINET_TEXT, type CabinetLocale } from "@/lib/cabinet/i18n";
 import { Pipeline } from "@/components/Pipeline";
 import { compressForUpload } from "@/lib/compress-file";
 import { Scanner } from "./Scanner";
+import { CabinetLock, CabinetLockToggle, clearCabinetLock } from "./CabinetLock";
 import { clearOffline, saveOffline } from "@/components/pwa/offline-docs";
 
 type FileMeta = { name: string; size: number; uploadedAt: string } | null;
@@ -310,6 +311,7 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
   }, [view, t, locale]);
 
   async function logout() {
+    clearCabinetLock();
     await clearOffline();
     await fetch("/api/cabinet/logout", { method: "POST" }).catch(() => null);
     router.refresh();
@@ -325,10 +327,14 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
               {t.hello}, {view.name}
             </h1>
           </div>
-          <button type="button" onClick={logout} aria-label={t.logout} className="btn-ghost min-h-10 shrink-0 px-3 text-[14px]">
-            <LogOut className="h-4 w-4" /> <span className="hidden min-[360px]:inline">{t.logout}</span>
-          </button>
+          <div className="flex shrink-0 items-center gap-1">
+            <CabinetLockToggle locale={locale} />
+            <button type="button" onClick={logout} aria-label={t.logout} className="btn-ghost min-h-10 shrink-0 px-3 text-[14px]">
+              <LogOut className="h-4 w-4" /> <span className="hidden min-[360px]:inline">{t.logout}</span>
+            </button>
+          </div>
         </div>
+        <CabinetLock locale={locale} offer />
 
         {view.deadline && !keta && <DeadlineTimer t={t} deadline={view.deadline} done={!CLIENT_TURN.includes(view.status)} locale={locale} />}
 

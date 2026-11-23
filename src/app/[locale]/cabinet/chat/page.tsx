@@ -4,6 +4,7 @@ import { setRequestLocale } from "next-intl/server";
 import { currentCabinet } from "@/lib/cabinet/server";
 import { cabinetLocale } from "@/lib/cabinet/i18n";
 import { CabinetChat } from "@/components/cabinet/CabinetChat";
+import { CabinetLock } from "@/components/cabinet/CabinetLock";
 
 export const dynamic = "force-dynamic";
 
@@ -19,5 +20,11 @@ export default async function CabinetChatPage({ params }: { params: Promise<{ lo
   const cab = await currentCabinet().catch(() => null);
   // Not logged in (old link, another device): the cabinet page explains what to do.
   if (!cab) redirect(`/${locale}/cabinet`);
-  return <CabinetChat locale={cabinetLocale(locale)} />;
+  const lang = cabinetLocale(locale);
+  return (
+    <>
+      <CabinetChat locale={lang} />
+      <CabinetLock locale={lang} />
+    </>
+  );
 }
