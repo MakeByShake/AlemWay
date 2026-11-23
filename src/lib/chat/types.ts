@@ -16,6 +16,7 @@ export const CHAT_EVENTS = [
   "stage",
   "deadline",
   "deadline_removed",
+  "deadline_soon",
   "zav",
   "keta",
   "called",

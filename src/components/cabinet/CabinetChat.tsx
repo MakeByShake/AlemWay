@@ -10,6 +10,7 @@ import { FILE_SHORT } from "@/lib/chat/texts";
 import { CHAT_TEXT_MAX, newMessageKey, type ChatMessageView, type ChatMode } from "@/lib/chat/types";
 import { Composer } from "@/components/chat/Composer";
 import { useCoverScreen } from "@/components/chat/cover";
+import { PushBanner } from "@/components/pwa/PushBanner";
 import { useChatFeed } from "@/components/chat/live";
 import { Messages, type LocalMessage } from "@/components/chat/Messages";
 
@@ -90,6 +91,7 @@ type Meta = {
   uploads: string[];
   have: string[];
   live: string | null;
+  push: string | null;
 };
 
 /** The client's chat with AlemWay: the assistant, the curators and news about the case in one thread. Fills the screen. */
@@ -252,6 +254,7 @@ export function CabinetChat({ locale }: { locale: "ru" | "kk" }) {
           </button>
         )}
       </header>
+      {meta && <PushBanner publicKey={meta.push} locale={locale} />}
 
       <div
         ref={box}
