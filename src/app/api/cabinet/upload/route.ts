@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isSameOrigin } from "@/lib/http";
 import { SERVICE_FILES, UPLOAD_KINDS, serviceOf, type UploadKind } from "@/lib/cabinet/fields";
-import { currentCabinet, patchCabinet, type Cabinet } from "@/lib/cabinet/server";
+import { currentCabinet, patchCabinet } from "@/lib/cabinet/server";
+import { lockReason } from "@/lib/cabinet/upload-rules";
 import { deleteFile } from "@/lib/cabinet/storage";
 import { readUpload, storeCabinetFile } from "@/lib/cabinet/uploads";
 
@@ -9,23 +10,6 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const fail = (error: string, status = 400) => NextResponse.json({ ok: false, error }, { status });
-
-/** Which file the client may change (upload, replace or delete) at this stage; null = allowed. */
-function lockReason(cab: Cabinet, kind: UploadKind, deleting = false): string | null {
-  const service = serviceOf(cab.service);
-  const status = cab.status ?? "waiting_data";
-  if (service === "keta") return status !== "waiting_data" ? "locked" : null;
-  if (kind === "signed" || kind === "signed2") {
-    // Signed scans (2 copies): after the declaration exists, and can be replaced until ZAV arrives.
-    if (!cab.files?.declaration?.path) return "no_declaration";
-    // Deleting only before the client sends them to us.
-    if (deleting) return status !== "declaration_ready" ? "locked" : null;
-    return status !== "declaration_ready" && status !== "signed_uploaded" ? "locked" : null;
-  }
-  // Driving licence: often comes a month later — can be added until the trip.
-  if (kind === "license") return status === "done" ? "locked" : null;
-  return status !== "waiting_data" && status !== "declaration_ready" ? "locked" : null;
-}
 
 async function clientKind(req: NextRequest) {
   const cab = await currentCabinet();

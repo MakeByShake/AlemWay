@@ -1,10 +1,13 @@
 "use client";
 
+import { usePathname } from "@/i18n/navigation";
 import { useServiceWhatsapp, type ServiceWhatsapp } from "./useServiceWhatsapp";
 import { WhatsAppIcon, WhatsAppLink } from "./WhatsAppLink";
 
 export function FloatingWhatsAppButton({ defaultHref, byService, label }: { defaultHref: string; byService: ServiceWhatsapp; label: string }) {
   const href = useServiceWhatsapp(defaultHref, byService);
+  // In the personal cabinet this corner belongs to the chat with AlemWay (WhatsApp stays in the «Есть вопрос?» card).
+  if (usePathname().startsWith("/cabinet")) return null;
   return (
     <WhatsAppLink
       href={href}

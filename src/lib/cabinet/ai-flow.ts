@@ -4,6 +4,7 @@ import { escapeHtml, sendTelegram } from "@/lib/telegram";
 import { latinName } from "@/lib/translit";
 import { clientOverrides, saveAiDeclaration, teamOverrides, todayAlmaty } from "./declaration";
 import { cabinetAdminUrl, displayName, getCabinet, managerLine, patchCabinet, type Cabinet } from "./server";
+import { declarationEvent } from "@/lib/chat/server";
 
 const list = (xs: string[]) => xs.slice(0, 8).map((x) => `• ${escapeHtml(x)}`);
 
@@ -38,7 +39,10 @@ export async function checkAndBuildDeclaration(cabId: string, by: "client" | "ma
   const passportName = cab.files?.passport?.path && ai.fields.txtfPersonNachname && ai.fields.txtfPersonVorname ? latinName(`${ai.fields.txtfPersonNachname} ${ai.fields.txtfPersonVorname}`) : "";
   await patchCabinet(cab._id, { aiCheck: ai, ...(passportName ? { clientName: passportName } : {}) });
 
-  if (ready) await saveAiDeclaration({ ...cab, aiCheck: ai } as Cabinet, ai);
+  if (ready) {
+    await saveAiDeclaration({ ...cab, aiCheck: ai } as Cabinet, ai);
+    await declarationEvent(cab);
+  }
 
   await sendTelegram([
     ready ? `<b>📝 ИИ сделал декларацию — ${ai.status}</b>` : "<b>⚠️ ИИ: декларацию выдать нельзя — НЕ ГОТОВО</b>",

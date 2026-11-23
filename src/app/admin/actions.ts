@@ -24,6 +24,7 @@ import { AdminOpError, createCabinet, deleteCabinetCompletely, renumberCabinets 
 import { cabinetAdminUrl, freshLink, getCabinet, patchCabinet, writeClient } from "@/lib/cabinet/server";
 import { escapeHtml, sendTelegram } from "@/lib/telegram";
 import { checkAndBuildDeclaration } from "@/lib/cabinet/ai-flow";
+import { chatEvent } from "@/lib/chat/server";
 import { aiReady } from "@/lib/ai/declaration";
 import { CABINET_STATUSES, FERIENJOB_FULL_SECTIONS, FILE_KINDS, FILE_LABELS, KETA_FIELDS, serviceOf, type FileKind } from "@/lib/cabinet/fields";
 import { deleteFile } from "@/lib/cabinet/storage";
@@ -231,8 +232,11 @@ export async function updateCabinetAction(_prev: ActionState, fd: FormData): Pro
       await logActivity(me, "contacts", "отметил(а): продан для Baybol (отдельно от наших клиентов)", cab);
     }
     if (fromBaybol) await logActivity(me, "contacts", "вернул(а) в наши клиенты", cab);
-    if (set.status && set.status !== (cab.status ?? "waiting_data"))
+    if (set.status && set.status !== (cab.status ?? "waiting_data")) {
       await logActivity(me, "status", `перевёл(а) на этап «${statusTitle(set.status as string)}»`, cab);
+      // The client sees the new stage in the chat. A refusal is told by a person, not by a line from the site.
+      if (set.status !== "keta_rejected") await chatEvent(id, "stage", { arg: set.status as string });
+    }
     if (fd.has("seller") && (set.seller ?? "") !== (cab.seller ?? ""))
       await logActivity(me, "seller", set.sellerName ? `указал(а), что продал(а): ${set.sellerName}` : "убрал(а), кто продал", cab);
     const managerChanged = "manager" in set ? set.manager !== cab.manager : unset.includes("manager") && Boolean(cab.manager);
@@ -695,6 +699,7 @@ export async function setDeadlineAction(_prev: ActionState, fd: FormData): Promi
     if (date < today) return { error: "Дата уже прошла" };
   }
   await patchCabinet(id, date ? { deadline: date } : {}, date ? [] : ["deadline"]);
+  if (date !== (cab.deadline ?? "")) await chatEvent(id, date ? "deadline" : "deadline_removed", date ? { arg: date } : {});
   const nice = date ? date.split("-").reverse().join(".") : "";
   await logActivity(me, "deadline", date ? `поставил(а) срок сдачи до ${nice}` : "убрал(а) срок сдачи", cab);
   revalidatePath(`/admin/clients/${id}`);

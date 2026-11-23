@@ -3,6 +3,7 @@ import { isSameOrigin, readJsonObject } from "@/lib/http";
 import { NO_PASSPORT_REQUIRED, SERVICE_FILES, sanitizeCabinetData, serviceOf, validateCabinetData, type FieldError } from "@/lib/cabinet/fields";
 import { cabinetAdminUrl, managerLine, currentCabinet, displayName, getCabinet, patchCabinet } from "@/lib/cabinet/server";
 import { checkAndBuildDeclaration, notifyAiFailed } from "@/lib/cabinet/ai-flow";
+import { chatEvent } from "@/lib/chat/server";
 import { escapeHtml, sendTelegram } from "@/lib/telegram";
 
 export const runtime = "nodejs";
@@ -58,6 +59,7 @@ export async function POST(req: NextRequest) {
 
   if (service === "keta") {
     await patchCabinet(cab._id, { data, submittedAt: now, status: "keta_applying" });
+    if (cab.status !== "keta_applying") await chatEvent(cab._id, "stage", { arg: "keta_applying", silent: true });
     await sendTelegram([
       "<b>🇰🇷 Анкета K-ETA заполнена — можно подавать</b>",
       "",
