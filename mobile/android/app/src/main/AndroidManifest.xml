@@ -27,7 +27,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="alemway.kz" android:pathPrefix="/c/" />
+                <data android:scheme="https" android:host="alem-way-git-app-tools-makebyshakes-projects.vercel.app" android:pathPrefix="/c/" />
             </intent-filter>
 
             <!-- «Поделиться» из WhatsApp или галереи → AlemWay: сотрудник кладёт файл в карточку клиента. -->

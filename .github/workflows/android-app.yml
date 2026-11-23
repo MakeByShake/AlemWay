@@ -5,7 +5,7 @@ name: Android-приложение AlemWay
 on:
   push:
     # app-links — проверочная сборка (без выкладки в Releases).
-    branches: [app, app-links]
+    branches: [app, app-links, app-test]
     paths:
       - "mobile/**"
       - ".github/workflows/android-app.yml"
@@ -44,6 +44,15 @@ jobs:
           name: AlemWay-apk
           path: mobile/AlemWay.apk
           if-no-files-found: error
+      - name: Тестовый APK в Releases (отдельно от основного)
+        if: github.ref == 'refs/heads/app-test'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete app-test --yes --cleanup-tag || true
+          gh release create app-test AlemWay.apk --target "$GITHUB_SHA" --prerelease \
+            --title "AlemWay Тест (Android)" \
+            --notes "Тестовое приложение: открывает предпросмотр с новыми функциями, ставится рядом с основным."
       - name: Выложить APK в Releases
         if: github.ref == 'refs/heads/app'
         env:

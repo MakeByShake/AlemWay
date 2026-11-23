@@ -4,7 +4,7 @@ android {
     namespace "kz.alemway.app"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "kz.alemway.app"
+        applicationId "kz.alemway.app.test"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

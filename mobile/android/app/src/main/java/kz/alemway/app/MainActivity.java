@@ -28,7 +28,7 @@ import com.getcapacitor.BridgeActivity;
  */
 public class MainActivity extends BridgeActivity {
 
-    private static final String HOST = "alemway.kz";
+    private static final String HOST = "alem-way-git-app-tools-makebyshakes-projects.vercel.app";
     private static final int MAX_FILES = 10;
     private static final int MAX_BYTES = 15 * 1024 * 1024;
 

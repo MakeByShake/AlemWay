@@ -1,13 +1,12 @@
 {
-  "appId": "kz.alemway.app",
-  "appName": "AlemWay",
+  "appId": "kz.alemway.app.test",
+  "appName": "AlemWay Тест",
   "webDir": "www",
   "server": {
-    "url": "https://alemway.kz/app",
+    "url": "https://alem-way-git-app-tools-makebyshakes-projects.vercel.app/app",
     "androidScheme": "https",
     "allowNavigation": [
-      "alemway.kz",
-      "*.alemway.kz"
+      "alem-way-git-app-tools-makebyshakes-projects.vercel.app"
     ],
     "errorPath": "offline.html"
   },
