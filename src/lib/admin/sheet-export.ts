@@ -251,7 +251,7 @@ type DeanRow = { _id: string; number?: number; clientName?: string; clientPhone?
 
 export async function deanSheetRows(): Promise<SheetRow[]> {
   const list = await writeClient().fetch<DeanRow[]>(
-    `*[_type == "cabinet" && !(_id in path("drafts.**")) && coalesce(group, "new") != "baybol" && defined(deanIssue)] | order(coalesce(number, 0) asc){_id, number, clientName, clientPhone, data, deanIssue}`
+    `*[_type == "cabinet" && !(_id in path("drafts.**")) && coalesce(group, "new") != "baybol" && (defined(deanIssue) || readiness == "minus")] | order(coalesce(number, 0) asc){_id, number, clientName, clientPhone, data, deanIssue, readiness}`
   );
   return list
     .map((c) => {
@@ -259,7 +259,9 @@ export async function deanSheetRows(): Promise<SheetRow[]> {
       const i = c.deanIssue ?? {};
       const key = digits(c.clientPhone || d.phone);
       const name = latinName([d.lastName, d.firstName].filter(Boolean).join(" ") || (c.clientName ?? ""));
-      const done = Boolean(i.resolvedAt);
+      // Marked «−» by the team without the client's report: still open, no details yet.
+      const markOnly = !c.deanIssue;
+      const done = !markOnly && Boolean(i.resolvedAt);
       const bg = done ? "#D9F2E1" : "#FFD8B0";
       return {
         key,
@@ -270,9 +272,9 @@ export async function deanSheetRows(): Promise<SheetRow[]> {
           "Факультет / группа": { v: [i.faculty, i.group].filter(Boolean).join(", "), bg },
           // A cell starting with «+» would become a formula (#ERROR!) in Google Sheets.
           "Декан / телефон деканата": { v: [i.deanName, i.phone && `тел. ${i.phone}`].filter(Boolean).join(", "), bg },
-          "Почему не ставят": { v: i.reason ?? "", bg },
+          "Почему не ставят": { v: markOnly ? "отметка команды «−» (декан не ставит печать)" : (i.reason ?? ""), bg },
           "Чей клиент": { v: "AlemWay", bold: true, bg },
-          "Статус": { v: done ? `✓ решено ${de(i.resolvedAt)}` : `не решено (с ${de(i.at)})`, bg, bold: !done, color: done ? "#0A7A42" : "#B54708" },
+          "Статус": { v: done ? `✓ решено ${de(i.resolvedAt)}` : markOnly ? "не решено" : `не решено (с ${de(i.at)})`, bg, bold: !done, color: done ? "#0A7A42" : "#B54708" },
         },
       };
     })
