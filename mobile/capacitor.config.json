@@ -3,9 +3,12 @@
   "appName": "AlemWay",
   "webDir": "www",
   "server": {
-    "url": "https://alemway.kz/admin",
+    "url": "https://alemway.kz/app",
     "androidScheme": "https",
-    "allowNavigation": ["alemway.kz", "*.alemway.kz"],
+    "allowNavigation": [
+      "alemway.kz",
+      "*.alemway.kz"
+    ],
     "errorPath": "offline.html"
   },
   "android": {

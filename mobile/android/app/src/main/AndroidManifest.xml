@@ -22,6 +22,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Личная ссылка клиента (alemway.kz/c/…) может открываться прямо в приложении. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="alemway.kz" android:pathPrefix="/c/" />
+            </intent-filter>
+
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
 
         </activity>
