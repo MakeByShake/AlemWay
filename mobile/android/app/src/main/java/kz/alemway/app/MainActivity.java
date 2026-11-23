@@ -10,6 +10,11 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.provider.Settings;
+import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.util.Base64;
@@ -24,6 +29,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import org.json.JSONObject;
+import androidx.appcompat.app.AlertDialog;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -84,6 +93,8 @@ public class MainActivity extends BridgeActivity {
             return WindowInsetsCompat.CONSUMED;
         });
         ViewCompat.requestApplyInsets(root);
+
+        checkUpdate();
 
         // Вход в админку и кабинет держится на cookie — не теряем их между запусками.
         CookieManager.getInstance().setAcceptCookie(true);
@@ -503,6 +514,106 @@ public class MainActivity extends BridgeActivity {
     private static boolean isOwnHost(Uri uri) {
         String host = uri.getHost();
         return host != null && (host.equals(HOST) || host.endsWith("." + HOST));
+    }
+
+    // ---------- Обновление приложения без Google Play ----------
+    // Сборка на GitHub кладёт рядом с APK файл version.json с номером версии. При запуске приложение
+    // сверяет номер; если вышла новая версия, предлагает «Обновить», скачивает APK и открывает установку.
+    private static final String RELEASE = "https://github.com/MakeByShake/AlemWay/releases/download/app-latest/";
+    private boolean updateAfterPermission = false;
+
+    private long myVersion() {
+        try {
+            PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), 0);
+            return Build.VERSION.SDK_INT >= 28 ? info.getLongVersionCode() : info.versionCode;
+        } catch (Exception e) {
+            return Long.MAX_VALUE;
+        }
+    }
+
+    private static byte[] httpGet(String url, int max) throws Exception {
+        HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
+        c.setConnectTimeout(15000);
+        c.setReadTimeout(60000);
+        c.setInstanceFollowRedirects(true);
+        try (InputStream in = c.getInputStream(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            byte[] buf = new byte[65536];
+            int n;
+            while ((n = in.read(buf)) > 0) {
+                out.write(buf, 0, n);
+                if (out.size() > max) throw new Exception("too big");
+            }
+            return out.toByteArray();
+        } finally {
+            c.disconnect();
+        }
+    }
+
+    private void checkUpdate() {
+        if (!"kz.alemway.app".equals(getPackageName())) return; // тестовая версия обновляется отдельно
+        final SharedPreferences prefs = getSharedPreferences("aw_update", MODE_PRIVATE);
+        new Thread(() -> {
+            try {
+                JSONObject v = new JSONObject(new String(httpGet(RELEASE + "version.json?t=" + System.currentTimeMillis(), 4096), "UTF-8"));
+                final long latest = v.optLong("versionCode", 0);
+                if (latest <= myVersion()) return;
+                if (prefs.getLong("later_" + latest, 0) > System.currentTimeMillis()) return;
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    if (isFinishing()) return;
+                    new AlertDialog.Builder(this)
+                        .setTitle("Доступно обновление")
+                        .setMessage("Вышла новая версия приложения AlemWay. Обновить сейчас? Вход и данные сохранятся.")
+                        .setPositiveButton("Обновить", (d, w) -> startUpdate())
+                        .setNegativeButton("Позже", (d, w) -> prefs.edit().putLong("later_" + latest, System.currentTimeMillis() + 24L * 3600 * 1000).apply())
+                        .show();
+                });
+            } catch (Exception ignored) {
+                // нет сети или файла: проверим при следующем запуске
+            }
+        }).start();
+    }
+
+    private void startUpdate() {
+        if (Build.VERSION.SDK_INT >= 26 && !getPackageManager().canRequestPackageInstalls()) {
+            // Один раз Android просит разрешить установку из AlemWay.
+            updateAfterPermission = true;
+            Toast.makeText(this, "Разрешите установку для AlemWay и вернитесь назад", Toast.LENGTH_LONG).show();
+            try {
+                startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName())));
+            } catch (Exception e) {
+                updateAfterPermission = false;
+            }
+            return;
+        }
+        Toast.makeText(this, "Скачиваю обновление…", Toast.LENGTH_LONG).show();
+        new Thread(() -> {
+            try {
+                byte[] apk = httpGet(RELEASE + "AlemWay.apk?t=" + System.currentTimeMillis(), 200 * 1024 * 1024);
+                File dir = new File(getCacheDir(), "update");
+                dir.mkdirs();
+                File f = new File(dir, "AlemWay.apk");
+                try (FileOutputStream out = new FileOutputStream(f)) {
+                    out.write(apk);
+                }
+                Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", f);
+                Intent i = new Intent(Intent.ACTION_VIEW);
+                i.setDataAndType(uri, "application/vnd.android.package-archive");
+                i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+                new Handler(Looper.getMainLooper()).post(() -> startActivity(i));
+            } catch (Exception e) {
+                new Handler(Looper.getMainLooper()).post(() ->
+                    Toast.makeText(this, "Не удалось скачать обновление. Попробуйте позже.", Toast.LENGTH_LONG).show());
+            }
+        }).start();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (updateAfterPermission && (Build.VERSION.SDK_INT < 26 || getPackageManager().canRequestPackageInstalls())) {
+            updateAfterPermission = false;
+            startUpdate();
+        }
     }
 
     @Override

@@ -64,11 +64,13 @@ jobs:
           # Без постоянного ключа клиенты не смогут обновиться поверх: такой APK не выкладываем.
           [ -n "$AW_KEYSTORE" ] || { echo "::error::Нет постоянного ключа подписи"; exit 1; }
           # Заменяем файл в том же релизе: удаление и пересоздание могло оставить релиз черновиком (ссылка 404).
+          # version.json: по нему приложение узнаёт, что вышла новая версия, и предлагает обновиться.
+          echo "{\"versionCode\": $GITHUB_RUN_NUMBER}" > version.json
           if gh release view app-latest >/dev/null 2>&1; then
-            gh release upload app-latest AlemWay.apk --clobber
+            gh release upload app-latest AlemWay.apk version.json --clobber
             gh release edit app-latest --draft=false --prerelease
           else
-            gh release create app-latest AlemWay.apk --target "$GITHUB_SHA" --prerelease \
+            gh release create app-latest AlemWay.apk version.json --target "$GITHUB_SHA" --prerelease \
               --title "Приложение AlemWay (Android)" \
               --notes "Скачайте AlemWay.apk на телефон и установите. Приложение открывает живой сайт alemway.kz."
           fi
