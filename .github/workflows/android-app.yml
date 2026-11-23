@@ -4,7 +4,8 @@ name: Android-приложение AlemWay
 # поэтому пересобирать его после изменений сайта не нужно — только когда меняется сама оболочка.
 on:
   push:
-    branches: [app]
+    # app-links — проверочная сборка (без выкладки в Releases).
+    branches: [app, app-links]
     paths:
       - "mobile/**"
       - ".github/workflows/android-app.yml"
@@ -44,6 +45,7 @@ jobs:
           path: mobile/AlemWay.apk
           if-no-files-found: error
       - name: Выложить APK в Releases
+        if: github.ref == 'refs/heads/app'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
