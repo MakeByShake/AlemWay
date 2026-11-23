@@ -74,12 +74,24 @@ public class MainActivity extends BridgeActivity {
             }
         });
 
-        // Страница /admin/share забирает файлы через window.AlemWayShare (только с нашего сайта).
-        webView.addJavascriptInterface(new ShareBridge(), "AlemWayShare");
-        // Блокировка PIN/отпечатком на сайте спрашивает отпечаток через сам телефон (WebView не умеет WebAuthn).
-        webView.addJavascriptInterface(new BioBridge(), "AlemWayBio");
 
         openFromIntent(getIntent());
+    }
+
+    /**
+     * Мосты для страниц сайта. Их надо добавить ДО первой загрузки: WebView показывает такие объекты
+     * только страницам, загруженным после добавления, а Capacitor открывает сайт внутри super.load().
+     * window.AlemWayShare: /admin/share забирает файлы из «Поделиться».
+     * window.AlemWayBio: блокировка PIN спрашивает отпечаток через сам телефон (WebView не умеет WebAuthn).
+     */
+    @Override
+    protected void load() {
+        WebView early = findViewById(com.getcapacitor.android.R.id.webview);
+        if (early != null) {
+            early.addJavascriptInterface(new ShareBridge(), "AlemWayShare");
+            early.addJavascriptInterface(new BioBridge(), "AlemWayBio");
+        }
+        super.load();
     }
 
     private class ShareBridge {
