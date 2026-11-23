@@ -32,7 +32,7 @@ export function AdminNav({ owner, full }: { owner: boolean; full: boolean }) {
   useEffect(() => {
     void loadInbox();
   }, []);
-  useLive(inbox.live, inboxChanged, path.startsWith("/admin/chats") ? 20_000 : 60_000);
+  useLive(inbox.live, inboxChanged, path.startsWith("/admin/chats") ? 8_000 : 60_000);
   // On a phone the menu is one scrolling row: bring the open section into view.
   const nav = useRef<HTMLElement>(null);
   useEffect(() => {

@@ -5,11 +5,11 @@ import type { ChatMessageView } from "@/lib/chat/types";
 
 /**
  * Calls `onChange` when something changed on the server.
- * Normally the browser listens to a tiny «signal» (Sanity listen API, `url`) and reacts at once.
- * If that connection can't be opened, it falls back to asking every `pollMs`. Hidden tabs do nothing.
+ * Normally the browser listens to a tiny «signal» through our own site (/api/live, `url`) and reacts at once.
+ * If that connection can't be opened or goes quiet, it falls back to asking every `pollMs`. Hidden tabs do nothing.
  * `off` — don't watch at all (someone else on the page already does).
  */
-export function useLive(url: string | null | undefined, onChange: () => void, pollMs = 15_000, off = false) {
+export function useLive(url: string | null | undefined, onChange: () => void, pollMs = 6_000, off = false) {
   const cb = useRef(onChange);
   useEffect(() => {
     cb.current = onChange;
@@ -19,6 +19,8 @@ export function useLive(url: string | null | undefined, onChange: () => void, po
     if (off) return;
     let es: EventSource | null = null;
     let connected = false;
+    let everConnected = false;
+    let welcomeTimer: ReturnType<typeof setTimeout> | null = null;
     let last = Date.now();
     let retryAt = 0;
     let fails = 0;
@@ -36,6 +38,8 @@ export function useLive(url: string | null | undefined, onChange: () => void, po
       }, 250);
     };
     const close = () => {
+      if (welcomeTimer) clearTimeout(welcomeTimer);
+      welcomeTimer = null;
       es?.close();
       es = null;
       connected = false;
@@ -47,16 +51,23 @@ export function useLive(url: string | null | undefined, onChange: () => void, po
       } catch {
         return;
       }
-      es.addEventListener("welcome", () => {
-        connected = true;
-        fails = 0;
-      });
-      es.addEventListener("mutation", fireSoon);
       const drop = () => {
         close();
         fails += 1;
         retryAt = Date.now() + Math.min(120_000, 10_000 * fails);
       };
+      // No «welcome» soon: something on the way holds the stream back, so ask regularly instead.
+      welcomeTimer = setTimeout(() => !connected && drop(), 8_000);
+      es.addEventListener("welcome", () => {
+        if (welcomeTimer) clearTimeout(welcomeTimer);
+        welcomeTimer = null;
+        connected = true;
+        fails = 0;
+        // A reconnect (the server ends each connection after a few minutes): catch up on what came meanwhile.
+        if (everConnected) fireSoon();
+        everConnected = true;
+      });
+      es.addEventListener("mutation", fireSoon);
       es.addEventListener("channelError", drop);
       es.addEventListener("disconnect", drop);
       es.onerror = () => {
