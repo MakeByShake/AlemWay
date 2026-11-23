@@ -28,6 +28,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.IntentSenderRequest;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.biometric.BiometricManager;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationManagerCompat;
@@ -37,6 +40,10 @@ import androidx.core.content.FileProvider;
 
 import com.getcapacitor.BridgeActivity;
 import com.google.firebase.FirebaseApp;
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanner;
+import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions;
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanning;
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult;
 import com.google.firebase.messaging.FirebaseMessaging;
 
 /**
@@ -110,6 +117,7 @@ public class MainActivity extends BridgeActivity {
             early.addJavascriptInterface(new BioBridge(), "AlemWayBio");
             early.addJavascriptInterface(new PushBridge(), "AlemWayPush");
             early.addJavascriptInterface(new SaveBridge(), "AlemWaySave");
+            early.addJavascriptInterface(new ScanBridge(), "AlemWayScan");
         }
         super.load();
     }
@@ -291,6 +299,101 @@ public class MainActivity extends BridgeActivity {
         public void fail() {
             runOnUiThread(() -> Toast.makeText(MainActivity.this, "Не удалось скачать файл", Toast.LENGTH_SHORT).show());
         }
+    }
+
+
+    /** Лимит загрузки файла на сайт (как в src/lib/scan.ts). */
+    private static final int SCAN_PDF_LIMIT = (int) (3.8 * 1024 * 1024);
+    private String scanWaiting;
+    private final ActivityResultLauncher<IntentSenderRequest> scanLauncher =
+        registerForActivityResult(new ActivityResultContracts.StartIntentSenderForResult(), result -> onScanResult(result.getResultCode(), result.getData()));
+
+    /**
+     * Сканер документов Google (ML Kit): сам находит лист, обрезает и выравнивает, несколько страниц, PDF.
+     * Ответ уходит в window.__awScan(id, {pdf} или {pages}, state).
+     */
+    private class ScanBridge {
+        @JavascriptInterface
+        public boolean available() {
+            return true;
+        }
+
+        @JavascriptInterface
+        public void start(final String id) {
+            if (id == null || !REQUEST_ID.matcher(id).matches()) return;
+            runOnUiThread(() -> {
+                try {
+                    GmsDocumentScannerOptions options = new GmsDocumentScannerOptions.Builder()
+                        .setGalleryImportAllowed(true)
+                        .setPageLimit(15)
+                        .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_PDF, GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
+                        .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
+                        .build();
+                    GmsDocumentScanner scanner = GmsDocumentScanning.getClient(options);
+                    scanner.getStartScanIntent(MainActivity.this)
+                        .addOnSuccessListener(sender -> {
+                            scanWaiting = id;
+                            scanLauncher.launch(new IntentSenderRequest.Builder(sender).build());
+                        })
+                        .addOnFailureListener(e -> scanAnswer(id, null, "error"));
+                } catch (Exception e) {
+                    scanAnswer(id, null, "error");
+                }
+            });
+        }
+    }
+
+    private void onScanResult(int code, Intent data) {
+        String id = scanWaiting;
+        scanWaiting = null;
+        if (id == null) return;
+        if (code != RESULT_OK || data == null) {
+            scanAnswer(id, null, "cancel");
+            return;
+        }
+        try {
+            GmsDocumentScanningResult result = GmsDocumentScanningResult.fromActivityResultIntent(data);
+            if (result == null) throw new IllegalStateException("no result");
+            byte[] pdf = result.getPdf() == null ? null : readAll(result.getPdf().getUri());
+            StringBuilder json = new StringBuilder("{");
+            if (pdf != null && pdf.length <= SCAN_PDF_LIMIT) {
+                json.append("\"pdf\":\"").append(Base64.encodeToString(pdf, Base64.NO_WRAP)).append('"');
+            } else if (result.getPages() != null) {
+                // PDF вышел тяжелее лимита: отдаём страницы, сайт сожмёт их сам.
+                json.append("\"pages\":[");
+                int i = 0;
+                for (GmsDocumentScanningResult.Page page : result.getPages()) {
+                    byte[] jpg = readAll(page.getImageUri());
+                    if (jpg == null) continue;
+                    if (i++ > 0) json.append(',');
+                    json.append('"').append(Base64.encodeToString(jpg, Base64.NO_WRAP)).append('"');
+                }
+                json.append(']');
+            } else {
+                throw new IllegalStateException("empty");
+            }
+            scanAnswer(id, json.append('}').toString(), "ok");
+        } catch (Exception e) {
+            scanAnswer(id, null, "error");
+        }
+    }
+
+    private byte[] readAll(Uri uri) {
+        try (InputStream in = getContentResolver().openInputStream(uri)) {
+            if (in == null) return null;
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            byte[] buf = new byte[64 * 1024];
+            int n;
+            while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+            return out.toByteArray();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void scanAnswer(String id, String json, String state) {
+        String body = json == null ? "null" : json;
+        runOnUiThread(() -> getBridge().getWebView().evaluateJavascript("window.__awScan && window.__awScan('" + id + "', " + body + ", '" + state + "')", null));
     }
 
     private static String quote(String s) {
