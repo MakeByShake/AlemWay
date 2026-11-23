@@ -92,6 +92,7 @@ type Meta = {
   have: string[];
   live: string | null;
   push: string | null;
+  pushApp?: boolean;
 };
 
 /** The client's chat with AlemWay: the assistant, the curators and news about the case in one thread. Fills the screen. */
@@ -254,7 +255,7 @@ export function CabinetChat({ locale }: { locale: "ru" | "kk" }) {
           </button>
         )}
       </header>
-      {meta && <PushBanner publicKey={meta.push} locale={locale} />}
+      {meta && <PushBanner publicKey={meta.push} app={Boolean(meta.pushApp)} locale={locale} />}
 
       <div
         ref={box}
