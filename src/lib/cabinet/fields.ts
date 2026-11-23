@@ -409,6 +409,13 @@ export const CABINET_SECTIONS: CabinetSection[] = [
 /** Without a passport the name, surname and date of birth are required. */
 export const NO_PASSPORT_REQUIRED = ["firstName", "lastName", "birthDate"] as const;
 
+/** No certificate (team allowed it): the study data the client must type in instead. */
+export const NO_ENROLLMENT_REQUIRED = ["uniName", "subject", "studyYears", "enrolledSince", "studyEnd", "breakFrom", "breakTo"] as const;
+
+/** Files required before submitting; the certificate is dropped when the team allowed «без справки». */
+export const requiredFiles = (service: ServiceId, noEnrollment?: boolean) =>
+  SERVICE_FILES[service].requiredBeforeSubmit.filter((k) => !(noEnrollment && k === "enrollment"));
+
 export const CABINET_FIELDS: CabinetField[] = CABINET_SECTIONS.flatMap((s) => s.fields);
 export const KETA_FIELDS: CabinetField[] = KETA_SECTIONS.flatMap((s) => s.fields);
 

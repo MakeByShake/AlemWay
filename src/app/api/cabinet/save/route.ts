@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isSameOrigin, readJsonObject } from "@/lib/http";
-import { NO_PASSPORT_REQUIRED, SERVICE_FILES, sanitizeCabinetData, serviceOf, validateCabinetData, type FieldError } from "@/lib/cabinet/fields";
+import { NO_ENROLLMENT_REQUIRED, NO_PASSPORT_REQUIRED, requiredFiles, sanitizeCabinetData, serviceOf, validateCabinetData, type FieldError } from "@/lib/cabinet/fields";
 import { cabinetAdminUrl, managerLine, currentCabinet, displayName, getCabinet, patchCabinet } from "@/lib/cabinet/server";
 import { checkAndBuildDeclaration, notifyAiFailed } from "@/lib/cabinet/ai-flow";
 import { escapeHtml, sendTelegram } from "@/lib/telegram";
@@ -43,7 +43,11 @@ export async function POST(req: NextRequest) {
     if (service === "ferienjob" && !cab.files?.passport?.path) {
       for (const k of NO_PASSPORT_REQUIRED) if (!data[k]?.trim() && !errors[k]) errors[k] = "required";
     }
-    const missingFiles = SERVICE_FILES[service].requiredBeforeSubmit.filter((k) => !cab.files?.[k]?.path);
+    // No certificate (allowed by the team): the study data must be typed in.
+    if (service === "ferienjob" && cab.noEnrollment && !cab.files?.enrollment?.path) {
+      for (const k of NO_ENROLLMENT_REQUIRED) if (!data[k]?.trim() && !errors[k]) errors[k] = "required";
+    }
+    const missingFiles = requiredFiles(service, cab.noEnrollment).filter((k) => !cab.files?.[k]?.path);
     if (Object.keys(errors).length || missingFiles.length) {
       await patchCabinet(cab._id, { data });
       return NextResponse.json({ ok: false, error: "invalid", errors, missingFiles }, { status: 422 });

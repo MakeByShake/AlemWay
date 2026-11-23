@@ -27,7 +27,9 @@ import {
   MAX_UPLOAD_BYTES,
   toGermanDate,
   validateCabinetData,
+  NO_ENROLLMENT_REQUIRED,
   NO_PASSPORT_REQUIRED,
+  requiredFiles,
   type CabinetData,
   type CabinetField,
   type CabinetStatus,
@@ -55,6 +57,8 @@ export type CabinetView = {
   declarationDate: string | null;
   /** Old client moved to the new form 06/2026: fills the questionnaire again. */
   reform: boolean;
+  /** Team allowed the declaration without the certificate: study data is typed in. */
+  noEnrollment: boolean;
   /** Hand-in deadline set by the team (YYYY-MM-DD, until 23:59 Almaty). */
   deadline: string | null;
   /** Open «деканат не ставит печать» report, if any. */
@@ -194,7 +198,8 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
     setNotice(null);
     const errs = validateCabinetData(data, view.service);
     if (!keta && !files.passport) for (const k of NO_PASSPORT_REQUIRED) if (!data[k]?.trim() && !errs[k]) errs[k] = "required";
-    const missing = SERVICE_FILES[view.service].requiredBeforeSubmit.some((k) => !files[k]);
+    if (!keta && view.noEnrollment && !files.enrollment) for (const k of NO_ENROLLMENT_REQUIRED) if (!data[k]?.trim() && !errs[k]) errs[k] = "required";
+    const missing = requiredFiles(view.service, view.noEnrollment).some((k) => !files[k]);
     setErrors(errs);
     if (Object.keys(errs).length || missing) {
       setNotice({ tone: "err", text: Object.keys(errs).length ? t.fixErrors : t.needFiles });
@@ -516,13 +521,13 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
                     key={kind}
                     label={
                       FILE_LABELS[kind][locale].replace(/ \((необязательно|міндетті емес)\)$/, "") +
-                      (SERVICE_FILES[view.service].requiredBeforeSubmit.includes(kind)
+                      (requiredFiles(view.service, view.noEnrollment).includes(kind)
                         ? keta
                           ? ""
                           : ` (${t.required})`
                         : ` (${kind === "passport" && !keta ? t.passportSuffix : t.optional})`)
                     }
-                    hint={kind === "photo" ? t.ketaPhotoHint : kind === "calendar" ? t.calendarHint : kind === "license" ? t.licenseHint : kind === "passport" && !keta ? t.passportLater : undefined}
+                    hint={kind === "enrollment" && view.noEnrollment && !keta ? t.noEnrollmentHint : kind === "photo" ? t.ketaPhotoHint : kind === "calendar" ? t.calendarHint : kind === "license" ? t.licenseHint : kind === "passport" && !keta ? t.passportLater : undefined}
                     meta={files[kind]}
                     busy={busy === kind}
                     t={t}

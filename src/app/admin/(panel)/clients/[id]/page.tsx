@@ -32,6 +32,7 @@ import {
   deleteCabinetAction,
   deleteClientFileAction,
   setEnrollmentAnyLangAction,
+  setNoEnrollmentAction,
   updateAnketaAction,
   deletePaymentAction,
   deleteReceiptAction,
@@ -953,6 +954,18 @@ export default async function ClientPage({
                             >
                               {cab.enrollmentAnyLang ? "Снова требовать английскую" : "Принять справку на русском (английская позже)"}
                             </QuickButton>
+                            {!f && (
+                              <>
+                                {cab.noEnrollment && <span className="font-semibold text-amber-700">✓ Без справки — клиент сам вписывает вуз и даты</span>}
+                                <QuickButton
+                                  action={setNoEnrollmentAction}
+                                  hidden={{ id, on: cab.noEnrollment ? "no" : "yes" }}
+                                  className="font-semibold text-brand hover:underline"
+                                >
+                                  {cab.noEnrollment ? "Снова требовать справку" : "Разрешить без справки"}
+                                </QuickButton>
+                              </>
+                            )}
                           </div>
                         )}
                       </div>

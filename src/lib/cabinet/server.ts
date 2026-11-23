@@ -81,6 +81,8 @@ export type Cabinet = {
   deadline?: string;
   /** Team allowed a Russian/Kazakh enrollment certificate for the declaration (the English one comes later). */
   enrollmentAnyLang?: boolean;
+  /** Team allowed the declaration without any certificate (the client types the study data in the questionnaire). */
+  noEnrollment?: boolean;
   /** More phone numbers besides the main one (parents, a second number). */
   contacts?: ExtraContact[];
   reform?: boolean;
@@ -90,7 +92,7 @@ export type Cabinet = {
 };
 
 const PROJECTION = `{_id, number, group, _rev, service, status, clientName, clientPhone, data, files, declarationDate, submittedAt, signedAt,
-  zavReceivedAt, employer, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil, manager, managerName, seller, sellerName, party, teamEdited, deanIssue, reform, reformAt, archivedFiles, deadline, enrollmentAnyLang, contacts, price, discount, discountNote, plan, payments, aiCheck}`;
+  zavReceivedAt, employer, employerName, workCity, workPosition, workFrom, workTo, clientMessage, ketaValidUntil, manager, managerName, seller, sellerName, party, teamEdited, deanIssue, reform, reformAt, archivedFiles, deadline, enrollmentAnyLang, noEnrollment, contacts, price, discount, discountNote, plan, payments, aiCheck}`;
 
 export function writeClient(): SanityClient {
   const c = getWriteClient();

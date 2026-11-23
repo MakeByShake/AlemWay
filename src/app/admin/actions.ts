@@ -269,7 +269,7 @@ export async function declarationAction(_prev: ActionState, fd: FormData): Promi
   const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
   if (!cab) return { error: "Кабинет не найден" };
   if (serviceOf(cab.service) !== "ferienjob") return { error: "Декларация ZAV есть только у Ferienjob" };
-  if (!cab.files?.enrollment?.path) return { error: "Нет справки с места учёбы — без неё ИИ не сделает декларацию" };
+  if (!cab.files?.enrollment?.path && !cab.noEnrollment) return { error: "Нет справки с места учёбы — без неё ИИ не сделает декларацию (или нажмите «Разрешить без справки» в документах)" };
   try {
     const ai = await checkAndBuildDeclaration(id, "manager");
     await logActivity(me, "declaration", `запустил(а) ИИ-декларацию: ${ai.status}`, cab);
@@ -824,6 +824,19 @@ export async function setEnrollmentAnyLangAction(fd: FormData) {
   if (on) await patchCabinet(id, { enrollmentAnyLang: true });
   else await patchCabinet(id, {}, ["enrollmentAnyLang"]);
   await logActivity(me, "file_upload", on ? "разрешил(а) справку на русском/казахском для декларации" : "снова требует справку на английском", cab);
+  revalidatePath(`/admin/clients/${id}`);
+}
+
+/** Team allows (or stops allowing) the declaration without any certificate: the client types the study data in. */
+export async function setNoEnrollmentAction(fd: FormData) {
+  const me = await requireAdminUser({ full: true });
+  const id = s(fd, "id", 100);
+  const on = s(fd, "on", 5) === "yes";
+  const cab = id.startsWith("cabinets.") ? await getCabinet(id) : null;
+  if (!cab) return;
+  if (on) await patchCabinet(id, { noEnrollment: true });
+  else await patchCabinet(id, {}, ["noEnrollment"]);
+  await logActivity(me, "file_upload", on ? "разрешил(а) декларацию без справки (клиент сам вписывает данные об учёбе)" : "снова требует справку для декларации", cab);
   revalidatePath(`/admin/clients/${id}`);
 }
 
