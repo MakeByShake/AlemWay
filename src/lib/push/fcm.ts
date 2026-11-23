@@ -12,8 +12,10 @@ function account(): Account | null {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
   if (!raw) return null;
   try {
-    const a = JSON.parse(raw) as Account;
-    return a.project_id && a.client_email && a.private_key ? a : null;
+    const a = JSON.parse(raw.trim()) as Account;
+    if (!a.project_id || !a.client_email || !a.private_key) return null;
+    // A key pasted through a terminal can keep its line breaks as the two characters "\n".
+    return { ...a, private_key: a.private_key.replace(/\\n/g, "\n") };
   } catch {
     return null;
   }
@@ -47,9 +49,9 @@ async function accessToken(a: Account): Promise<string> {
 }
 
 /** Sends one notification. Returns "gone" when the phone no longer has the app (the token should be dropped). */
-export async function fcmSend(token: string, msg: { title: string; body: string; url: string }): Promise<"ok" | "gone" | "error"> {
+export async function fcmSend(token: string, msg: { title: string; body: string; url: string }): Promise<"ok" | "gone" | `error ${string}`> {
   const a = account();
-  if (!a) return "error";
+  if (!a) return "error no key";
   const res = await fetch(`${FCM}/v1/projects/${a.project_id}/messages:send`, {
     method: "POST",
     headers: { Authorization: `Bearer ${await accessToken(a)}`, "Content-Type": "application/json" },
@@ -67,6 +69,7 @@ export async function fcmSend(token: string, msg: { title: string; body: string;
     const text = await res.text().catch(() => "");
     if (res.status === 404 || /UNREGISTERED|registration-token-not-registered|INVALID_ARGUMENT/.test(text)) return "gone";
   }
-  console.error("[push] fcm failed", res.status);
-  return "error";
+  const why = (await res.text().catch(() => "")).replace(/\s+/g, " ").slice(0, 160);
+  console.error("[push] fcm failed", res.status, why);
+  return `error ${res.status} ${why}`;
 }

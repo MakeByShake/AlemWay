@@ -75,7 +75,9 @@ async function send(cabinetIds: string[], payload: { title?: string; body: strin
         if ("fcm" in s && s.fcm) {
           if (!fcmReady()) return;
           // The phone removed the app or Firebase forgot it: drop it.
-          if ((await fcmSend(s.fcm, msg).catch(() => "error" as const)) === "gone") await removePushSub(d.cabinet, `fcm:${s.fcm}`);
+          const result = await fcmSend(s.fcm, msg).catch((err: unknown) => `error ${String(err).slice(0, 120)}`);
+          if (result === "gone") await removePushSub(d.cabinet, `fcm:${s.fcm}`);
+          await noteLastSend(d.cabinet, result);
           return;
         }
         if (!web || !s.endpoint || !("keys" in s)) return;
@@ -90,6 +92,29 @@ async function send(cabinetIds: string[], payload: { title?: string; body: strin
       })
     )
   );
+}
+
+/** The last delivery into the app, so the team sees in the client's profile whether notifications reach them. */
+async function noteLastSend(cabinetId: string, result: string) {
+  await writeClient()
+    .patch(docId(cabinetId))
+    .set({ last: { at: new Date().toISOString(), result: result.slice(0, 200) } })
+    .commit()
+    .catch(() => null);
+}
+
+/** For the client's profile in the admin: where notifications are on and how the last one went. */
+export async function pushStatusOf(cabinetId: string): Promise<string> {
+  if (!anyPush()) return "";
+  const doc = await writeClient()
+    .fetch<{ subs?: Stored[]; last?: { at: string; result: string } } | null>(`*[_id == $id][0]{subs, last}`, { id: docId(cabinetId) })
+    .catch(() => null);
+  const app = (doc?.subs ?? []).filter((s) => "fcm" in s && s.fcm).length;
+  const web = (doc?.subs ?? []).length - app;
+  if (!app && !web) return "выключены";
+  const where = [app ? "в приложении" : "", web ? "в браузере" : ""].filter(Boolean).join(" и ");
+  const last = doc?.last ? (doc.last.result === "ok" ? ", последнее доставлено" : doc.last.result === "gone" ? ", приложение удалено" : `, ошибка: ${doc.last.result.replace(/^error /, "")}`) : "";
+  return `включены ${where}${last}`;
 }
 
 /** Tells the clients' phones about a new message in their chat. Runs after the answer has gone out; never throws. */

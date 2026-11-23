@@ -1,3 +1,4 @@
+import { pushStatusOf } from "@/lib/push/server";
 import "server-only";
 import type { NextRequest } from "next/server";
 import { isSameOrigin } from "@/lib/http";
@@ -165,7 +166,7 @@ const niceDate = (iso?: string) => (iso && /^\d{4}-\d{2}-\d{2}/.test(iso) ? iso.
 export async function chatProfile(cabinetId: string, me: ChatStaff): Promise<ChatProfile | null> {
   const cab = await getCabinetFull(cabinetId);
   if (!cab || !canSeeChat(me, cab)) return null;
-  const companions = await getCompanions(cab.party, cabinetId);
+  const [companions, push] = await Promise.all([getCompanions(cab.party, cabinetId), pushStatusOf(cabinetId)]);
   const service = serviceOf(cab.service);
   const status = cab.status ?? "waiting_data";
   const p = clientProgress(service, status);
@@ -195,6 +196,7 @@ export async function chatProfile(cabinetId: string, me: ChatStaff): Promise<Cha
     { label: "Права", value: licence },
     { label: "Работодатель", value: [cab.employerName, work].filter(Boolean).join(" · ") },
     { label: "Даты работы", value: workDates },
+    { label: "Уведомления", value: push },
   ].filter((f) => f.value);
 
   const askable = new Set<UploadKind>(SERVICE_FILES[service].client);
