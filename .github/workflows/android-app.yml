@@ -72,5 +72,5 @@ jobs:
           else
             gh release create app-latest AlemWay.apk version.json --target "$GITHUB_SHA" --prerelease \
               --title "Приложение AlemWay (Android)" \
-              --notes "Скачайте AlemWay.apk на телефон и установите. Приложение открывает живой сайт alemway.kz."
+              --notes "Скачайте AlemWay.apk на телефон и установите. Приложение открывает живой сайт alemway.kz и само предлагает обновиться, когда выходит новая версия."
           fi
