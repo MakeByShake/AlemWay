@@ -35,8 +35,20 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - run: npm ci
       - run: npx cap sync android
+      - name: Постоянный ключ подписи
+        env:
+          AW_KEYSTORE_B64: ${{ secrets.AW_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$AW_KEYSTORE_B64" ]; then
+            echo "$AW_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/aw.jks"
+            echo "AW_KEYSTORE=$RUNNER_TEMP/aw.jks" >> "$GITHUB_ENV"
+          else
+            echo "::warning::Нет секрета AW_KEYSTORE_B64: APK подписан временным ключом и не встанет поверх прошлой версии"
+          fi
       - name: Сборка APK
         working-directory: mobile/android
+        env:
+          AW_KEY_PASS: ${{ secrets.AW_KEY_PASS }}
         run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
       - run: mv android/app/build/outputs/apk/debug/app-debug.apk AlemWay.apk
       - uses: actions/upload-artifact@v4
@@ -49,6 +61,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # Без постоянного ключа клиенты не смогут обновиться поверх: такой APK не выкладываем.
+          [ -n "$AW_KEYSTORE" ] || { echo "::error::Нет постоянного ключа подписи"; exit 1; }
           # Заменяем файл в том же релизе: удаление и пересоздание могло оставить релиз черновиком (ссылка 404).
           if gh release view app-latest >/dev/null 2>&1; then
             gh release upload app-latest AlemWay.apk --clobber

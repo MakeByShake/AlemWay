@@ -7,7 +7,8 @@ android {
         applicationId "kz.alemway.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        // Номер сборки растёт сам, чтобы новая версия ставилась поверх старой.
+        versionCode (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger()
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
@@ -16,7 +17,23 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // Постоянный ключ подписи (секреты GitHub AW_KEYSTORE_B64 и AW_KEY_PASS). С одним ключом
+    // новые версии ставятся поверх старой, клиентам не нужно удалять приложение.
+    def awKeystore = System.getenv("AW_KEYSTORE")
+    signingConfigs {
+        aw {
+            if (awKeystore) {
+                storeFile file(awKeystore)
+                storePassword System.getenv("AW_KEY_PASS")
+                keyAlias "alemway"
+                keyPassword System.getenv("AW_KEY_PASS")
+            }
+        }
+    }
     buildTypes {
+        debug {
+            if (awKeystore) signingConfig signingConfigs.aw
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
