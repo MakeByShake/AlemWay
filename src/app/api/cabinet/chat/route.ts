@@ -1,4 +1,4 @@
-import { pushPublicKey } from "@/lib/push/server";
+import { appPushReady, pushPublicKey } from "@/lib/push/server";
 import { NextResponse, type NextRequest } from "next/server";
 import { isSameOrigin, readJsonObject } from "@/lib/http";
 import { FILE_KINDS } from "@/lib/cabinet/fields";
@@ -42,6 +42,8 @@ function chatView(cab: Cabinet, chat: ChatDoc | null, after?: string | null) {
     live: liveUrl(cab._id),
     /** Key for turning on notifications on this device; null — notifications are off on the site. */
     push: pushPublicKey(),
+    /** Notifications inside the Android app (Firebase) are set up on the site. */
+    pushApp: appPushReady(),
   };
 }
 
