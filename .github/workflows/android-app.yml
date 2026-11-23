@@ -62,8 +62,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           # Без постоянного ключа клиенты не смогут обновиться поверх: такой APK не выкладываем.
-          # Сейчас ключ хранится только на ноутбуке, релиз выкладывает скрипт mobile/release.ps1 оттуда.
-          if [ -z "$AW_KEYSTORE" ]; then echo "::notice::Ключа нет в GitHub, релиз выкладывается с ноутбука"; exit 0; fi
+          if [ -z "$AW_KEYSTORE" ]; then echo "::error::Нет секретов AW_KEYSTORE_B64 и AW_KEY_PASS"; exit 1; fi
           # Заменяем файл в том же релизе: удаление и пересоздание могло оставить релиз черновиком (ссылка 404).
           # version.json: по нему приложение узнаёт, что вышла новая версия, и предлагает обновиться.
           echo "{\"versionCode\": $GITHUB_RUN_NUMBER}" > version.json
