@@ -5,6 +5,7 @@ import { FILE_LABELS, MANAGER_UPLOAD_KINDS, SERVICE_FILES, serviceOf, type Cabin
 import { cabinetAdminUrl, managerLine, displayName, getCabinet, patchCabinet } from "@/lib/cabinet/server";
 import { readUpload, storeCabinetFile } from "@/lib/cabinet/uploads";
 import { missingAnketaFromDeclaration, readDeclarationFields } from "@/lib/cabinet/declaration";
+import { chatEvent, declarationEvent } from "@/lib/chat/server";
 import { escapeHtml, sendTelegram } from "@/lib/telegram";
 
 export const runtime = "nodejs";
@@ -59,6 +60,11 @@ export async function POST(req: NextRequest) {
   if (kind === "declaration" && up.type === "application/pdf") Object.assign(set, missingAnketaFromDeclaration(cab, await readDeclarationFields(new Uint8Array(up.buf))));
   await patchCabinet(id, set);
   await cleanup();
+  // News for the client's chat.
+  if (kind === "zav") await chatEvent(id, "zav", { doc: "zav", action: "download" });
+  else if (kind === "keta") await chatEvent(id, "keta", { doc: "keta", action: "download" });
+  else if (kind === "declaration") await declarationEvent(cab);
+  else if (kind === "signed" && set.status !== cab.status) await chatEvent(id, "stage", { arg: set.status as string });
   await logActivity({ login: access.login }, "file_upload", `загрузил(а) файл «${FILE_LABELS[kind]?.ru ?? kind}»`, cab);
 
   if (kind === "zav") {

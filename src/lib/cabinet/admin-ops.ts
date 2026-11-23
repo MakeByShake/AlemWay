@@ -3,6 +3,7 @@ import { getCabinet, newCabinetId, newLoginToken, writeClient } from "./server";
 import { deleteFile } from "./storage";
 import { serviceOf, type ServiceId } from "./fields";
 import { DEFAULT_PRICE, receiptsOf } from "./payments";
+import { deleteChatOf } from "@/lib/chat/server";
 
 /** Manager operations on cabinets, shared by the Studio API routes and the /admin pages. */
 
@@ -83,6 +84,8 @@ export async function deleteCabinetCompletely(rawId: string) {
     }
   }
   await writeClient().transaction().delete(id).delete(`drafts.${id}`).commit();
+  // The client's chat goes too: its files, the chat itself and its live signal.
+  await deleteChatOf(id).catch((err) => console.error("[cabinet delete] chat", id, err));
   await renumberCabinets();
   return { deletedFiles: paths.size - failed, failedFiles: failed };
 }

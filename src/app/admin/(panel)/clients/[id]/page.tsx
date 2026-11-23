@@ -294,6 +294,9 @@ export default async function ClientPage({
           >
             ⬇ Скачать всё (ZIP)
           </a>
+          <Link prefetch={false} href={`/admin/chats?c=${encodeURIComponent(id)}`} className="btn-primary min-h-10 px-4 text-[14px]">
+            💬 Чат
+          </Link>
           {wa && (
             <a
               href={wa}

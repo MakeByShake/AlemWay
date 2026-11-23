@@ -12,8 +12,8 @@ export async function POST(req: NextRequest) {
   try {
     const { isValidSignature, body } = await parseBody<{ _type?: string }>(req, secret, true);
     if (!isValidSignature) return NextResponse.json({ ok: false, error: "invalid_signature" }, { status: 401 });
-    // Leads don't change public pages.
-    if (body?._type === "lead") return NextResponse.json({ ok: true, skipped: true });
+    // Leads and chats don't change public pages.
+    if (["lead", "chat", "chatSignal", "chatBroadcast"].includes(body?._type ?? "")) return NextResponse.json({ ok: true, skipped: true });
     revalidatePath("/", "layout");
     return NextResponse.json({ ok: true, revalidated: true, type: body?._type });
   } catch (err) {

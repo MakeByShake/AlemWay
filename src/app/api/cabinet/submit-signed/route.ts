@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isSameOrigin } from "@/lib/http";
 import { cabinetAdminUrl, currentCabinet, displayName, managerLine, patchCabinet } from "@/lib/cabinet/server";
+import { chatEvent } from "@/lib/chat/server";
 import { escapeHtml, sendTelegram } from "@/lib/telegram";
 
 export const runtime = "nodejs";
@@ -16,6 +17,8 @@ export async function POST(req: NextRequest) {
   if (cab.status !== "declaration_ready") return NextResponse.json({ ok: true, already: true });
 
   await patchCabinet(cab._id, { status: "signed_uploaded", signedAt: new Date().toISOString() });
+  // The client did it themself: a line in the chat, without a «new message» mark.
+  await chatEvent(cab._id, "stage", { arg: "signed_uploaded", silent: true });
   await sendTelegram([
     "<b>✅ Клиент сдал декларацию с печатью</b>",
     "",

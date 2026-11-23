@@ -4,7 +4,9 @@ import { CABINET_SUPPORT_WHATSAPP, currentCabinet, displayName } from "@/lib/cab
 import { CABINET_TEXT, cabinetLocale } from "@/lib/cabinet/i18n";
 import { FILE_KINDS, serviceOf } from "@/lib/cabinet/fields";
 import { CabinetApp, type CabinetView } from "@/components/cabinet/CabinetApp";
-import { CabinetChat } from "@/components/cabinet/CabinetChat";
+import { ChatEntry } from "@/components/cabinet/ChatEntry";
+import { getChat } from "@/lib/chat/server";
+import { messageText } from "@/lib/chat/texts";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsAppLink";
 import { whatsappLink } from "@/lib/i18n-content";
 
@@ -67,10 +69,15 @@ export default async function CabinetPage({ params }: { params: Promise<{ locale
     },
   };
 
+  // The chat: how many new messages wait for the client, and the last of them.
+  const chat = await getChat(cab._id).catch(() => null);
+  const lastForClient = [...(chat?.messages ?? [])].reverse().find((m) => m.kind !== "note" && m.from !== "client");
+  const lastText = lastForClient ? (lastForClient.kind === "file" ? (lastForClient.file?.name ?? "") : messageText(lastForClient, cabinetLocale(locale))).slice(0, 160) : null;
+
   return (
     <>
       <CabinetApp key={JSON.stringify(view.files) + view.status} view={view} locale={cabinetLocale(locale)} />
-      {view.service === "ferienjob" && <CabinetChat locale={cabinetLocale(locale)} />}
+      <ChatEntry locale={cabinetLocale(locale)} unread={chat?.unreadClient ?? 0} last={lastText} />
       <section className="container-x pb-16">
         <div className="card mx-auto flex max-w-3xl flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
