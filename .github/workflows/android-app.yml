@@ -49,10 +49,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release delete app-test --yes --cleanup-tag || true
-          gh release create app-test AlemWay.apk --target "$GITHUB_SHA" --prerelease \
-            --title "AlemWay Тест (Android)" \
-            --notes "Тестовое приложение: открывает предпросмотр с новыми функциями, ставится рядом с основным."
+          # Заменяем файл в том же релизе: удаление и пересоздание оставляло релиз черновиком (ссылка 404).
+          if gh release view app-test >/dev/null 2>&1; then
+            gh release upload app-test AlemWay.apk --clobber
+            gh release edit app-test --draft=false --prerelease
+          else
+            gh release create app-test AlemWay.apk --target "$GITHUB_SHA" --prerelease \
+              --title "AlemWay Тест (Android)" \
+              --notes "Тестовое приложение: открывает предпросмотр с новыми функциями, ставится рядом с основным."
+          fi
       - name: Выложить APK в Releases
         if: github.ref == 'refs/heads/app'
         env:
