@@ -2,21 +2,79 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Нет интернета · AlemWay</title>
 <style>
-  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f5f6fa; color: #0b0f24; font: 16px/1.5 system-ui, sans-serif; text-align: center; padding: 24px; box-sizing: border-box; }
-  img { width: 72px; height: 72px; border-radius: 20px; }
-  button { margin-top: 16px; min-height: 48px; padding: 0 24px; border: 0; border-radius: 14px; background: #2340ff; color: #fff; font: 600 16px system-ui, sans-serif; }
-  p { color: #545a73; max-width: 320px; margin: 8px auto 0; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: #f5f6fa; color: #0b0f24; font: 16px/1.5 system-ui, sans-serif; padding: 24px 16px calc(24px + env(safe-area-inset-bottom)); }
+  main { max-width: 520px; margin: 0 auto; }
+  .head { text-align: center; }
+  img { width: 64px; height: 64px; border-radius: 18px; }
+  h1 { font-size: 22px; margin: 12px 0 0; }
+  h2 { font-size: 15px; margin: 0 0 10px; }
+  p { color: #545a73; margin: 6px 0 0; }
+  .card { background: #fff; border: 1px solid #e3e6ef; border-radius: 18px; padding: 16px; margin-top: 16px; text-align: left; }
+  .doc { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 14px; margin-top: 8px; border-radius: 14px; background: #eef1ff; color: #2340ff; font-weight: 600; text-decoration: none; }
+  dl { margin: 0; display: grid; gap: 10px; }
+  dt { font-size: 13px; color: #545a73; }
+  dd { margin: 0; font-weight: 600; }
+  button { display: block; width: 100%; margin-top: 16px; min-height: 48px; border: 0; border-radius: 14px; background: #2340ff; color: #fff; font: 600 16px system-ui, sans-serif; }
+  .small { font-size: 13px; text-align: center; }
 </style>
 </head>
 <body>
-<div>
-  <img src="/brand/alemway_icon.svg" alt="" />
-  <h1 style="font-size:22px;margin:16px 0 0">Нет интернета</h1>
-  <p>Проверьте подключение и попробуйте снова. Интернет жоқ: байланысты тексеріп, қайта көріңіз.</p>
-  <button onclick="location.reload()">Повторить</button>
-</div>
+<main>
+  <div class="head">
+    <img src="/brand/alemway_icon.svg" alt="" />
+    <h1 id="title">Нет интернета</h1>
+    <p id="lead">Проверьте подключение и попробуйте снова. Интернет жоқ: байланысты тексеріп, қайта көріңіз.</p>
+  </div>
+  <div id="saved"></div>
+  <button onclick="location.reload()" id="retry">Повторить</button>
+</main>
+<script>
+  // Documents and trip facts the installed app saved on this phone (see public/sw.js, "aw-docs").
+  (async () => {
+    try {
+      if (!("caches" in window)) return;
+      const res = await (await caches.open("aw-docs")).match("/offline/cabinet.json", { ignoreVary: true });
+      if (!res) return;
+      const s = await res.json();
+      const kk = s.locale === "kk";
+      const T = kk
+        ? { lead: "Интернетсіз де құжаттарыңыз ашылады:", docs: "Құжаттар", trip: "Сапар", saved: "Сақталған", retry: "Қайта көру", call: "AlemWay телефоны" }
+        : { lead: "Без интернета ваши документы всё равно открываются:", docs: "Документы", trip: "Поездка", saved: "Сохранено", retry: "Повторить", call: "Телефон AlemWay" };
+      const el = (tag, attrs, text) => {
+        const n = document.createElement(tag);
+        for (const [k, v] of Object.entries(attrs || {})) n.setAttribute(k, v);
+        if (text) n.textContent = text;
+        return n;
+      };
+      document.getElementById("lead").textContent = T.lead;
+      document.getElementById("retry").textContent = T.retry;
+      const box = document.getElementById("saved");
+      if (s.docs && s.docs.length) {
+        const c = el("section", { class: "card" });
+        c.append(el("h2", {}, T.docs));
+        for (const d of s.docs) c.append(el("a", { class: "doc", href: d.url }, "📄 " + d.label));
+        box.append(c);
+      }
+      const facts = (s.facts || []).concat(s.phone ? [{ label: T.call, value: s.phone }] : []);
+      if (facts.length) {
+        const c = el("section", { class: "card" });
+        c.append(el("h2", {}, T.trip + (s.name ? " · " + s.name : "")));
+        const dl = el("dl");
+        for (const f of facts) {
+          const row = el("div");
+          row.append(el("dt", {}, f.label), el("dd", {}, f.value));
+          dl.append(row);
+        }
+        c.append(dl);
+        box.append(c);
+      }
+      if (s.savedAt) box.append(el("p", { class: "small" }, T.saved + ": " + new Date(s.savedAt).toLocaleString(kk ? "kk-KZ" : "ru-RU")));
+    } catch (e) {}
+  })();
+</script>
 </body>
 </html>

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { isFullRole, requireAdminUser } from "@/lib/admin/session";
 import { logoutAction } from "../actions";
 import { AdminNav } from "@/components/admin/AdminNav";
+import { LockToggle, StaffLock } from "@/components/admin/StaffLock";
 
 export const dynamic = "force-dynamic";
 
@@ -16,9 +17,12 @@ export default async function PanelLayout({ children }: { children: ReactNode })
             <span className="text-[13px] font-semibold tracking-wide text-brand uppercase">AlemWay</span>
             <span className="block text-[18px] font-bold leading-tight">Админка</span>
           </Link>
-          <form action={logoutAction} className="lg:hidden">
-            <button className="text-[14px] text-muted hover:text-ink">Выйти</button>
-          </form>
+          <div className="flex items-center gap-1 lg:hidden">
+            <LockToggle login={me.login} compact />
+            <form action={logoutAction}>
+              <button className="min-h-10 px-2 text-[14px] text-muted hover:text-ink">Выйти</button>
+            </form>
+          </div>
         </div>
         <AdminNav owner={me.role === "owner"} full={isFullRole(me.role)} />
         <div className="hidden px-5 pt-6 text-[13px] text-muted lg:block">
@@ -28,9 +32,13 @@ export default async function PanelLayout({ children }: { children: ReactNode })
           <form action={logoutAction} className="mt-2">
             <button className="font-medium text-brand hover:underline">Выйти</button>
           </form>
+          <p className="mt-3">
+            <LockToggle login={me.login} />
+          </p>
         </div>
       </aside>
       <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">{children}</main>
+      <StaffLock login={me.login} name={me.name} />
     </div>
   );
 }

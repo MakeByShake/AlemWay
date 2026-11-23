@@ -6,6 +6,7 @@ import {
   AlertCircle,
   Briefcase,
   Building2,
+  Camera,
   CalendarDays,
   CheckCircle2,
   Download,
@@ -40,6 +41,8 @@ import {
 import { CABINET_TEXT, type CabinetLocale } from "@/lib/cabinet/i18n";
 import { Pipeline } from "@/components/Pipeline";
 import { compressForUpload } from "@/lib/compress-file";
+import { Scanner } from "./Scanner";
+import { clearOffline, saveOffline } from "@/components/pwa/offline-docs";
 
 type FileMeta = { name: string; size: number; uploadedAt: string } | null;
 
@@ -291,7 +294,23 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
     }
   }
 
+  // The installed app keeps the trip documents and facts on the phone for use without internet.
+  useEffect(() => {
+    const { job } = view;
+    const dates = job.from && job.to ? `${toGermanDate(job.from)} — ${toGermanDate(job.to)}` : job.from ? `${t.zavFrom} ${toGermanDate(job.from)}` : null;
+    const facts = [
+      job.employer && { label: t.zavEmployer, value: job.employer },
+      job.position && { label: t.zavPosition, value: job.position },
+      job.city && { label: t.zavCity, value: job.city },
+      dates && { label: t.zavDates, value: dates },
+    ].filter(Boolean) as { label: string; value: string }[];
+    const docs = (["zav", "keta", "declaration", "signed"] as const).filter((k) => view.files[k]).map((k) => ({ label: FILE_LABELS[k][locale], url: `/api/cabinet/file/${k}` }));
+    if (!docs.length && !facts.length) return;
+    void saveOffline({ name: view.name, savedAt: new Date().toISOString(), locale, facts, docs, phone: "+7 777 588 29 49" });
+  }, [view, t, locale]);
+
   async function logout() {
+    await clearOffline();
     await fetch("/api/cabinet/logout", { method: "POST" }).catch(() => null);
     router.refresh();
   }
@@ -918,8 +937,10 @@ function FileRow({
   onDelete?: () => void;
 }) {
   const input = useRef<HTMLInputElement>(null);
+  const [scan, setScan] = useState(false);
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-line p-4 sm:flex-row sm:items-center">
+      {scan && <Scanner t={t} name={label.replace(/[^\p{L}\p{N}]+/gu, "_").slice(0, 40) || "scan"} onDone={onPick} onClose={() => setScan(false)} />}
       <div className="flex-1">
         <p className="text-[15px] font-semibold">{label}</p>
         {hint && <p className="mt-0.5 text-[13px] leading-snug text-muted">{hint}</p>}
@@ -949,6 +970,11 @@ function FileRow({
       {meta && onDelete && !busy && (
         <button type="button" className="min-h-11 px-2 text-[14px] font-medium text-red-600 hover:underline" onClick={onDelete}>
           {t.delete}
+        </button>
+      )}
+      {!busy && (
+        <button type="button" className="btn-ghost min-h-11 px-4 text-[14px]" onClick={() => setScan(true)}>
+          <Camera className="h-4 w-4" /> {t.scan}
         </button>
       )}
       <button type="button" className="btn-ghost min-h-11 px-4 text-[14px]" disabled={busy} onClick={() => input.current?.click()}>
