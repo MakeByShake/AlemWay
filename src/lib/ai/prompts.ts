@@ -158,6 +158,7 @@ export const UNIVERSITY_DIRECTORY = `### Справочник вузов (уже
 | SDU University | Abylaykhan St. | 1/1 | 040900 | Kaskelen | +7 (727) 307-95-60 | info@sdu.edu.kz | https://sdu.edu.kz/ |
 | Kenzhegali Sagadiyev University of International Business | Abay Ave. | 8A | 050010 | Almaty | +7 (727) 259-80-20 | uib@uib.kz | https://uib.edu.kz/ |
 | Miras University | G. Ilyaev St. | 3 | 160012 | Shymkent | +7 (7252) 33-77-77 | info@miras.edu.kz | https://miras.edu.kz/ |
+| Zhumabek Akhmetuly Tashenev University (Tashenev University, former Syrdarya University) | Kunaev St. | 21 | 160000 | Shymkent | +7 (72534) 6-14-63 | info@tashenev.edu.kz | https://tashenev.edu.kz/ |
 
 Проверить: индексы Narxoz и KazUTB, адрес и почту Civil Aviation Academy. Новые вузы добавлять в эту таблицу.`;
 
