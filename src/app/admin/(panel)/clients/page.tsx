@@ -7,6 +7,7 @@ import { CABINET_STATUSES, PIPELINES } from "@/lib/cabinet/fields";
 import { Badge, Empty, RowLegend, rowTone, PageTitle, Progress, SERVICE_SHORT, fmtDate, waLink, WA_TARGET } from "@/components/admin/bits";
 import { NewClientForm } from "@/components/admin/NewClientForm";
 import { ReadinessMark } from "@/components/admin/ReadinessMark";
+import { uniShort } from "@/lib/admin/universities";
 
 export const metadata = { title: "Клиенты" };
 
@@ -21,7 +22,7 @@ const STAGE_SHORT: Record<string, string> = Object.fromEntries(
   [...PIPELINES.keta, ...PIPELINES.ferienjob].map((st) => [st.status, st.status.startsWith("keta_") ? `K-ETA: ${st.title.ru}` : st.title.ru])
 );
 
-export default async function ClientsPage({ searchParams }: { searchParams: Promise<{ service?: string; status?: string; q?: string; manager?: string; seller?: string; group?: string; dean?: string }> }) {
+export default async function ClientsPage({ searchParams }: { searchParams: Promise<{ service?: string; status?: string; q?: string; manager?: string; seller?: string; group?: string; dean?: string; uni?: string }> }) {
   const sp = await searchParams;
   const service = sp.service === "ferienjob" || sp.service === "keta" ? sp.service : "";
   const status = CABINET_STATUSES.some((s) => s.value === sp.status) ? sp.status! : "";
@@ -36,14 +37,20 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
   const group = sp.group === "old" || sp.group === "new" || sp.group === "baybol" ? sp.group : "";
   const dean = sp.dean === "1";
   const base = { service, q, manager, seller, group, dean, mine: owner ? undefined : me.login };
-  const [rows, allStages] = await Promise.all([getCabinets({ ...base, status }), status ? getCabinets(base) : null]);
+  // One fetch; university and stage filters are applied here, so their counters show what each choice would give.
+  const pool = await getCabinets(base);
+  const uniCount = new Map<string, number>();
+  for (const r of pool) uniCount.set(uniShort(r.uniRaw), (uniCount.get(uniShort(r.uniRaw)) ?? 0) + 1);
+  const uniOptions = [...uniCount].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "ru"));
+  const uni = sp.uni && uniCount.has(sp.uni) ? sp.uni : "";
   // How many clients are on each stage (with all other filters applied), so nobody counts by hand.
-  const stageRows = allStages ?? rows;
+  const stageRows = uni ? pool.filter((r) => uniShort(r.uniRaw) === uni) : pool;
+  const rows = status ? stageRows.filter((r) => (r.status ?? "waiting_data") === status) : stageRows;
   const stageCount = new Map<string, number>();
   for (const r of stageRows) stageCount.set(r.status ?? "waiting_data", (stageCount.get(r.status ?? "waiting_data") ?? 0) + 1);
   const stageHref = (st: string) => {
     const u = new URLSearchParams();
-    for (const [k, v] of Object.entries({ service, q, group, manager: sp.manager, seller: sp.seller, dean: dean ? "1" : "" })) if (v) u.set(k, v);
+    for (const [k, v] of Object.entries({ service, q, group, manager: sp.manager, seller: sp.seller, uni, dean: dean ? "1" : "" })) if (v) u.set(k, v);
     if (st) u.set("status", st);
     const qs = u.toString();
     return qs ? `/admin/clients?${qs}` : "/admin/clients";
@@ -59,6 +66,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
     if (g) u.set("group", g);
     if (sp.manager) u.set("manager", sp.manager);
     if (sp.seller) u.set("seller", sp.seller);
+    if (uni) u.set("uni", uni);
     const qs = u.toString();
     return qs ? `/admin/clients?${qs}` : "/admin/clients";
   };
@@ -128,6 +136,14 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
             <option value="-">Не указано</option>
           </select>
         )}
+        <select name="uni" defaultValue={uni} className="field w-full sm:w-auto sm:max-w-[260px]" aria-label="Вуз">
+          <option value="">🎓 Вуз: все</option>
+          {uniOptions.map(([name, n]) => (
+            <option key={name} value={name}>
+              {name === "—" ? "Вуз не указан" : name} ({n})
+            </option>
+          ))}
+        </select>
         <select name="status" defaultValue={status} className="field w-full sm:w-auto sm:max-w-[240px]">
           <option value="">Все этапы</option>
           {CABINET_STATUSES.map((s) => (
@@ -221,7 +237,8 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
                     {cabinetName(c)}
                   </span>
                   <span className="text-[13px] text-muted">
-                    {SERVICE_SHORT[c.service ?? "ferienjob"]} · {c.clientPhone || "без телефона"} · создан {fmtDate(c._createdAt, false)}
+                    {SERVICE_SHORT[c.service ?? "ferienjob"]}
+                    {uniShort(c.uniRaw) !== "—" && ` · 🎓 ${uniShort(c.uniRaw)}`} · {c.clientPhone || "без телефона"} · создан {fmtDate(c._createdAt, false)}
                   </span>
                 </Link>
                 <div className="flex flex-wrap items-center gap-2">

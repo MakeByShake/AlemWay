@@ -70,6 +70,8 @@ export type CabinetRow = {
   licenseCat?: string;
   licenseReady?: string;
   employerName?: string;
+  /** University as read from the certificate (or typed by the client). */
+  uniRaw?: string;
 };
 
 export type CabinetFull = Cabinet & { _createdAt: string; managerNote?: string; linkCreatedAt?: string; loginLink?: string; leadId?: string };
@@ -114,7 +116,8 @@ export async function getCabinets(filter: { service?: string; status?: string; q
       _id, number, _createdAt, service, status, clientName, clientPhone, "firstName": data.firstName, "lastName": data.lastName, managerName, sellerName, party,
       "dean": ${deanOpen}, "noManager": !defined(manager), readiness, deadline,
       "license": select(defined(files.license) || data.licenseStatus == "yes" => "yes", data.licenseStatus == "soon" => "soon"),
-      "licenseCat": data.driverLicense, "licenseReady": data.licenseReady, "employerName": select(defined(employer) => employerName)
+      "licenseCat": data.driverLicense, "licenseReady": data.licenseReady, "employerName": select(defined(employer) => employerName),
+      "uniRaw": coalesce(aiCheck.fields.txtfDritteName, data.uniName)
     }`,
     {
       service: filter.service || null,
