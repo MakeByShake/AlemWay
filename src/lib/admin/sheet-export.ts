@@ -2,6 +2,7 @@ import "server-only";
 import { latinName } from "@/lib/translit";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { writeClient } from "@/lib/cabinet/server";
+import { NO_UNI, uniShort } from "@/lib/admin/universities";
 import { shareUrl, type ShareKind } from "@/lib/cabinet/share";
 
 /**
@@ -183,19 +184,28 @@ const shortUni = (v?: string) => {
   for (const [re, s] of UNI) if (re.test(v ?? "")) return s;
   return (v ?? "").replace(/(Non-Profit )?JSC|НАО|АО|["«»]/g, "").trim().slice(0, 28);
 };
-const shortBreak = (a?: string, b?: string) => {
-  if (!a || !b) return "";
-  const x = de(a), y = de(b);
-  return x.endsWith(".2027") && y.endsWith(".2027") ? `${x.slice(0, 5)} – ${y.slice(0, 5)}` : `${x} – ${y}`;
-};
 
-type TeamRow = Row & { party?: string; aiStatus?: string; missing?: string[] };
+type TeamRow = Row & { party?: string; aiStatus?: string; missing?: string[]; von?: string; bis?: string; uniAi?: string };
+
+/** Holidays as in the declaration we made (DD.MM.YYYY), else as in the questionnaire; odd ones get flagged. */
+function teamBreak(c: TeamRow, d: Record<string, string>) {
+  const ok = (v?: string) => (v && /^\d{2}\.\d{2}\.\d{4}$/.test(v) ? v : "");
+  const from = (c.files?.declaration?.path && ok(c.von)) || de(d.breakFrom);
+  const to = (c.files?.declaration?.path && ok(c.bis)) || de(d.breakTo);
+  if (!from || !to) return { text: "", odd: false };
+  const t = (v: string) => Date.UTC(+v.slice(6, 10), +v.slice(3, 5) - 1, +v.slice(0, 2));
+  const days = Math.round((t(to) - t(from)) / 864e5) + 1;
+  // Not 2027, under 60 or over 110 days — almost always a mistake in the questionnaire or the certificate.
+  const odd = !from.endsWith(".2027") || !to.endsWith(".2027") || !(days >= 60 && days <= 110);
+  return { text: `${from} – ${to}`, odd };
+}
 
 export async function teamSheetRows(base = "https://alemway.kz"): Promise<SheetRow[]> {
   const list = await writeClient().fetch<TeamRow[]>(
     `*[_type == "cabinet" && !(_id in path("drafts.**")) && coalesce(group, "new") != "baybol" && coalesce(service, "ferienjob") == "ferienjob"] | order(coalesce(number, 0) asc){
       _id, number, status, clientName, clientPhone, data, archivedData, files, party,
-      "dean": defined(deanIssue) && !defined(deanIssue.resolvedAt), "aiStatus": aiCheck.status, "missing": aiCheck.missing
+      "dean": defined(deanIssue) && !defined(deanIssue.resolvedAt), "aiStatus": aiCheck.status, "missing": aiCheck.missing,
+      "von": aiCheck.fields.dateStudiumFerienVon, "bis": aiCheck.fields.dateStudiumFerienBis, "uniAi": aiCheck.fields.txtfDritteName
     }`
   );
   const nameOf = (c: TeamRow) => {
@@ -203,7 +213,7 @@ export async function teamSheetRows(base = "https://alemway.kz"): Promise<SheetR
     const full = [c.data?.lastName, c.data?.firstName].filter(Boolean).join(" ").trim();
     return n.split(" ").length >= 2 || !full ? n : full;
   };
-  const out: SheetRow[] = [];
+  const out: (SheetRow & { uni: string; n: number })[] = [];
   for (const c of list) {
     const name = latinName(nameOf(c));
     if (/^(бла|тест|test)(\s|$)/i.test(name)) continue;
@@ -222,8 +232,12 @@ export async function teamSheetRows(base = "https://alemway.kz"): Promise<SheetR
     const note = c.aiStatus === "НЕ ГОТОВО" && c.missing?.length ? `Нет: ${c.missing[0].split(/[:—(.]/)[0].trim().slice(0, 40)}` : "";
     const city = (d.city ?? "").replace(/^Г\.\s*/i, "").replace("Almaty", "Алматы").replace("Astana", "Астана").trim();
     const cell = (v: string, extra: Partial<SheetCell> = {}): SheetCell => ({ v, bg, ...extra });
+    const br = teamBreak(c, d);
+    const uni = uniShort(c.uniAi?.trim() || d.uniName);
     out.push({
       key,
+      uni,
+      n: c.number ?? 0,
       cells: {
         "№": cell(String(c.number ?? "")),
         "ФИО": cell(name, { bold: true }),
@@ -231,8 +245,8 @@ export async function teamSheetRows(base = "https://alemway.kz"): Promise<SheetR
         "Этап": cell(title),
         "Чья очередь": cell(who, who === "МЫ" ? { bold: true, color: "#1F4FD1" } : {}),
         "Декан": cell(dean, c.dean ? { bold: true, color: "#B54708" } : {}),
-        "Каникулы 2027": cell(shortBreak(d.breakFrom, d.breakTo)),
-        "Вуз": cell(shortUni(d.uniName)),
+        "Каникулы 2027": cell(br.text, br.odd ? { bold: true, color: "#C00000" } : {}),
+        "Вуз": cell(uni === NO_UNI ? "" : uni),
         "Город": cell(city),
         "Дата рожд.": cell(de(d.birthDate)),
         "Права": cell(lic),
@@ -242,7 +256,12 @@ export async function teamSheetRows(base = "https://alemway.kz"): Promise<SheetR
       },
     });
   }
-  return out;
+  // Students of one university stand together: biggest universities first, unknown at the end, by number inside.
+  const size = new Map<string, number>();
+  for (const r of out) size.set(r.uni, (size.get(r.uni) ?? 0) + 1);
+  const rank = (u: string) => (u === NO_UNI ? -1 : size.get(u)!);
+  out.sort((a, b) => rank(b.uni) - rank(a.uni) || a.uni.localeCompare(b.uni, "ru") || a.n - b.n);
+  return out.map(({ key, cells }) => ({ key, cells }));
 }
 
 // ---------- «Не ставят печать» tab: our clients whose dean's office won't sign ----------
