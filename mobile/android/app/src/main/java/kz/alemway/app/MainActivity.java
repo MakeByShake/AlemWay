@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.IntentSenderRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -93,6 +94,28 @@ public class MainActivity extends BridgeActivity {
             return WindowInsetsCompat.CONSUMED;
         });
         ViewCompat.requestApplyInsets(root);
+
+        // Кнопка «Назад» на телефоне: сначала возвращает на прошлую страницу сайта,
+        // а выходит из приложения только с первой страницы и только после второго нажатия.
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            private long lastBack = 0;
+
+            @Override
+            public void handleOnBackPressed() {
+                WebView wv = getBridge().getWebView();
+                if (wv.canGoBack()) {
+                    wv.goBack();
+                    return;
+                }
+                long now = System.currentTimeMillis();
+                if (now - lastBack < 2000) {
+                    finish();
+                } else {
+                    lastBack = now;
+                    Toast.makeText(MainActivity.this, "Нажмите «Назад» ещё раз, чтобы выйти", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
 
         checkUpdate();
 
