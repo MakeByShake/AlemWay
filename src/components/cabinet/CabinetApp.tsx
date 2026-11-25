@@ -425,18 +425,12 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
             <a href="/api/cabinet/file/declaration" download className={clsx("mt-5", view.status === "declaration_ready" ? "btn-primary" : "btn-ghost")}>
               <Download className="h-4 w-4" /> {t.download}
             </a>
-            <a href="/api/cabinet/file/declaration?onepage=1" download className="mt-3 inline-flex items-center gap-1.5 text-[14px] font-semibold text-brand hover:underline">
-              <Download className="h-4 w-4" /> {t.downloadOnePage}
-            </a>
             {files.declaration2 && (
               <div className="mt-5 border-t border-line pt-5">
                 <p className="text-[15px] font-semibold">{t.decl2Title}</p>
                 <p className="mt-1 text-[14px] text-muted">{t.decl2Text}</p>
                 <a href="/api/cabinet/file/declaration2" download className="btn-ghost mt-3">
                   <Download className="h-4 w-4" /> {t.download} — {t.decl2Short}
-                </a>
-                <a href="/api/cabinet/file/declaration2?onepage=1" download className="mt-3 inline-flex items-center gap-1.5 text-[14px] font-semibold text-brand hover:underline">
-                  <Download className="h-4 w-4" /> {t.downloadOnePage} — {t.decl2Short}
                 </a>
               </div>
             )}

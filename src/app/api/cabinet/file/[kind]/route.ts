@@ -12,6 +12,5 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ kind
   if (!FILE_KINDS.includes(kind as FileKind)) return NextResponse.json({ ok: false }, { status: 404 });
   const cab = await currentCabinet();
   if (!cab) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
-  const onePage = (kind === "declaration" || kind === "declaration2") && req.nextUrl.searchParams.get("onepage") === "1";
-  return fileResponse(cab.files?.[kind as FileKind], { onePage });
+  return fileResponse(cab.files?.[kind as FileKind]);
 }

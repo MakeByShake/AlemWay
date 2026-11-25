@@ -21,6 +21,5 @@ export async function GET(req: NextRequest) {
   const inline = req.nextUrl.searchParams.get("view") === "1";
   // Files from before the questionnaire was reset for the new form.
   if (archived !== null) return fileResponse(cab.archivedFiles?.[Number(archived)], { inline });
-  const onePage = kind === "declaration" && req.nextUrl.searchParams.get("onepage") === "1";
-  return fileResponse(cab.files?.[kind], { inline, onePage });
+  return fileResponse(cab.files?.[kind], { inline });
 }
