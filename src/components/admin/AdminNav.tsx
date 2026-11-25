@@ -17,7 +17,7 @@ const ITEMS = [
   { href: "/admin/employers", label: "Работодатели", icon: Building2 },
   { href: "/admin/consultations", label: "Консультации", icon: CalendarClock },
   { href: "/admin/activity", label: "Активность", icon: Activity, fullOnly: true },
-  { href: "/admin/finance", label: "Финансы", icon: Wallet, ownerOnly: true },
+  { href: "/admin/finance", label: "Финансы", icon: Wallet, moneyOnly: true },
   { href: "/admin/feedback", label: "Отзывы", icon: MessageSquare },
   { href: "/admin/team", label: "Команда", icon: UserCog },
 ];
@@ -25,7 +25,7 @@ const ITEMS = [
 /** The team's list of chats changed on the server: the counter and whoever shows the list reload. */
 const inboxChanged = () => void loadInbox(true);
 
-export function AdminNav({ owner, full }: { owner: boolean; full: boolean }) {
+export function AdminNav({ owner, money, full }: { owner: boolean; money: boolean; full: boolean }) {
   const path = usePathname();
   // The number on «Чаты»: how many clients wait for a person. Nothing rings or pops up — the team looks here.
   const inbox = useInbox();
@@ -45,7 +45,7 @@ export function AdminNav({ owner, full }: { owner: boolean; full: boolean }) {
   const remembered: Record<string, string> = { "/admin/clients": useListQuery("/admin/clients"), "/admin/employers": useListQuery("/admin/employers") };
   return (
     <nav ref={nav} className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:px-3 lg:pb-0">
-      {ITEMS.filter((i) => (owner || !("ownerOnly" in i)) && (full || !("fullOnly" in i))).map(({ href, label, icon: Icon }) => {
+      {ITEMS.filter((i) => (money || !("moneyOnly" in i)) && (full || !("fullOnly" in i))).map(({ href, label, icon: Icon }) => {
         const active = href === "/admin" ? path === "/admin" : path.startsWith(href);
         return (
           <Link prefetch={false}

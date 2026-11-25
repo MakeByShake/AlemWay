@@ -1,5 +1,5 @@
 import { type NextRequest } from "next/server";
-import { ROLE_TITLES, requireAdminUser } from "@/lib/admin/session";
+import { ROLE_TITLES, isTopRole, requireAdminUser } from "@/lib/admin/session";
 import { getActivity, getTeamStatsData, teamStats } from "@/lib/admin/activity";
 import { cabinetName, getFinanceRows } from "@/lib/admin/data";
 import { PAYMENT_METHODS, PAYMENT_STATUS_TITLES, paymentTotals } from "@/lib/cabinet/payments";
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ kind
   const today = almatyNow().date;
 
   if (kind === "finance") {
-    await requireAdminUser({ owner: true });
+    await requireAdminUser({ top: true });
     const rows = (await getFinanceRows()).map((r) => ({ ...r, money: paymentTotals(r.price, r.payments, { discount: r.discount, plan: r.plan, today }) }));
     const name = (r: (typeof rows)[number]) => cabinetName(r);
 
@@ -101,7 +101,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ kind
 
   if (kind === "activity") {
     const me = await requireAdminUser({ full: true });
-    const money = me.role === "owner";
+    const money = isTopRole(me.role);
     const period = toPeriod(req.nextUrl.searchParams.get("period"));
     const day = toDay(req.nextUrl.searchParams.get("date"));
     const { from, to } = day ? dayBounds(day) : periodBounds(period, today);

@@ -1,5 +1,5 @@
 import { getAdminUsers } from "@/lib/admin/data";
-import { ROLE_TITLES, requireAdminUser } from "@/lib/admin/session";
+import { ROLE_OPTIONS, ROLE_TITLES, isTopRole, requireAdminUser } from "@/lib/admin/session";
 import { addManagerAction, removeManagerAction, renameMemberAction, setConsultantAction, setPasswordAction, setRoleAction } from "../../actions";
 import { Badge, PageTitle, fmtDate } from "@/components/admin/bits";
 import { ActionForm, AutoSelect, ConfirmForm, SubmitButton } from "@/components/admin/ui";
@@ -8,8 +8,10 @@ export const metadata = { title: "Команда" };
 
 export default async function TeamPage() {
   const me = await requireAdminUser();
+  // The administrator manages accounts; the founder sees the whole team but doesn't change it.
   const owner = me.role === "owner";
-  const users = owner ? await getAdminUsers() : [];
+  const seeTeam = isTopRole(me.role);
+  const users = seeTeam ? await getAdminUsers() : [];
 
   return (
     <>
@@ -29,7 +31,7 @@ export default async function TeamPage() {
         {owner && (
           <section className="card p-4 sm:p-6">
             <h2 className="text-[18px] font-bold">Добавить менеджера</h2>
-            <p className="mt-1 text-[14px] text-muted">Отдел продаж — только свои клиенты (просмотр, договор и чеки). Менеджер — вся работа с клиентами. Владелец — ещё команда и финансы.</p>
+            <p className="mt-1 text-[14px] text-muted">Отдел продаж — только свои клиенты (просмотр, договор и чеки). Операционный отдел — вся работа с клиентами. Учредитель — видит всё, включая деньги и действия каждого. Администратор — ещё команда и сайт.</p>
             <ActionForm action={addManagerAction} className="mt-4 grid gap-3 sm:grid-cols-2" resetOnSuccess>
               <label className="grid gap-1 text-[14px] font-medium">
                 Имя
@@ -46,9 +48,11 @@ export default async function TeamPage() {
               <label className="grid gap-1 text-[14px] font-medium">
                 Роль
                 <select name="role" className="field py-2">
-                  <option value="sales">Отдел продаж</option>
-                  <option value="manager">Менеджер</option>
-                  <option value="owner">Владелец</option>
+                  {ROLE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {ROLE_TITLES[o.value]}
+                    </option>
+                  ))}
                 </select>
               </label>
               <div>
@@ -59,7 +63,7 @@ export default async function TeamPage() {
         )}
       </div>
 
-      {owner && (
+      {seeTeam && (
         <section className="card mt-5 p-4 sm:p-6">
           <h2 className="text-[18px] font-bold">Все, у кого есть доступ</h2>
           <ul className="mt-3 divide-y divide-line">
@@ -68,9 +72,11 @@ export default async function TeamPage() {
                 <div className="min-w-0">
                   <p className="font-semibold">
                     {u.name} <span className="font-normal text-muted">· {u.login}</span>{" "}
-                    <Badge tone={u.role === "owner" ? "blue" : u.role === "sales" ? "amber" : "gray"}>{ROLE_TITLES[u.role] ?? "Менеджер"}</Badge>
+                    <Badge tone={isTopRole(u.role) ? "blue" : u.role === "sales" ? "amber" : "gray"}>{ROLE_TITLES[u.role] ?? ROLE_TITLES.manager}</Badge>
                   </p>
                   <p className="text-[13px] text-muted">добавлен {fmtDate(u.createdAt, false)}</p>
+                  {owner && (
+                  <>
                   <ActionForm action={renameMemberAction} className="mt-1.5 flex flex-wrap items-center gap-2">
                     <input type="hidden" name="login" value={u.login} />
                     <input name="name" defaultValue={u.name} required minLength={2} maxLength={60} aria-label="Имя" className="field w-44 py-1.5 text-[14px]" />
@@ -92,20 +98,18 @@ export default async function TeamPage() {
                       ]}
                     />
                   </div>
+                  </>
+                  )}
                 </div>
-                {u.login !== me.login && (
+                {owner && u.login !== me.login && (
                   <div className="flex flex-wrap items-center gap-3">
                     <AutoSelect
                       action={setRoleAction}
                       hidden={{ login: u.login }}
                       name="role"
                       label="Роль"
-                      value={u.role === "owner" || u.role === "sales" ? u.role : "manager"}
-                      options={[
-                        { value: "sales", title: "Отдел продаж" },
-                        { value: "manager", title: "Менеджер" },
-                        { value: "owner", title: "Владелец" },
-                      ]}
+                      value={u.role ?? "manager"}
+                      options={ROLE_OPTIONS.map((o) => ({ value: o.value, title: o.title }))}
                     />
                     <ActionForm action={setPasswordAction} className="flex flex-wrap gap-2" resetOnSuccess>
                       <input type="hidden" name="login" value={u.login} />

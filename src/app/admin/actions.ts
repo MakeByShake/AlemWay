@@ -9,6 +9,7 @@ import {
   ADMIN_COOKIE,
   LOGIN_RE,
   isFullRole,
+  isTopRole,
   adminUserId,
   checkPassword,
   getAdminUserByLogin,
@@ -18,6 +19,7 @@ import {
   loginSucceeded,
   requireAdminUser,
   sessionValue,
+  toRole,
 } from "@/lib/admin/session";
 import { deleteDoc, patchDoc } from "@/lib/admin/data";
 import { AdminOpError, createCabinet, deleteCabinetCompletely, renumberCabinets } from "@/lib/cabinet/admin-ops";
@@ -176,7 +178,7 @@ export async function createCabinetAction(_prev: ActionState, fd: FormData): Pro
         `📋 <a href="${cabinetAdminUrl(res.id)}">Открыть клиента в админке</a>`,
       ]).catch(() => null);
     revalidatePath("/admin", "layout");
-    return { ok: true, ...res, clientName, phone: clientPhone, curator: full && me.role !== "owner" ? me.name : undefined, service: service || undefined };
+    return { ok: true, ...res, clientName, phone: clientPhone, curator: full && !isTopRole(me.role) ? me.name : undefined, service: service || undefined };
   } catch (err) {
     return fail(err);
   }
@@ -514,7 +516,7 @@ export async function addManagerAction(_prev: ActionState, fd: FormData): Promis
   const name = s(fd, "name", 60);
   const password = s(fd, "password", 200);
   const roleRaw = s(fd, "role", 10);
-  const role = roleRaw === "owner" ? "owner" : roleRaw === "sales" ? "sales" : "manager";
+  const role = toRole(roleRaw);
   if (!LOGIN_RE.test(login)) return { error: "Логин: 3–30 символов, латиница, цифры, точка, дефис" };
   if (name.length < 2) return { error: "Укажите имя" };
   if (password.length < 8) return { error: "Пароль — минимум 8 символов" };
@@ -782,7 +784,7 @@ export async function setRoleAction(fd: FormData) {
   const me = await requireAdminUser({ owner: true });
   const login = s(fd, "login", 40);
   const roleRaw = s(fd, "role", 10);
-  const role = roleRaw === "owner" ? "owner" : roleRaw === "sales" ? "sales" : "manager";
+  const role = toRole(roleRaw);
   if (!LOGIN_RE.test(login) || login === me.login) return;
   const user = await getAdminUserByLogin(login);
   if (!user) return;

@@ -17,11 +17,27 @@ const scrypt = promisify(scryptCb) as (pw: string, salt: Buffer, len: number) =>
 export const ADMIN_COOKIE = "aw_admin";
 const SESSION_DAYS = 30;
 
-export type AdminRole = "owner" | "manager" | "sales";
+export type AdminRole = "owner" | "founder" | "manager" | "sales";
 
-/** Owner and manager do all the work; «Отдел продаж» (sales) sees only its assigned clients, read-only. */
-export const isFullRole = (role: string | undefined) => role === "owner" || role === "manager";
-export const ROLE_TITLES: Record<string, string> = { owner: "Владелец", manager: "Менеджер", sales: "Отдел продаж" };
+/**
+ * Roles:
+ * - owner «Администратор» — everything, including team accounts (who makes the site);
+ * - founder «Учредитель» — sees everything (money, finance, activity of every employee) and can work with clients;
+ * - manager «Операционный отдел» — all work with clients after the sale, no money reports;
+ * - sales «Отдел продаж» — only the clients they sold or lead, read-only.
+ */
+export const isFullRole = (role: string | undefined) => role === "owner" || role === "founder" || role === "manager";
+/** Sees money: finance, payment sums in «Активность», AI costs. */
+export const isTopRole = (role: string | undefined) => role === "owner" || role === "founder";
+export const ROLE_TITLES: Record<string, string> = { owner: "Администратор", founder: "Учредитель", manager: "Операционный отдел", sales: "Отдел продаж" };
+/** Role picker in «Команда», from the least to the most access. */
+export const ROLE_OPTIONS = [
+  { value: "sales", title: "Отдел продаж — только свои клиенты, просмотр" },
+  { value: "manager", title: "Операционный отдел — вся работа с клиентами" },
+  { value: "founder", title: "Учредитель — видит всё, включая деньги" },
+  { value: "owner", title: "Администратор — всё, плюс команда и сайт" },
+] as const;
+export const toRole = (v: string): AdminRole => (v === "owner" || v === "founder" || v === "sales" ? v : "manager");
 export type AdminUser = {
   _id: string;
   login: string;
@@ -101,10 +117,11 @@ export const currentAdmin = cache(async (): Promise<SessionUser | null> => {
 });
 
 /** For admin pages and server actions: the user, or redirect to the login page. */
-export async function requireAdminUser(opts: { owner?: boolean; full?: boolean } = {}): Promise<SessionUser> {
+export async function requireAdminUser(opts: { owner?: boolean; top?: boolean; full?: boolean } = {}): Promise<SessionUser> {
   const user = await currentAdmin();
   if (!user) redirect("/admin/login");
   if (opts.owner && user.role !== "owner") redirect("/admin");
+  if (opts.top && !isTopRole(user.role)) redirect("/admin");
   if (opts.full && !isFullRole(user.role)) redirect("/admin");
   return user;
 }

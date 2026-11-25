@@ -16,7 +16,7 @@ const FILTERS = [
 ];
 
 export default async function FinancePage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
-  await requireAdminUser({ owner: true });
+  await requireAdminUser({ top: true });
   const { status } = await searchParams;
   const [rawRows, ai] = await Promise.all([getFinanceRows(), getAiStats()]);
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Almaty" }).format(new Date());

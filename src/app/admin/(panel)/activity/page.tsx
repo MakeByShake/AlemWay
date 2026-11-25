@@ -1,6 +1,6 @@
 import Link from "next/link";
 import clsx from "clsx";
-import { ROLE_TITLES, requireAdminUser } from "@/lib/admin/session";
+import { ROLE_TITLES, isTopRole, requireAdminUser } from "@/lib/admin/session";
 import { getActivity, getTeamStatsData, teamStats, type MemberStats } from "@/lib/admin/activity";
 import { formatTenge } from "@/lib/cabinet/payments";
 import { almatyNow } from "@/lib/consultation";
@@ -16,7 +16,7 @@ const MEDALS = ["🥇", "🥈", "🥉"];
 export default async function ActivityPage({ searchParams }: { searchParams: Promise<{ period?: string; date?: string }> }) {
   const me = await requireAdminUser({ full: true });
   // Money (contract sums, payments) only for the owner, as on «Финансы».
-  const money = me.role === "owner";
+  const money = isTopRole(me.role);
   const sp = await searchParams;
   const today = almatyNow().date;
   // A day picked in the calendar wins over the period buttons.
