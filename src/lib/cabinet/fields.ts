@@ -437,14 +437,14 @@ export type UploadKind = (typeof UPLOAD_KINDS)[number];
 export const FILE_KINDS = ["passport", "enrollment", "calendar", "license", "declaration", "declaration2", "signed", "signed2", "zav", "photo", "keta", "contract"] as const;
 export type FileKind = (typeof FILE_KINDS)[number];
 /** Files the manager can upload or replace from the admin panel. */
-export const MANAGER_UPLOAD_KINDS = ["zav", "declaration", "declaration2", "signed", "signed2", "passport", "enrollment", "calendar", "license", "keta", "photo", "contract"] as const satisfies readonly FileKind[];
+export const MANAGER_UPLOAD_KINDS = ["zav", "declaration", "declaration2", "signed", "passport", "enrollment", "calendar", "license", "keta", "photo", "contract"] as const satisfies readonly FileKind[];
 export type ManagerUploadKind = (typeof MANAGER_UPLOAD_KINDS)[number];
 
 /** Which files belong to each service, in the order the manager sees them (first = the one the manager adds). */
 export const SERVICE_FILES: Record<ServiceId, { all: FileKind[]; client: UploadKind[]; form: UploadKind[]; requiredBeforeSubmit: UploadKind[] }> = {
   ferienjob: {
-    all: ["zav", "contract", "enrollment", "passport", "calendar", "license", "declaration", "declaration2", "signed", "signed2"],
-    client: ["passport", "enrollment", "calendar", "license", "signed", "signed2"],
+    all: ["zav", "contract", "enrollment", "passport", "calendar", "license", "declaration", "declaration2", "signed"],
+    client: ["passport", "enrollment", "calendar", "license", "signed"],
     // Shown in the form, in this order. The passport may come later (then the name is typed in).
     form: ["enrollment", "passport", "calendar", "license"],
     requiredBeforeSubmit: ["enrollment"],
@@ -457,8 +457,8 @@ export const FILE_LABELS: Record<FileKind, { ru: string; kk: string }> = {
   enrollment: { ru: "Справка с места учёбы — только на английском", kk: "Оқу орнынан анықтама — тек ағылшынша" },
   declaration: { ru: "Декларация ZAV", kk: "ZAV декларациясы" },
   declaration2: { ru: "Декларация ZAV — 2-й вариант дат (необязательно)", kk: "ZAV декларациясы — күндердің 2-нұсқасы (міндетті емес)" },
-  signed: { ru: "Декларация с подписью и печатью — 1-й экземпляр", kk: "Қолы мен мөрі қойылған декларация — 1-дана" },
-  signed2: { ru: "Декларация с подписью и печатью — 2-й экземпляр", kk: "Қолы мен мөрі қойылған декларация — 2-дана" },
+  signed: { ru: "Декларация с подписью и печатью (обе страницы одним файлом)", kk: "Қолы мен мөрі қойылған декларация (екі бет бір файлда)" },
+  signed2: { ru: "Декларация с печатью — 2-й экз. (старое, больше не нужно)", kk: "Мөрі бар декларация — 2-дана (ескі, енді керек емес)" },
   zav: { ru: "Разрешение ZAV (Zustimmung)", kk: "ZAV рұқсаты (Zustimmung)" },
   photo: { ru: "Фото лица, как на документы", kk: "Құжатқа арналған бет суреті" },
   keta: { ru: "Одобренный K-ETA", kk: "Мақұлданған K-ETA" },

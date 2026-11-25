@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { randomUUID } from "node:crypto";
 import { isSameOrigin } from "@/lib/http";
 import { SERVICE_FILES, UPLOAD_KINDS, serviceOf, type UploadKind } from "@/lib/cabinet/fields";
-import { currentCabinet, getCabinet, patchCabinet } from "@/lib/cabinet/server";
+import { currentCabinet, patchCabinet } from "@/lib/cabinet/server";
 import { fileResponse } from "@/lib/cabinet/file-response";
 import { saveFile } from "@/lib/cabinet/storage";
 import { lockReason } from "@/lib/cabinet/upload-rules";
@@ -59,10 +59,9 @@ export async function POST(req: NextRequest) {
   await patchCabinet(cab._id, { [`files.${doc}`]: file });
   await cleanup();
   await postClientFile(cab, { doc });
-  // Both signed copies are in: the client still has to press «Отправить» in the cabinet (they check the scans first).
-  if ((doc === "signed" || doc === "signed2") && cab.status === "declaration_ready") {
-    const now = await getCabinet(cab._id);
-    if (now?.files?.signed?.path && now.files.signed2?.path) await chatEvent(cab._id, "signed_both", { action: "cabinet", silent: true });
+  // The stamped declaration is in: the client still has to press «Отправить» in the cabinet (they check the scan first).
+  if (doc === "signed" && cab.status === "declaration_ready") {
+    await chatEvent(cab._id, "signed_both", { action: "cabinet", silent: true });
   }
   return NextResponse.json({ ok: true });
 }
