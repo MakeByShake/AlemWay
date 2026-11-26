@@ -8,6 +8,7 @@ import { createCabinetAction, type ActionState } from "@/app/admin/actions";
 import { PAYMENT_METHODS } from "@/lib/cabinet/payments";
 import { compressForUpload } from "@/lib/compress-file";
 import { LinkBox } from "./ui";
+import { UNI_NAMES } from "@/lib/admin/universities";
 
 type Member = { login: string; name: string };
 
@@ -184,6 +185,15 @@ export function NewClientForm({ full, isOwner, me, members }: { full: boolean; i
           <option value="ferienjob">🇩🇪 Германия (Ferienjob)</option>
           <option value="keta">🇰🇷 K-ETA</option>
         </select>
+      </label>
+      <label className="grid gap-1 text-[14px] font-medium">
+        Университет (можно потом)
+        <input name="uniName" list="new-client-unis" maxLength={120} className="field" placeholder="КазНУ им. аль-Фараби" />
+        <datalist id="new-client-unis">
+          {UNI_NAMES.map((u) => (
+            <option key={u} value={u} />
+          ))}
+        </datalist>
       </label>
       <label className="grid gap-1 text-[14px] font-medium">
         Сумма договора, ₸

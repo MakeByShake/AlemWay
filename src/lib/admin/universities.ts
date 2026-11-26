@@ -34,6 +34,9 @@ const UNIS: [RegExp, string][] = [
 
 export const NO_UNI = "—";
 
+/** Known universities (short names) — hints in the «new client» form. */
+export const UNI_NAMES = [...new Set(UNIS.map(([, name]) => name))].sort((a, b) => a.localeCompare(b, "ru"));
+
 /** Short university name for lists and filters; unknown names are shown cleaned up, empty ones as «—». */
 export function uniShort(raw?: string | null): string {
   const s = (raw ?? "").trim();

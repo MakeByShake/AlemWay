@@ -162,7 +162,10 @@ export async function createCabinetAction(_prev: ActionState, fd: FormData): Pro
     });
     const price = parseAmount(s(fd, "price", 30));
     const contacts = readContacts(fd);
-    if (price || contacts.length) await patchCabinet(res.id, { ...(price ? { price } : {}), ...(contacts.length ? { contacts } : {}) });
+    // The seller may type the university right away: it lands in the questionnaire (the client sees it filled in).
+    const uniName = s(fd, "uniName", 120);
+    if (price || contacts.length || uniName)
+      await patchCabinet(res.id, { ...(price ? { price } : {}), ...(contacts.length ? { contacts } : {}), ...(uniName ? { "data.uniName": uniName } : {}) });
     await logActivity(me, "client_created", `создал(а) клиента ${clientName}`, { _id: res.id, clientName });
     if (leadId) await patchDoc(leadId, { status: "paid" }).catch(() => {});
     if (!full)
@@ -171,6 +174,7 @@ export async function createCabinetAction(_prev: ActionState, fd: FormData): Pro
         "",
         `<b>Клиент:</b> ${escapeHtml(clientName)}`,
         clientPhone && `<b>Телефон:</b> ${escapeHtml(clientPhone)}`,
+        uniName && `<b>Вуз:</b> ${escapeHtml(uniName)}`,
         `<b>Продал:</b> ${escapeHtml(me.name)}`,
         price ? `<b>Сумма договора:</b> ${formatTenge(price)}` : "",
         "Назначьте ведущего и напишите клиенту.",
