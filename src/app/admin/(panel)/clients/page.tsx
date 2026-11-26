@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { RememberListQuery } from "@/components/admin/ListMemory";
-import { getCabinets, cabinetName, getManagerOptions } from "@/lib/admin/data";
+import { getCabinets, cabinetName, getClientUnis, getManagerOptions } from "@/lib/admin/data";
 import { isFullRole, requireAdminUser } from "@/lib/admin/session";
 import { CABINET_STATUSES, PIPELINES } from "@/lib/cabinet/fields";
 import { Badge, Empty, RowLegend, rowTone, PageTitle, Progress, SERVICE_SHORT, fmtDate, waLink, WA_TARGET } from "@/components/admin/bits";
@@ -27,7 +27,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
   const service = sp.service === "ferienjob" || sp.service === "keta" ? sp.service : "";
   const status = CABINET_STATUSES.some((s) => s.value === sp.status) ? sp.status! : "";
   const q = (sp.q ?? "").slice(0, 60);
-  const [me, managers] = await Promise.all([requireAdminUser(), getManagerOptions()]);
+  const [me, managers, clientUnis] = await Promise.all([requireAdminUser(), getManagerOptions(), getClientUnis()]);
   // «owner» here = full rights (owner or manager); «Отдел продаж» is read-only.
   const owner = isFullRole(me.role);
   // «Отдел продаж» sees only the clients they lead or sold.
@@ -98,7 +98,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
       <details className="card mb-6 p-4 sm:p-5">
         <summary className="cursor-pointer text-[16px] font-bold text-brand">+ Новый клиент</summary>
         <p className="mt-2 text-[14px] text-muted">Создайте кабинет, когда клиент оплатил: сразу можно приложить договор и чеки. Клиент войдёт по ссылке без пароля.</p>
-        <NewClientForm full={owner} isOwner={owner} me={me.login} members={managers} />
+        <NewClientForm full={owner} isOwner={owner} me={me.login} members={managers} unis={clientUnis} />
       </details>
 
       <form className="mb-5 flex flex-wrap gap-2" action="/admin/clients">

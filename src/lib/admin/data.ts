@@ -2,6 +2,7 @@ import "server-only";
 import { writeClient, type Cabinet } from "@/lib/cabinet/server";
 import type { ServiceId } from "@/lib/cabinet/fields";
 import type { Payment, PlanItem } from "@/lib/cabinet/payments";
+import { NO_UNI, uniShort } from "./universities";
 
 /** Reads for the /admin pages. Everything goes through the server token; nothing is public. */
 
@@ -281,4 +282,13 @@ export function getConsultations(filter: { when: "upcoming" | "past"; today: str
 
 export function countConsultationsToday(today: string) {
   return writeClient().fetch<number>(`count(*[_type == "consultation" && date == $today && status in ["new", "confirmed"]])`, { today });
+}
+
+/** Universities of all our clients (short names, A→Я) — the list sellers pick from when adding a client. */
+export async function getClientUnis(): Promise<string[]> {
+  const rows = await writeClient().fetch<{ a?: string; b?: string }[]>(
+    `*[_type == "cabinet" && ${notDraft}]{ "a": aiCheck.fields.txtfDritteName, "b": data.uniName }`
+  );
+  const names = new Set(rows.map((r) => uniShort(r.a?.trim() || r.b)).filter((n) => n !== NO_UNI));
+  return [...names].sort((x, y) => x.localeCompare(y, "ru"));
 }

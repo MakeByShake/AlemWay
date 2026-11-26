@@ -20,7 +20,7 @@ const UNIS: [RegExp, string][] = [
   [/semey|семей/i, "Медуниверситет Семей"],
   [/АУЭС|AUES|energy and communication|энергетики и связи/i, "АУЭС"],
   [/south kazakhstan medical|южно-казахстанская медицинская/i, "ЮКМА (Шымкент)"],
-  [/auezov|ауэзов/i, "ЮКУ им. Ауэзова"],
+  [/auezov|ауэзов|ауезов|әуезов/i, "ЮКУ им. Ауэзова"],
   [/tashenev|ташенев|ташенов/i, "Tashenev University"],
   [/utemisov|утемисов/i, "ЗКУ им. Утемисова"],
   [/zhangir|жангир|ЗКАТУ/i, "ЗКАТУ им. Жангир хана"],
@@ -33,9 +33,6 @@ const UNIS: [RegExp, string][] = [
 ];
 
 export const NO_UNI = "—";
-
-/** Known universities (short names) — hints in the «new client» form. */
-export const UNI_NAMES = [...new Set(UNIS.map(([, name]) => name))].sort((a, b) => a.localeCompare(b, "ru"));
 
 /** Short university name for lists and filters; unknown names are shown cleaned up, empty ones as «—». */
 export function uniShort(raw?: string | null): string {

@@ -8,7 +8,6 @@ import { createCabinetAction, type ActionState } from "@/app/admin/actions";
 import { PAYMENT_METHODS } from "@/lib/cabinet/payments";
 import { compressForUpload } from "@/lib/compress-file";
 import { LinkBox } from "./ui";
-import { UNI_NAMES } from "@/lib/admin/universities";
 
 type Member = { login: string; name: string };
 
@@ -60,7 +59,8 @@ function FilePick({ label, files, setFiles, multiple }: { label: string; files: 
  * «+ Новый клиент»: name, phone, service, price — and right away the contract and the first payment with
  * its receipts. «Отдел продаж» gets the same form: the client becomes theirs and the team is notified.
  */
-export function NewClientForm({ full, isOwner, me, members }: { full: boolean; isOwner: boolean; me: string; members: Member[] }) {
+export function NewClientForm({ full, isOwner, me, members, unis }: { full: boolean; isOwner: boolean; me: string; members: Member[]; unis: string[] }) {
+  const [uniPick, setUniPick] = useState("");
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -188,13 +188,23 @@ export function NewClientForm({ full, isOwner, me, members }: { full: boolean; i
       </label>
       <label className="grid gap-1 text-[14px] font-medium">
         Университет (можно потом)
-        <input name="uniName" list="new-client-unis" maxLength={120} className="field" placeholder="КазНУ им. аль-Фараби" />
-        <datalist id="new-client-unis">
-          {UNI_NAMES.map((u) => (
-            <option key={u} value={u} />
+        <select value={uniPick} onChange={(e) => setUniPick(e.target.value)} className="field">
+          <option value="">— не знаю, клиент впишет сам —</option>
+          {unis.map((u) => (
+            <option key={u} value={u}>
+              {u}
+            </option>
           ))}
-        </datalist>
+          <option value="__other">✏️ Другой вуз — вписать вручную</option>
+        </select>
+        {uniPick && uniPick !== "__other" && <input type="hidden" name="uniName" value={uniPick} />}
       </label>
+      {uniPick === "__other" && (
+        <label className="grid gap-1 text-[14px] font-medium">
+          Название вуза (первый клиент из этого вуза)
+          <input name="uniName" required maxLength={120} className="field" placeholder="Например: Turan University" autoFocus />
+        </label>
+      )}
       <label className="grid gap-1 text-[14px] font-medium">
         Сумма договора, ₸
         <input name="price" inputMode="numeric" className="field" placeholder="750000" />
