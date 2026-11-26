@@ -71,8 +71,14 @@ type Row = {
 export const PARTNER_LAST_BREAK_START = "06-04";
 const fitsPartner = (breakFrom?: string) => !!breakFrom && /^\d{4}-\d{2}-\d{2}$/.test(breakFrom) && breakFrom.slice(5) <= PARTNER_LAST_BREAK_START;
 
-/** Partner sheet: rows to show, and phone keys of our clients to take out of the sheet (holidays start too late). */
-export async function sheetRows(base = "https://alemway.kz"): Promise<{ rows: SheetRow[]; remove: string[] }> {
+/** The client has sent the stamped declaration (stage 3 or later) — the rest are still waiting for the dean. */
+const isStamped = (c: Row) => !c.dean && ORDER.indexOf(c.status ?? "waiting_data") >= 2;
+
+/**
+ * Partner sheet: rows to show, and phone keys of our clients to take out of this tab.
+ * part «ready» — declaration already stamped, «pending» — not stamped yet, «all» — both (old single-tab script).
+ */
+export async function sheetRows(base = "https://alemway.kz", part: "all" | "ready" | "pending" = "all"): Promise<{ rows: SheetRow[]; remove: string[] }> {
   const list = await writeClient().fetch<Row[]>(
     `*[_type == "cabinet" && !(_id in path("drafts.**")) && coalesce(group, "new") != "baybol" && coalesce(service, "ferienjob") == "ferienjob"] | order(coalesce(number, 0) asc){
       _id, number, status, clientName, clientPhone, employerName, zavReceivedAt, data, archivedData, files,
@@ -84,7 +90,7 @@ export async function sheetRows(base = "https://alemway.kz"): Promise<{ rows: Sh
   const remove: string[] = [];
   for (const c of list) {
     const d = { ...Object.fromEntries(Object.entries(c.archivedData ?? {}).filter(([, v]) => v)), ...Object.fromEntries(Object.entries(c.data ?? {}).filter(([, v]) => v)) };
-    if (!fitsPartner(d.breakFrom)) {
+    if (!fitsPartner(d.breakFrom) || (part !== "all" && isStamped(c) !== (part === "ready"))) {
       const k = digits(c.clientPhone || d.phone);
       if (k.length >= 10) remove.push(k);
       continue;
