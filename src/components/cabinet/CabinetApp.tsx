@@ -514,7 +514,10 @@ export function CabinetApp({ view, locale }: { view: CabinetView; locale: Cabine
               </div>
             )}
 
-            {sections.filter((section) => !(section.id === "nopassport" && files.passport)).map((section) => (
+            {sections
+              .filter((section) => !(section.id === "nopassport" && files.passport))
+              .filter((section) => section.id !== "uniaddress" || needUniAddress(ai, data))
+              .map((section) => (
               <fieldset key={section.id} className="card p-5 sm:p-7">
                 <legend className="sr-only">{section.title[locale]}</legend>
                 <h2 className="h-card" aria-hidden="true">
@@ -600,6 +603,12 @@ type T = (typeof CABINET_TEXT)[CabinetLocale];
 type DeanIssueView = { uni: string; faculty: string; group: string; reason: string; phone: string };
 
 /** «Деканат не ставит подпись и печать?» — the client tells where and why; the team gets it in Telegram. */
+/** The university-address block: only when the site asked for it, or the client already filled something in. */
+function needUniAddress(ai: { status: string; missing: string[] } | null, data: CabinetData) {
+  const asked = ai?.status === "НЕ ГОТОВО" && ai.missing.some((m) => /адрес вуза|сайт вуза|город вуза|вуз[а]? на англ|название вуза/i.test(m));
+  return asked || ["uniStreet", "uniHouse", "uniPostcode", "uniCity", "uniWebsite", "uniPhone", "uniEmail"].some((k) => Boolean((data as Record<string, unknown>)[k]));
+}
+
 function DeanIssueBox({ t, initial, uniName }: { t: T; initial: DeanIssueView | null; uniName?: string }) {
   const [sent, setSent] = useState<DeanIssueView | null>(initial);
   const [editing, setEditing] = useState(false);

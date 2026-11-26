@@ -9,6 +9,30 @@ import { declarationEvent } from "@/lib/chat/server";
 const list = (xs: string[]) => xs.slice(0, 8).map((x) => `• ${escapeHtml(x)}`);
 
 /**
+ * Fields that must be filled for the declaration to be handed out (the university's phone and email may stay empty:
+ * some universities have none we can confirm). Anything empty → «НЕ ГОТОВО» and the client sees what to add.
+ */
+const REQUIRED: [keyof AiCheck["fields"], string][] = [
+  ["txtfDritteName", "Полное официальное название вуза на английском"],
+  ["txtfDritteStr", "Адрес вуза: улица"],
+  ["txtfDritteHausNr", "Адрес вуза: номер дома"],
+  ["txtfDrittePlz", "Адрес вуза: почтовый индекс"],
+  ["txtfDritteOrt", "Адрес вуза: город"],
+  ["txtfDritteWeb", "Официальный сайт вуза"],
+  ["txtfPersonVorname", "Имя латиницей (как в загранпаспорте)"],
+  ["txtfPersonNachname", "Фамилия латиницей (как в загранпаспорте)"],
+  ["datePersonGebDatum", "Дата рождения"],
+  ["txtfPersonNationalitaet", "Гражданство"],
+  ["txtfStudiumFach", "Специальность"],
+  ["txtfStudiumDauer", "Срок обучения (лет)"],
+  ["dateStudiumSeit", "Дата зачисления"],
+  ["dateStudiumEnde", "Ожидаемая дата окончания учёбы"],
+  ["dateStudiumFerienVon", "Начало летних каникул 2027"],
+  ["dateStudiumFerienBis", "Конец летних каникул 2027"],
+  ["txtfUnterschriftOrt", "Город вуза (место подписи)"],
+];
+
+/**
  * AI checks the documents. Ready → the declaration is made and the client can download it.
  * Not ready → the client sees what is missing. The result is stored on the cabinet for the manager.
  */
@@ -16,7 +40,7 @@ export async function checkAndBuildDeclaration(cabId: string, by: "client" | "ma
   const cab = await getCabinet(cabId);
   if (!cab) throw new Error("cabinet not found");
   const ai = await runDeclarationCheck(cab, todayAlmaty());
-  const ready = aiReady(ai.status);
+  let ready = aiReady(ai.status);
   // What the team corrected in the questionnaire goes into the declaration as is.
   if (ready) {
     // Study/holiday dates as the client typed them; the team's corrections on top.
@@ -31,6 +55,19 @@ export async function checkAndBuildDeclaration(cabId: string, by: "client" | "ma
     if (changed.length) {
       Object.assign(ai.fields, over);
       ai.checks = [...ai.checks, `Взято из анкеты, исправленной командой: ${changed.map(([, v]) => v).join(", ")}`];
+    }
+  }
+  // A declaration with empty fields is never handed out: the client is told what is missing instead.
+  if (ready) {
+    const empty = REQUIRED.filter(([k]) => !String(ai.fields[k] ?? "").trim());
+    if (empty.length) {
+      ready = false;
+      ai.status = "НЕ ГОТОВО";
+      const extra = empty.map(([, label]) => label).filter((label) => !ai.missing.some((m) => m.toLowerCase().includes(label.toLowerCase().slice(0, 12))));
+      ai.missing = [...ai.missing, ...extra];
+      const first = (ai.fields.txtfPersonVorname || cab.data?.firstName || "").trim();
+      ai.clientMessage = `${first ? `${first}, здравствуйте! ` : "Здравствуйте! "}Декларацию пока сделать нельзя: в ней остались бы пустые поля. Добавьте, пожалуйста, то, что указано в списке «Чего не хватает» (данные о вузе можно взять в деканате или на сайте вуза), и отправьте анкету заново.`;
+      ai.checks = [...ai.checks, `Декларацию не выдали: пустые поля — ${empty.map(([, label]) => label).join(", ")}`];
     }
   }
   // «Will the studies continue after the semester break?» — always «Yes».

@@ -378,6 +378,20 @@ export const CABINET_SECTIONS: CabinetSection[] = [
     ],
   },
   {
+    // Shown only when the site asked for the university's address (not in the certificate and not in our directory).
+    id: "uniaddress",
+    title: { ru: "Адрес университета", kk: "Университет мекенжайы" },
+    fields: [
+      { ...FULL.uniStreet, optional: true, hint: { ru: "Адрес, телефон и сайт есть на сайте вуза или в деканате.", kk: "Мекенжай, телефон және сайт ЖОО сайтында немесе деканатта бар." } },
+      { ...FULL.uniHouse, optional: true },
+      { ...FULL.uniPostcode, optional: true },
+      { ...FULL.uniCity, optional: true },
+      { ...FULL.uniWebsite, optional: true },
+      { ...FULL.uniPhone, optional: true },
+      { ...FULL.uniEmail, optional: true },
+    ],
+  },
+  {
     id: "vacation",
     title: { ru: "Летние каникулы 2027", kk: "2027 жазғы демалыс" },
     fields: [
