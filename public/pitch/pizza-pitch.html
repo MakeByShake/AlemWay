@@ -1,0 +1,321 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>AlemWay — Pizza Pitch</title>
+<meta name="description" content="AlemWay: визовый бизнес в одной платформе с ИИ. Pitch deck.">
+<meta property="og:title" content="AlemWay — Pizza Pitch"><meta property="og:description" content="Визовый бизнес в одной платформе: студент собирает документы за вечер, декларацию делает ИИ.">
+<meta property="og:image" content="https://alemway.kz/pitch/img/combo-01.png">
+<link rel="icon" href="/icon.svg"><style>
+@font-face{font-family:Inter;src:url(fonts/inter-cyrillic-wght-normal.woff2) format('woff2');font-weight:100 900;unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:Inter;src:url(fonts/inter-latin-wght-normal.woff2) format('woff2');font-weight:100 900}
+@font-face{font-family:Mono;src:url(fonts/jetbrains-mono-cyrillic-wght-normal.woff2) format('woff2');font-weight:100 900;unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:Mono;src:url(fonts/jetbrains-mono-latin-wght-normal.woff2) format('woff2');font-weight:100 900}
+:root{--bg:#05070d;--panel:rgba(255,255,255,.035);--line:rgba(255,255,255,.09);--text:#eef1fa;--muted:#8d95b3;--mint:#2ef2b8;--cyan:#38d9f5;--blue:#5b7cff;--violet:#a06bff;--amber:#ffc24b}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:Inter,-apple-system,sans-serif;color:var(--text);overflow:hidden}
+body{background:#03050a}
+.deck{position:fixed;inset:0;overflow:hidden}
+.stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;margin:-540px 0 0 -960px;transform-origin:50% 50%}
+.fx{position:absolute;inset:0;z-index:6;pointer-events:none;overflow:hidden}
+.fx i{position:absolute;display:block}
+
+
+.slide{position:absolute;inset:0;width:1920px;height:1080px;padding:90px 120px;overflow:hidden;display:flex;flex-direction:column;justify-content:center;color:var(--text);visibility:hidden;background:radial-gradient(900px 600px at 88% 8%,rgba(91,124,255,.20),transparent 70%),radial-gradient(800px 600px at 0% 100%,rgba(46,242,184,.10),transparent 70%),linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/64px 64px,linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/64px 64px,var(--bg)}
+.slide.on,.slide.prev{visibility:visible}.slide.on{z-index:2}.slide.prev{z-index:1}
+.slide:after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(1400px 900px at 50% 50%,transparent 55%,rgba(0,0,0,.5))}
+.slide>*{position:relative;z-index:1}
+.slide:not(.on){pointer-events:none}
+.slide.dark{background:radial-gradient(1000px 700px at 85% 10%,rgba(160,107,255,.22),transparent 70%),radial-gradient(800px 600px at 5% 95%,rgba(56,217,245,.12),transparent 70%),linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/64px 64px,linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/64px 64px,var(--bg)}
+.tag{position:absolute;top:44px;right:120px;font:600 19px Mono,monospace;color:#5d6788;letter-spacing:.04em;text-transform:uppercase}
+.tag:before{content:"[ ";color:var(--mint)}.tag:after{content:" ]";color:var(--mint)}
+.eyebrow{font:600 22px Mono,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--mint);margin-bottom:22px}
+.eyebrow:before{content:"// ";color:#4b5577}
+h1{font-size:84px;line-height:1.03;font-weight:800;letter-spacing:-.035em;color:#fff}
+h2{font-size:60px;line-height:1.08;font-weight:800;letter-spacing:-.03em;margin-bottom:44px;max-width:1400px;color:#fff}
+h3{font-size:29px;font-weight:700;margin:10px 0;color:#fff}
+p{font-size:26px;line-height:1.45;color:var(--muted)}
+.hl{color:var(--mint);text-shadow:0 0 34px rgba(46,242,184,.35)}
+.cover h1 .hl:after{content:"";display:inline-block;width:.09em;height:.82em;margin-left:.08em;background:var(--mint);vertical-align:-.06em;animation:caret 1s steps(1) infinite}
+@keyframes caret{50%{opacity:0}}
+.lead{font-size:30px;margin-top:28px;max-width:860px}
+.chips{display:flex;flex-wrap:wrap;gap:12px;margin-top:34px}
+.chips span{font:600 20px Mono,monospace;padding:11px 18px;border-radius:10px;background:rgba(46,242,184,.06);border:1px solid rgba(46,242,184,.28);color:#c8fff0}
+.link{margin-top:32px;font:700 28px Mono,monospace;color:var(--cyan)}
+.link:before{content:"→ ";color:var(--mint)}
+.logo{height:60px;margin-bottom:34px;filter:brightness(0) invert(1)}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;height:100%}
+.txt{max-width:880px}
+.grid2,.grid3,.grid4{display:grid;gap:26px}.grid2{grid-template-columns:repeat(2,1fr)}.grid3{grid-template-columns:repeat(3,1fr)}.grid4{grid-template-columns:repeat(4,1fr)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:36px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 30px 60px -40px rgba(0,0,0,.8);position:relative;overflow:hidden}
+.card:before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:linear-gradient(90deg,transparent,var(--mint),transparent);opacity:.55}
+.big{font-size:48px}.num{display:block;font:800 46px Mono,monospace;color:var(--mint);letter-spacing:-.02em}
+.who,.result{margin-top:38px;font-size:27px}.who b,.result b{color:#fff}
+.steps{list-style:none;display:grid;gap:20px}.steps li{display:flex;gap:22px;align-items:flex-start}
+.steps li>b{flex:none;width:54px;height:54px;border-radius:14px;background:rgba(46,242,184,.1);border:1px solid rgba(46,242,184,.4);color:var(--mint);font:700 24px Mono,monospace;display:flex;align-items:center;justify-content:center}
+.steps h3{margin:4px 0}.steps p{font-size:23px}
+.ticks{list-style:none;display:grid;gap:18px}.ticks li{font-size:27px;line-height:1.4;padding-left:48px;position:relative;color:var(--muted)}
+.ticks li:before{content:"✓";position:absolute;left:0;top:3px;width:32px;height:32px;border-radius:9px;background:rgba(46,242,184,.12);border:1px solid rgba(46,242,184,.45);color:var(--mint);font-size:18px;display:flex;align-items:center;justify-content:center;font-weight:800}
+.ticks b{color:#fff}
+.plain{list-style:none;display:grid;gap:10px;margin:14px 0 18px}.plain li{font-size:25px;color:var(--muted)}.plain b{color:#fff}
+.stats{display:flex;gap:20px;margin-top:38px}.stats div{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 24px}
+.stats b{display:block;font:800 36px Mono,monospace;color:var(--mint);white-space:nowrap}.stats span{font-size:18px;color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.kpis div{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px 24px;position:relative;overflow:hidden}
+.kpis div:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--mint)}
+.kpis b{display:block;font:800 40px Mono,monospace;color:#fff;letter-spacing:-.03em;white-space:nowrap}.kpis b span{font:inherit;color:inherit}.kpis div>span{font-size:19px;color:var(--muted)}
+.kpis div:nth-child(1) b,.kpis div:nth-child(2) b{color:var(--mint)}
+.note{font-size:20px;margin-top:22px}
+.cmp{width:100%;border-collapse:separate;border-spacing:0;font-size:24px;border:1px solid var(--line);border-radius:20px;overflow:hidden;background:var(--panel)}
+.cmp th,.cmp td{padding:16px 26px;text-align:left;border-bottom:1px solid var(--line);color:var(--muted)}.cmp th{background:rgba(255,255,255,.04);font-size:22px;vertical-align:top;color:#fff}
+.cmp th small{font:500 15px Mono,monospace;color:#6c7594}.cmp td:first-child{font-weight:600;color:#fff}
+.cmp .us{background:rgba(46,242,184,.08);color:var(--mint);font-weight:700}.cmp th.us{color:var(--mint)}
+.moat{margin-top:28px;font-size:24px;background:rgba(91,124,255,.08);border:1px solid rgba(91,124,255,.3);border-radius:18px;padding:22px 28px}.moat b{color:#fff}
+.flags{display:grid;grid-template-columns:repeat(7,1fr);gap:14px;margin-bottom:44px}
+.flags div{border:1px solid var(--line);border-radius:18px;padding:22px 10px;text-align:center;background:var(--panel)}
+.flags b{font-size:54px;display:block}.flags span{display:block;font-size:21px;font-weight:700;margin-top:8px;color:#fff}.flags i{display:block;font:500 15px Mono,monospace;font-style:normal;color:var(--muted);margin-top:4px}
+.flags .now{border-color:rgba(46,242,184,.55);background:rgba(46,242,184,.07);box-shadow:0 0 40px -10px rgba(46,242,184,.4)}.flags .now i{color:var(--mint);font-weight:700}
+.road{display:grid;grid-template-columns:repeat(4,1fr);gap:22px}.road div{border-top:2px solid var(--line);padding-top:22px;position:relative}
+.road div:before{content:"";position:absolute;top:-7px;left:0;width:12px;height:12px;border-radius:50%;background:var(--blue);box-shadow:0 0 16px var(--blue)}
+.road div:first-child:before{background:var(--mint);box-shadow:0 0 16px var(--mint)}
+.road b{font:700 26px Mono,monospace;display:block;margin-bottom:10px;color:#fff}.road p{font-size:22px}
+.team{display:grid;grid-template-columns:repeat(4,1fr);gap:22px}.team .card{padding:28px}.team h3{font-size:27px}
+.role{font:700 17px Mono,monospace!important;color:var(--mint)!important;margin-bottom:10px;line-height:1.35!important}.team p{font-size:20px}
+.why{margin-top:32px;font-size:27px}.why b{color:#fff}
+.todo{color:var(--amber);font-size:20px;font-weight:600;margin-top:12px}
+.speakers{margin-top:32px}.speakers .lbl{font:600 16px Mono,monospace;letter-spacing:.08em;text-transform:uppercase;color:#5d6788}.speakers p{font-size:25px;color:#fff;margin-top:6px}
+.contacts{margin-top:34px;display:grid;gap:12px}.contacts p{font:500 26px Mono,monospace;color:#dfe4f5}.contacts b{color:var(--cyan)}
+.thanks h1{font-size:108px}
+.tam{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+.tam .m{border-radius:24px;padding:40px 36px;text-align:center;background:rgba(255,255,255,.03);border:1px solid var(--line);position:relative;overflow:hidden}
+.tam .m:before{content:"";position:absolute;inset:0;opacity:.18}
+.tam .t1{border-color:rgba(46,242,184,.5);box-shadow:0 0 60px -20px rgba(46,242,184,.45)}.tam .t1:before{background:radial-gradient(circle at 50% 0,var(--mint),transparent 65%)}
+.tam .t2{border-color:rgba(56,217,245,.5);box-shadow:0 0 60px -20px rgba(56,217,245,.45)}.tam .t2:before{background:radial-gradient(circle at 50% 0,var(--cyan),transparent 65%)}
+.tam .t3{border-color:rgba(160,107,255,.55);box-shadow:0 0 60px -20px rgba(160,107,255,.5)}.tam .t3:before{background:radial-gradient(circle at 50% 0,var(--violet),transparent 65%)}
+.tam .m>*{position:relative}
+.tam .ic{font-size:50px;display:block}
+.tam .k{display:block;font:700 20px Mono,monospace;letter-spacing:.08em;text-transform:uppercase;margin-top:12px}
+.tam .t1 .k{color:var(--mint)}.tam .t2 .k{color:var(--cyan)}.tam .t3 .k{color:var(--violet)}
+.tam .v{display:block;font:800 52px Mono,monospace;letter-spacing:-.03em;margin-top:12px;white-space:nowrap;color:#fff}
+.tam .v2{display:block;font:800 36px Mono,monospace;margin-top:26px;padding-top:22px;border-top:1px dashed rgba(255,255,255,.14);white-space:nowrap;color:#fff}
+.tam .u{display:block;font-size:19px;color:var(--muted);margin-top:4px}
+.src{margin-top:28px;font:400 15px/1.6 Mono,monospace;color:#646d8c}
+.devs{position:relative;height:880px;display:flex;align-items:center;justify-content:center}
+.dev{filter:drop-shadow(0 40px 70px rgba(91,124,255,.35)) drop-shadow(0 0 1px rgba(255,255,255,.25))}
+.devs.one .wide{width:118%;max-width:none}.devs.one .mac{width:105%;max-width:none}
+.devs.three .dev{height:660px;position:absolute}.devs.three .p0{left:0;top:110px;transform:rotate(-6deg)}.devs.three .p1{left:50%;margin-left:-150px;top:20px;z-index:2}.devs.three .p2{right:0;top:110px;transform:rotate(6deg)}
+.bar{position:fixed;left:0;bottom:0;height:3px;background:var(--mint);box-shadow:0 0 12px var(--mint);z-index:9;transition:width .5s}
+.ui{position:fixed;right:18px;bottom:14px;z-index:9;display:flex;gap:10px;align-items:center;font:600 13px Mono,monospace;color:#8d95b3}
+.ui a{color:#c8fff0;background:rgba(46,242,184,.08);border:1px solid rgba(46,242,184,.3);padding:7px 14px;border-radius:8px;text-decoration:none}
+.ui button{all:unset;cursor:pointer;color:#fff;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);width:32px;height:32px;border-radius:8px;text-align:center;line-height:32px}
+.dots{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);display:flex;align-items:center;z-index:9}
+.dots i{width:9px;height:9px;border-radius:50%;background:#2a3150;transition:all .4s}.dots i+i{margin-left:26px;position:relative}.dots i+i:before{content:"";position:absolute;right:9px;top:4px;width:26px;height:1px;background:#2a3150}
+.dots i.done{background:var(--mint)}.dots i.done:before{background:var(--mint)}.dots i.cur{background:var(--mint);box-shadow:0 0 0 4px rgba(46,242,184,.2),0 0 14px var(--mint);transform:scale(1.3)}
+/* animations */
+.slide .a{opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .8s cubic-bezier(.2,.8,.2,1)}
+.slide.on .a{opacity:1;transform:none}
+.slide.on .a:nth-child(1){transition-delay:0.08s}.slide.on .a:nth-child(2){transition-delay:0.16999999999999998s}.slide.on .a:nth-child(3){transition-delay:0.26s}.slide.on .a:nth-child(4){transition-delay:0.35000000000000003s}.slide.on .a:nth-child(5){transition-delay:0.44s}.slide.on .a:nth-child(6){transition-delay:0.5299999999999999s}.slide.on .a:nth-child(7){transition-delay:0.62s}.slide.on .a:nth-child(8){transition-delay:0.71s}.slide.on .a:nth-child(9){transition-delay:0.7999999999999999s}.slide.on .a:nth-child(10){transition-delay:0.8899999999999999s}.slide.on .a:nth-child(11){transition-delay:0.9799999999999999s}.slide.on .a:nth-child(12){transition-delay:1.07s}
+.slide.on .grid3>.a:nth-child(2),.slide.on .grid4>.a:nth-child(2),.slide.on .kpis>.a:nth-child(2),.slide.on .road>.a:nth-child(2),.slide.on .team>.a:nth-child(2),.slide.on .grid2>.a:nth-child(2){transition-delay:.35s}
+.slide.on .grid3>.a:nth-child(3),.slide.on .grid4>.a:nth-child(3),.slide.on .kpis>.a:nth-child(3),.slide.on .road>.a:nth-child(3),.slide.on .team>.a:nth-child(3){transition-delay:.5s}
+.slide.on .grid4>.a:nth-child(4),.slide.on .kpis>.a:nth-child(4),.slide.on .road>.a:nth-child(4),.slide.on .team>.a:nth-child(4){transition-delay:.65s}
+.slide.on .kpis>.a:nth-child(5){transition-delay:.8s}.slide.on .kpis>.a:nth-child(6){transition-delay:.95s}
+.slide.on .flags>.a:nth-child(1){transition-delay:0.2s}.slide.on .flags>.a:nth-child(2){transition-delay:0.30000000000000004s}.slide.on .flags>.a:nth-child(3){transition-delay:0.4s}.slide.on .flags>.a:nth-child(4){transition-delay:0.5s}.slide.on .flags>.a:nth-child(5){transition-delay:0.6000000000000001s}.slide.on .flags>.a:nth-child(6){transition-delay:0.7s}.slide.on .flags>.a:nth-child(7){transition-delay:0.8s}
+.slide .devs{opacity:0;transform:translateX(80px) scale(.95);transition:opacity .9s ease .25s,transform 1.1s cubic-bezier(.2,.8,.2,1) .25s}
+.slide.on .devs{opacity:1;transform:none}
+.slide.on .dev{animation:float 6s ease-in-out infinite}.slide.on .p1{animation-delay:-2s}.slide.on .p2{animation-delay:-4s}
+@keyframes float{0%,100%{translate:0 0}50%{translate:0 -14px}}
+.cmp tbody tr{opacity:0;transform:translateX(-24px);transition:all .5s ease}.slide.on .cmp tbody tr{opacity:1;transform:none}
+.slide.on .cmp tbody tr:nth-child(1){transition-delay:0.3s}.slide.on .cmp tbody tr:nth-child(2){transition-delay:0.42s}.slide.on .cmp tbody tr:nth-child(3){transition-delay:0.54s}.slide.on .cmp tbody tr:nth-child(4){transition-delay:0.6599999999999999s}.slide.on .cmp tbody tr:nth-child(5){transition-delay:0.78s}.slide.on .cmp tbody tr:nth-child(6){transition-delay:0.8999999999999999s}
+@media (prefers-reduced-motion:reduce){.slide *{transition:none!important;animation:none!important}}
+/* PDF: every slide on its own page, no animation */
+@media print{html,body{background:#05070d;overflow:visible;height:auto}.deck{position:static;display:block;overflow:visible}.stage{position:static;margin:0;width:auto;height:auto;transform:none!important}.fx{display:none}
+.slide{background:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/64px 64px,linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/64px 64px,radial-gradient(900px 600px at 88% 8%,rgba(91,124,255,.2),transparent 70%),#05070d!important}.slide:after{display:none}
+.slide{position:relative;visibility:visible!important;opacity:1!important;transform:none!important;clip-path:none!important;page-break-after:always;break-after:page}.slide .a,.slide .devs,.cmp tbody tr{opacity:1!important;transform:none!important;transition:none!important}
+.dev{animation:none!important}.bar,.ui,.scan,.dots{display:none}.slide{border-radius:0!important;box-shadow:none!important;filter:none!important;outline:none!important}.cover h1 .hl:after{display:none}.hl,.slide *{text-shadow:none!important}}
+@page{size:1920px 1080px;margin:0}
+</style></head><body>
+<div class="deck"><div class="stage"><section class="slide cover" data-fx="boot"><div class="split"><div class="txt">
+      <img class="logo a" src="img/alemway_wordmark.svg" alt="AlemWay">
+      <h1 class="a">Визовый бизнес<br>в одной платформе.<br><span class="hl">Документы проверяет ИИ.</span></h1>
+      <p class="lead a">Сайт, кабинет студента, CRM и ИИ-декларация — работает и приносит деньги.</p>
+      <div class="chips a"><span>С 2019 года</span><span>1000+ клиентов</span><span>10,4 млн ₸ через платформу</span></div>
+      <div class="speakers a"><p class="lbl">Выступают</p><p><b>Алиби</b> · <b>Мухаммад Шералхан</b> · <b>Ерасыл</b></p></div>
+      <p class="link a">alemway.kz</p>
+    </div><div class="devs one"><img class="dev wide" src="img/combo-01.png" alt=""></div></div></section>
+<section class="slide " data-fx="pixels"><span class="tag">1 · Problem</span><p class="eyebrow a">Проблема</p><h2 class="a">Визовые агентства до сих пор живут в WhatsApp и Excel</h2>
+    <div class="grid3">
+      <div class="card a"><b class="big">📲</b><h3>Всё вручную</h3><p>Паспорта, справки и чеки приходят в WhatsApp. Менеджер переписывает их в декларацию, таблицу и Google Drive. На одного студента уходят часы.</p></div>
+      <div class="card a"><b class="big">🗂</b><h3>Всё разбросано</h3><p>У нас самих было 24 папки и 61 файл с разными названиями — и отдельная таблица на 230 строк.</p></div>
+      <div class="card a"><b class="big">⚠️</b><h3>Люди и документы теряются</h3><p>Одна ошибка в имени или дате — и немецкое агентство труда не примет декларацию. Студент не знает, на каком он этапе.</p></div>
+    </div>
+    <p class="who a">Для кого: <b>студенты</b>, которые едут работать летом за рубеж, и <b>визовые агентства</b>, которые их оформляют.</p></section>
+<section class="slide accent" data-fx="columns"><span class="tag">2 · Solution</span><p class="eyebrow a">Решение</p><h2 class="a">Все процессы в одной платформе — ИИ следит, чтобы никто не потерялся</h2>
+    <div class="grid4">
+      <div class="card a"><b class="big">🔗</b><h3>Личная ссылка</h3><p>Студент получает её в WhatsApp в один клик.</p></div>
+      <div class="card a"><b class="big">📄</b><h3>Загрузил документы</h3><p>Справка и паспорт — с телефона, большие сканы сжимаются сами.</p></div>
+      <div class="card a"><b class="big">🤖</b><h3>ИИ сделал декларацию</h3><p>Официальный бланк за ~30 секунд, с проверкой ошибок.</p></div>
+      <div class="card a"><b class="big">✅</b><h3>Видит каждый шаг</h3><p>8 этапов до вылета: что сделано и что дальше.</p></div>
+    </div>
+    <p class="result a">Результат: студент оформляет документы <b>за один вечер</b>, команда ведёт <b>в разы больше клиентов</b> и ничего не теряет.</p></section>
+<section class="slide " data-fx="screen"><span class="tag">3 · Product</span><div class="split"><div class="txt">
+      <p class="eyebrow a">Продукт · уже работает на alemway.kz</p><h2 class="a">Студент — на телефоне, команда — в CRM</h2>
+      <ul class="ticks">
+        <li class="a"><b>Студент:</b> запись на консультацию → личный кабинет → загрузил справку и паспорт → скачал декларацию → отправил с печатью декана</li>
+        <li class="a">Видит <b>все 8 этапов</b> до вылета и следующий шаг</li>
+        <li class="a"><b>Команда:</b> все клиенты и файлы в одном месте, скачать всё одним ZIP</li>
+        <li class="a">Роли <b>владелец, менеджер, отдел продаж</b> · оплаты и чеки · Telegram</li>
+        <li class="a">Шаблон в WhatsApp с личной ссылкой — в один клик</li>
+      </ul></div><div class="devs one"><img class="dev wide" src="img/combo-02.png" alt=""></div></div></section>
+<section class="slide dark" data-fx="scan"><span class="tag">4 · AI</span><div class="split"><div class="txt">
+      <p class="eyebrow a">AI в продукте</p><h2 class="a">ИИ — наш «декларационный отдел»</h2>
+      <ul class="ticks">
+        <li class="a">Читает справку, паспорт и календарь вуза и <b>заполняет все 21 поле</b> официального бланка Bundesagentur für Arbeit</li>
+        <li class="a">Находит ошибки: <b>«Medina» → «Madina»</b>, просроченный паспорт, справка без печати</li>
+        <li class="a">Не выдаёт неполную декларацию — объясняет студенту, что исправить</li>
+        <li class="a">Сам заполняет анкету клиента и отвечает на вопросы 24/7</li>
+      </ul>
+      <div class="stats a"><div><b>~30 сек</b><span>вместо часов ручной работы</span></div><div><b>≈40 ₸</b><span>стоимость одной проверки</span></div><div><b>21/21</b><span>поле — как у эксперта</span></div></div>
+    </div><div class="devs one"><img class="dev wide" src="img/combo-07.png" alt=""></div></div></section>
+<section class="slide accent" data-fx="rise"><span class="tag">5 · Traction</span><div class="split"><div class="txt">
+      <p class="eyebrow a">Traction</p><h2 class="a">Не идея — работающий бизнес</h2>
+      <div class="kpis">
+        <div class="a"><b><span data-n="10.4" data-d="1">10,4</span> млн ₸</b><span>выручка через платформу</span></div>
+        <div class="a"><b><span data-n="11.8" data-d="1">11,8</span> млн ₸</b><span>сумма договоров</span></div>
+        <div class="a"><b data-n="28">28</b><span>клиентов в платформе</span></div>
+        <div class="a"><b data-n="16">16</b><span>договоров Work&Travel</span></div>
+        <div class="a"><b data-n="7">7</b><span>деклараций, 6 — с печатью</span></div>
+        <div class="a"><b>1000+</b><span>клиентов AlemWay с 2019</span></div>
+      </div>
+      <p class="note a">Платформа запущена в ноябре 2026 — первые деньги пришли в первые недели. Все цифры — из нашей админки, реальные платежи.</p>
+    </div><div class="devs one"><img class="dev mac" src="img/macbook-08-finance.png" alt=""></div></div></section>
+<section class="slide dark" data-fx="zoomout"><span class="tag">6 · Market</span><p class="eyebrow a">Рынок</p><h2 class="a">Студенты + трудоустройство за рубеж</h2>
+    <div class="tam">
+      <div class="m a t1"><b class="ic">🇰🇿</b><span class="k">Казахстан</span>
+        <b class="v">≈ $1 млрд</b><span class="u">678 тыс. студентов × чек 730 тыс. ₸</span>
+        <b class="v2">Work&Travel</b><span class="u">Германия, Корея — уже работаем</span></div>
+      <div class="m a t2"><b class="ic">🌏</b><span class="k">Центральная Азия</span>
+        <b class="v">≈ $3,6 млрд</b><span class="u">2,44 млн студентов (КЗ, УЗ, КГ)</span>
+        <b class="v2">$22,4 млрд/год</b><span class="u">переводы трудовых мигрантов: УЗ $18,9 млрд + КГ $3,5 млрд</span></div>
+      <div class="m a t3"><b class="ic">🌐</b><span class="k">Азия</span>
+        <b class="v">$343 млрд/год</b><span class="u">переводы мигрантов: Южная + Восточная Азия</span>
+        <b class="v2">167,7 млн</b><span class="u">трудовых мигрантов в мире · 91 млн студентов в Китае и Индии</span></div>
+    </div>
+    <p class="src a">Студенты × средний чек 730 тыс. ₸ ≈ рынок программ (курс ≈ 500 ₸/$). Переводы мигрантов — объём денег, которые люди зарабатывают за рубежом: это экономика, которую обслуживает трудоустройство.<br>
+    Источники: stat.gov.kz · stat.uz · Нацстатком КР · ЦБ Узбекистана (переводы 2025) · Нацбанк КР (переводы 2025) · Всемирный банк, Migration and Development Brief (2024) · МОТ, Global Estimates on International Migrant Workers (2022) · Минобр КНР · AISHE India.</p></section>
+<section class="slide " data-fx="split"><span class="tag">7 · Business Model</span><p class="eyebrow a">Бизнес-модель</p><h2 class="a">Два источника дохода</h2>
+    <div class="grid2">
+      <div class="card a"><h3>1. Услуги AlemWay (B2C)</h3>
+        <ul class="plain"><li><b>Work&Travel Германия</b> — 710–750 тыс. ₸</li><li><b>K-ETA в Корею</b> — 12 000 ₸</li><li><b>Консультации</b> — 2 000 ₸</li></ul>
+        <p>Платформа снижает затраты: декларация от ИИ стоит ~40 ₸ вместо часа работы менеджера.</p></div>
+      <div class="card a"><h3>2. Платформа для агентств (B2B)</h3>
+        <p>Делаем другим визовым агентствам такой же сайт, кабинет клиента, CRM и ИИ — <b>под их процессы</b>: внедрение + ежемесячная поддержка.</p>
+        <p>Цена — индивидуально, под размер и процессы агентства.</p></div>
+    </div></section>
+<section class="slide " data-fx="diagonal"><span class="tag">8 · Competition</span><p class="eyebrow a">Конкуренты и преимущество</p><h2 class="a">Почему мы, а не они</h2>
+    <table class="cmp a"><thead><tr><th></th><th>Агентства<br><small>IEC, KCET, Freedom Travel…</small></th><th>Общие CRM<br><small>amoCRM, Bitrix24</small></th><th class="us">AlemWay</th></tr></thead><tbody>
+      <tr><td>Сбор документов</td><td>WhatsApp</td><td>вручную</td><td class="us">✅ кабинет студента</td></tr>
+      <tr><td>Декларация ZAV</td><td>вручную</td><td>—</td><td class="us">✅ ИИ, ~30 сек</td></tr>
+      <tr><td>Проверка ошибок</td><td>глазами</td><td>—</td><td class="us">✅ ИИ</td></tr>
+      <tr><td>Клиент видит этапы</td><td>—</td><td>—</td><td class="us">✅ 8 этапов</td></tr>
+      <tr><td>Заточено под визы</td><td>—</td><td>—</td><td class="us">✅</td></tr>
+    </tbody></table>
+    <p class="moat a"><b>Почему преимущество сохранится, когда ИИ станет доступнее всем:</b> ценность не в модели, а в том, что вокруг — знание процессов (бланки, правила, справочник вузов), реальные данные 1000+ клиентов и готовый рабочий процесс от заявки до вылета.</p></section>
+<section class="slide " data-fx="flight"><span class="tag">9 · Growth & Global</span><p class="eyebrow a">Рост и выход на мир</p><h2 class="a">Одна платформа — любая страна</h2>
+    <div class="flags">
+      <div class="a now"><b>🇩🇪</b><span>Германия</span><i>сейчас</i></div>
+      <div class="a now"><b>🇰🇷</b><span>Корея (K-ETA)</span><i>сейчас</i></div>
+      <div class="a"><b>🇺🇸</b><span>США</span><i>Work&Travel</i></div>
+      <div class="a"><b>🇯🇵</b><span>Япония</span></div>
+      <div class="a"><b>🇦🇺</b><span>Австралия</span></div>
+      <div class="a"><b>🇵🇱</b><span>Польша</span></div>
+      <div class="a"><b>🇸🇰</b><span>Словакия</span></div>
+    </div>
+    <div class="road">
+      <div class="a"><b>Сейчас</b><p>Германия и Корея, Казахстан и Узбекистан</p></div>
+      <div class="a"><b>Далее</b><p>Новые страны: ИИ учится на новых бланках — платформа та же</p></div>
+      <div class="a"><b>Масштаб</b><p>Документы из WhatsApp сразу в кабинет, ИИ-финансист</p></div>
+      <div class="a"><b>Мир</b><p>Платформа для агентств Центральной Азии и дальше</p></div>
+    </div></section>
+<section class="slide hero" data-fx="flip"><span class="tag">10 · Team</span><p class="eyebrow a">Команда</p><h2 class="a">Бизнес, который сам сделал свою платформу</h2>
+    <div class="team">
+      <div class="card a"><b class="big">🏢</b><h3>Нурберген</h3><p class="role">Основатель и CEO AlemWay</p><p>Основал AlemWay в 2019 году: 1000+ клиентов, программы в Германии и Корее.</p></div>
+      <div class="card a"><b class="big">🧠</b><h3>Мухаммад Шералхан</h3><p class="role">Сооснователь платформы · Product & AI</p><p>Спроектировал платформу и ИИ-декларацию, запустил её на реальных клиентах.</p></div>
+      <div class="card a"><b class="big">⚙️</b><h3>Ерасыл</h3><p class="role">Сооснователь платформы · Tech Lead</p><p>Кабинеты студентов, генерация официальных документов, безопасность данных.</p></div>
+      <div class="card a"><b class="big">🧭</b><h3>Алиби</h3><p class="role">Head of Client Success</p><p>Ведёт студентов от заявки до вылета — знает каждый шаг процесса, по которому мы строили продукт.</p></div>
+    </div>
+    <p class="why a">Почему мы: мы <b>и есть клиент</b> своей платформы — она уже ведёт наш бизнес и приносит деньги.</p>
+</section>
+<section class="slide cover thanks" data-fx="iris"><div class="split"><div class="txt">
+      <img class="logo a" src="img/alemway_wordmark.svg" alt="AlemWay">
+      <h1 class="a">Спасибо<br>за внимание!</h1>
+      <p class="lead a">Попробуйте сами — запишитесь на консультацию или откройте сайт.</p>
+      <div class="contacts a"><p>🌐 <b>alemway.kz</b></p><p>📅 alemway.kz/ru/consultation</p><p>📑 Эта презентация: <b>alemway.kz/pitch</b></p><p>💬 WhatsApp: +7 708 070 18 77</p></div>
+    </div><div class="devs one"><img class="dev wide" src="img/combo-07.png" alt=""></div></div></section><div class="fx"></div></div></div>
+<div class="bar"></div><div class="dots"></div>
+<div class="ui"><span class="cnt"></span><button class="prev" aria-label="Назад">‹</button><button class="next" aria-label="Вперёд">›</button><a href="pizza-pitch.pdf" download>PDF</a></div>
+<script>
+const S=[...document.querySelectorAll('.slide')],N=S.length,stage=document.querySelector('.stage'),FX=document.querySelector('.fx');
+let i=-1,busy=null;
+const bar=document.querySelector('.bar'),cnt=document.querySelector('.cnt');
+const dots=document.querySelector('.dots');dots.innerHTML=S.map(()=>'<i></i>').join('');const D=[...dots.children];
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function fit(){const k=Math.min(innerWidth/1920,innerHeight/1080);stage.style.transform='scale('+k+')'}
+const ease='cubic-bezier(.65,0,.35,1)',out='cubic-bezier(.16,1,.3,1)';
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const done=a=>a.finished.catch(()=>{});
+// overlay pieces (cheap: transform/opacity only)
+function pieces(n,make){FX.innerHTML='';const arr=[];for(let k=0;k<n;k++){const el=document.createElement('i');make(el,k);FX.appendChild(el);arr.push(el)}return arr}
+// Each slide has its own entrance. reveal(el) shows the new slide; it resolves when the effect ends.
+const E={
+ // 1 · cover: CRT power-on line
+ async boot(el,reveal){reveal();await done(el.animate([{clipPath:'inset(50% 0 50% 0)'},{clipPath:'inset(49.7% 0 49.7% 0)',offset:.3},{clipPath:'inset(0 0 0 0)'}],{duration:950,easing:'cubic-bezier(.7,0,.2,1)'}))},
+ // 2 · problem: pixel chaos (Codrops pixel transition idea)
+ async pixels(el,reveal){const C=16,R=9;const ps=pieces(C*R,(p,k)=>{p.style.cssText='left:'+(k%C)*120+'px;top:'+Math.floor(k/C)*120+'px;width:121px;height:121px;opacity:0;background:'+(Math.random()<.18?'#2ef2b8':'#0b1020')});
+  ps.forEach(p=>p.animate([{opacity:0},{opacity:1}],{duration:110,delay:Math.random()*380,fill:'forwards'}));await wait(520);reveal();
+  await Promise.all(ps.map(p=>done(p.animate([{opacity:1},{opacity:0}],{duration:110,delay:Math.random()*380,fill:'forwards'}))));FX.innerHTML=''},
+ // 3 · solution: ordered columns
+ async columns(el,reveal){const n=8;const ps=pieces(n,(p,k)=>{p.style.cssText='left:'+k*240+'px;top:0;width:241px;height:1080px;background:'+(k%2?'#0d1328':'#101a3a')+';transform:translateY(-101%)'});
+  await Promise.all(ps.map((p,k)=>done(p.animate([{transform:'translateY(-101%)'},{transform:'translateY(0)'}],{duration:420,delay:k*45,easing:ease,fill:'forwards'}))));reveal();
+  await Promise.all(ps.map((p,k)=>done(p.animate([{transform:'translateY(0)'},{transform:'translateY(101%)'}],{duration:420,delay:k*45,easing:ease,fill:'forwards'}))));FX.innerHTML=''},
+ // 4 · product: fly into the laptop screen
+ async screen(el,reveal){reveal();await done(el.animate([{transform:'translate(20%,-4%) scale(.34)',clipPath:'inset(0 round 46px)',opacity:.2},{transform:'translate(0,0) scale(1)',clipPath:'inset(0 round 0px)',opacity:1}],{duration:1000,easing:out}))},
+ // 5 · AI: neural scan ring
+ async scan(el,reveal){reveal();const [ring]=pieces(1,p=>{p.style.cssText='left:1340px;top:540px;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;border:3px solid #2ef2b8;box-shadow:0 0 30px #2ef2b8,inset 0 0 30px #2ef2b8'});
+  ring.animate([{transform:'scale(0)',opacity:1},{transform:'scale(70)',opacity:0}],{duration:1050,easing:out,fill:'forwards'});
+  await done(el.animate([{clipPath:'circle(0% at 70% 50%)'},{clipPath:'circle(130% at 70% 50%)'}],{duration:1000,easing:'cubic-bezier(.6,0,.2,1)'}));FX.innerHTML=''},
+ // 6 · traction: growing bars
+ async rise(el,reveal){const n=12;const ps=pieces(n,(p,k)=>{p.style.cssText='left:'+k*160+'px;bottom:0;width:161px;height:1080px;transform-origin:50% 100%;transform:scaleY(0);background:linear-gradient(#2ef2b8,#0e3b30)'});
+  await Promise.all(ps.map((p,k)=>done(p.animate([{transform:'scaleY(0)'},{transform:'scaleY(1)'}],{duration:380,delay:k*35,easing:ease,fill:'forwards'}))));reveal();
+  await Promise.all(ps.map((p,k)=>{p.style.transformOrigin='50% 0';return done(p.animate([{transform:'scaleY(1)'},{transform:'scaleY(0)'}],{duration:380,delay:(n-k)*35,easing:ease,fill:'forwards'}))}));FX.innerHTML=''},
+ // 7 · market: zoom out like a map
+ async zoomout(el,reveal){reveal();await done(el.animate([{transform:'scale(2.2)',opacity:0},{transform:'scale(1)',opacity:1}],{duration:1050,easing:out}))},
+ // 8 · business: two doors (B2C | B2B)
+ async split(el,reveal){const ps=pieces(2,(p,k)=>{p.style.cssText='top:0;height:1080px;width:961px;'+(k?'right:0;':'left:0;')+'background:'+(k?'#141b3d':'#0f1630')+';transform:translateX('+(k?'101%':'-101%')+')'});
+  await Promise.all(ps.map((p,k)=>done(p.animate([{transform:'translateX('+(k?'101%':'-101%')+')'},{transform:'translateX(0)'}],{duration:430,easing:ease,fill:'forwards'}))));reveal();
+  await Promise.all(ps.map((p,k)=>done(p.animate([{transform:'translateX(0)'},{transform:'translateX('+(k?'101%':'-101%')+')'}],{duration:520,delay:80,easing:ease,fill:'forwards'}))));FX.innerHTML=''},
+ // 9 · competition: diagonal strike
+ async diagonal(el,reveal){reveal();await done(el.animate([{clipPath:'polygon(0 0,0 0,0 0)'},{clipPath:'polygon(0 0,220% 0,0 220%)'}],{duration:850,easing:'cubic-bezier(.75,0,.25,1)'}))},
+ // 10 · growth: flight
+ async flight(el,reveal){reveal();const [pl]=pieces(1,p=>{p.textContent='✈';p.style.cssText='left:0;top:470px;font-size:120px;color:#2ef2b8;text-shadow:0 0 30px #2ef2b8'});
+  pl.animate([{transform:'translate(-200px,120px) rotate(-8deg)'},{transform:'translate(2100px,-160px) rotate(-8deg)'}],{duration:950,easing:'cubic-bezier(.5,0,.3,1)',fill:'forwards'});
+  await done(el.animate([{transform:'translateX(100%) skewX(-10deg)',opacity:.4},{transform:'translateX(-2%) skewX(2deg)',offset:.75,opacity:1},{transform:'none'}],{duration:1000,easing:out}));FX.innerHTML=''},
+ // 11 · team: flip up
+ async flip(el,reveal){reveal();await done(el.animate([{transform:'perspective(2400px) rotateX(-55deg) translateY(25%)',opacity:0},{transform:'perspective(2400px) rotateX(0) translateY(0)',opacity:1}],{duration:900,easing:out}))},
+ // 12 · thanks: iris + confetti
+ async iris(el,reveal){reveal();const cols=['#2ef2b8','#38d9f5','#a06bff','#ffc24b','#5b7cff'];const ps=pieces(46,(p,k)=>{const s=8+Math.random()*12;p.style.cssText='left:960px;top:1000px;width:'+s+'px;height:'+s+'px;border-radius:'+(k%3?'50%':'3px')+';background:'+cols[k%5]});
+  ps.forEach(p=>{const a=-Math.PI*(.15+Math.random()*.7),d=500+Math.random()*700;p.animate([{transform:'translate(0,0) rotate(0)',opacity:1},{transform:'translate('+Math.cos(a)*d+'px,'+Math.sin(a)*d+'px) rotate('+(Math.random()*720)+'deg)',opacity:0}],{duration:1400+Math.random()*500,easing:'cubic-bezier(.2,.7,.3,1)',fill:'forwards'})});
+  await done(el.animate([{clipPath:'circle(0% at 50% 100%)'},{clipPath:'circle(160% at 50% 100%)'}],{duration:1000,easing:'cubic-bezier(.6,0,.2,1)'}));setTimeout(()=>{if(FX.firstChild&&!busy)FX.innerHTML=''},1200)},
+ async fade(el,reveal){reveal();await done(el.animate([{opacity:0},{opacity:1}],{duration:400}))},
+};
+function count(s){s.querySelectorAll('[data-n]').forEach(el=>{const n=+el.dataset.n,d=+(el.dataset.d||0),t0=performance.now();
+ const step=t=>{const p=Math.min(1,(t-t0)/1400),e=1-Math.pow(1-p,3);el.textContent=(n*e).toFixed(d).replace('.',',');if(p<1)requestAnimationFrame(step)};requestAnimationFrame(step)})}
+function ui(){bar.style.width=((i+1)/N*100)+'%';cnt.textContent=(i+1)+' / '+N;D.forEach((x,k)=>{x.className=k<i?'done':k===i?'cur':''});history.replaceState(null,'','#'+(i+1))}
+async function show(n){n=Math.max(0,Math.min(N-1,n));if(n===i)return;
+ if(busy){S.forEach(s=>s.getAnimations({subtree:true}).forEach(a=>a.finish()));FX.getAnimations({subtree:true}).forEach(a=>a.finish());FX.innerHTML=''}
+ const old=S[i],el=S[n];i=n;ui();
+ if(old){old.classList.remove('on');old.classList.add('prev')}
+ const reveal=()=>{el.classList.add('on');count(el)};
+ const run=(old&&!RM)?(E[el.dataset.fx]||E.fade)(el,reveal):Promise.resolve(reveal());
+ const me=busy=run;await run;if(busy===me){busy=null;S.forEach(s=>{if(s!==el)s.classList.remove('prev','on')})}}
+addEventListener('keydown',e=>{if(['ArrowRight','PageDown',' ','Enter'].includes(e.key))show(i+1);if(['ArrowLeft','PageUp','Backspace'].includes(e.key))show(i-1);if(e.key==='f'||e.key==='F')document.documentElement.requestFullscreen?.();if(e.key==='Home')show(0);if(e.key==='End')show(N-1)});
+document.querySelector('.deck').addEventListener('click',e=>show(e.clientX>innerWidth/3?i+1:i-1));
+document.querySelector('.prev').onclick=()=>show(i-1);document.querySelector('.next').onclick=()=>show(i+1);
+D.forEach((x,k)=>{x.style.cursor='pointer';x.onclick=e=>{e.stopPropagation();show(k)}});
+let tx=0;addEventListener('touchstart',e=>tx=e.touches[0].clientX);addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>40)show(d<0?i+1:i-1)});
+addEventListener('resize',fit);fit();show(Math.max(0,Math.min(N-1,(+location.hash.slice(1)||1)-1)));</script></body></html>
