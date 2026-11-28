@@ -49,7 +49,8 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
     ...(money
       ? [
           { label: "Сумма договоров", value: formatTenge(total.soldSum), tone: "" },
-          { label: "Оплачено по продажам", value: formatTenge(total.paidSum), tone: "text-[#0a7a42]" },
+          { label: "Оплачено по продажам (факт)", value: `${formatTenge(total.paidSum)}${total.soldSum ? ` · ${Math.round((total.paidSum / total.soldSum) * 100)}%` : ""}`, tone: "text-[#0a7a42]" },
+          { label: "Осталось получить", value: formatTenge(Math.max(0, total.soldSum - total.paidSum)), tone: "" },
         ]
       : []),
     { label: "Действий команды", value: String(total.actions), tone: "text-brand" },
@@ -162,6 +163,8 @@ function Avatar({ m, big }: { m: MemberStats; big?: boolean }) {
   );
 }
 
+const paidPct = (m: MemberStats) => (m.soldSum > 0 ? Math.min(100, Math.round((m.paidSum / m.soldSum) * 100)) : 0);
+
 function SalesRow({ m, place, money, width }: { m: MemberStats; place: number; money: boolean; width: number }) {
   return (
     <li className="flex items-center gap-3">
@@ -180,9 +183,19 @@ function SalesRow({ m, place, money, width }: { m: MemberStats; place: number; m
           </p>
         </div>
         <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-surface">
-          <div className="team-bar h-full rounded-full bg-gradient-to-r from-brand to-accent" style={{ width: `${Math.max(width, m.sold ? 4 : 0)}%` }} />
+          <div className="team-bar relative h-full overflow-hidden rounded-full bg-brand/25" style={{ width: `${Math.max(width, m.sold ? 4 : 0)}%` }}>
+            {/* Paid part of the contracts — the bar fills up as clients pay. */}
+            <div className="h-full rounded-full bg-gradient-to-r from-brand to-accent" style={{ width: money ? `${paidPct(m)}%` : "100%" }} />
+          </div>
         </div>
-        {money && m.paidSum > 0 && <p className="mt-1 text-[12.5px] text-[#0a7a42]">оплачено {formatTenge(m.paidSum)}</p>}
+        {money && m.soldSum > 0 && (
+          <p className="mt-1 flex flex-wrap gap-x-3 text-[12.5px] tabular-nums">
+            <span className="font-semibold text-[#0a7a42]">
+              по факту оплачено {formatTenge(m.paidSum)} ({paidPct(m)}%)
+            </span>
+            {m.soldSum > m.paidSum && <span className="text-muted">осталось получить {formatTenge(m.soldSum - m.paidSum)}</span>}
+          </p>
+        )}
       </div>
     </li>
   );
